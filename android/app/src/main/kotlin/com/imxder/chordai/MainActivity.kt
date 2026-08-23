@@ -1,0 +1,5 @@
+package com.imxder.chordai
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()

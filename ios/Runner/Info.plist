@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>O ChordAI precisa do microfone para ouvir os acordes tocados no violão.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>O ChordAI se conecta ao servidor de reconhecimento de acordes na sua rede local.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

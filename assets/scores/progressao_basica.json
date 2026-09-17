@@ -1,0 +1,9 @@
+{
+  "title": "Progressão Básica (C - Am - F - G)",
+  "steps": [
+    {"chord": "C", "beats": 4},
+    {"chord": "Am", "beats": 4},
+    {"chord": "F", "beats": 4},
+    {"chord": "G", "beats": 4}
+  ]
+}

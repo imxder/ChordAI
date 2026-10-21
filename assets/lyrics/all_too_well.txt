@@ -1,4 +1,5 @@
 Tom:  C
+Tempo: 98
 
 [Intro] C  G  Am  F
         C  G  Am  F

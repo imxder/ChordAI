@@ -15,7 +15,13 @@ class LyricSection {
 class LyricSheet {
   final String title;
   final String? key;
+  final int? tempo;
   final List<LyricSection> sections;
 
-  const LyricSheet({required this.title, this.key, required this.sections});
+  const LyricSheet({
+    required this.title,
+    this.key,
+    this.tempo,
+    required this.sections,
+  });
 }

@@ -19,7 +19,9 @@ void main() {
     );
 
     await tester.pumpWidget(
-      const MaterialApp(home: LyricSheetScreen(sheet: sheet)),
+      const MaterialApp(
+        home: LyricSheetScreen(sheet: sheet, serverUrl: 'http://localhost:5001'),
+      ),
     );
 
     expect(find.byType(GuitarNeck), findsNothing);

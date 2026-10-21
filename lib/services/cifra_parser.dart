@@ -14,6 +14,7 @@ bool _isChordLine(String line) {
 LyricSheet parseCifra(String raw, {required String title}) {
   final rawLines = raw.replaceAll('​', '').split('\n');
   String? key;
+  int? tempo;
   final sections = <LyricSection>[];
   List<LyricLine>? currentLines;
   String? currentTitle;
@@ -34,6 +35,12 @@ LyricSheet parseCifra(String raw, {required String title}) {
 
     if (trimmed.toLowerCase().startsWith('tom:')) {
       key = trimmed.substring(4).trim();
+      i++;
+      continue;
+    }
+
+    if (trimmed.toLowerCase().startsWith('tempo:')) {
+      tempo = int.tryParse(trimmed.substring(6).trim());
       i++;
       continue;
     }
@@ -96,5 +103,5 @@ LyricSheet parseCifra(String raw, {required String title}) {
   }
   flushSection();
 
-  return LyricSheet(title: title, key: key, sections: sections);
+  return LyricSheet(title: title, key: key, tempo: tempo, sections: sections);
 }

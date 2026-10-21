@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:record/record.dart';
 
 import '../models/lyric_sheet.dart';
 import '../services/lyric_sheet_library.dart';
 import 'lyric_sheet_screen.dart';
 
 class LyricSheetListScreen extends StatefulWidget {
-  const LyricSheetListScreen({super.key});
+  final String serverUrl;
+  final InputDevice? inputDevice;
+
+  const LyricSheetListScreen({
+    super.key,
+    required this.serverUrl,
+    this.inputDevice,
+  });
 
   @override
   State<LyricSheetListScreen> createState() => _LyricSheetListScreenState();
@@ -42,7 +50,11 @@ class _LyricSheetListScreenState extends State<LyricSheetListScreen> {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => LyricSheetScreen(sheet: sheet),
+                  builder: (_) => LyricSheetScreen(
+                    sheet: sheet,
+                    serverUrl: widget.serverUrl,
+                    inputDevice: widget.inputDevice,
+                  ),
                 ),
               );
             },

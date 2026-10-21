@@ -272,7 +272,10 @@ class _HomePageState extends State<HomePage> {
                     : () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => const LyricSheetListScreen(),
+                            builder: (_) => LyricSheetListScreen(
+                              serverUrl: appState.serverUrl,
+                              inputDevice: _selectedDevice,
+                            ),
                           ),
                         );
                       },

@@ -1,13 +1,22 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:record/record.dart';
 
 import '../models/lyric_sheet.dart';
 import '../widgets/guitar_neck.dart';
+import 'lyric_player_screen.dart';
 
 class LyricSheetScreen extends StatelessWidget {
   final LyricSheet sheet;
+  final String serverUrl;
+  final InputDevice? inputDevice;
 
-  const LyricSheetScreen({super.key, required this.sheet});
+  const LyricSheetScreen({
+    super.key,
+    required this.sheet,
+    required this.serverUrl,
+    this.inputDevice,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,32 +24,57 @@ class LyricSheetScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(sheet.title)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Column(
         children: [
-          if (sheet.key != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Text(
-                'Tom: ${sheet.key}',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-          for (final section in sheet.sections) ...[
-            if (section.title != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 12, bottom: 4),
-                child: Text(
-                  '[${section.title}]',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: chordColor,
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                if (sheet.key != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      'Tom: ${sheet.key}',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                for (final section in sheet.sections) ...[
+                  if (section.title != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12, bottom: 4),
+                      child: Text(
+                        '[${section.title}]',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: chordColor,
+                            ),
                       ),
-                ),
-              ),
-            for (final line in section.lines)
-              _buildLine(context, line, chordColor),
-          ],
+                    ),
+                  for (final line in section.lines)
+                    _buildLine(context, line, chordColor),
+                ],
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: FilledButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => LyricPlayerScreen(
+                      serverUrl: serverUrl,
+                      inputDevice: inputDevice,
+                      sheet: sheet,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.play_circle_outline),
+              label: const Text('Tocar música'),
+              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56)),
+            ),
+          ),
         ],
       ),
     );

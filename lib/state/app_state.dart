@@ -5,6 +5,8 @@ import '../config.dart';
 import '../models/chord_prediction.dart';
 import '../models/gamification.dart';
 import '../models/score.dart';
+import '../models/tuner_note.dart';
+import '../models/tuning_preset.dart';
 
 enum SessionStatus { idle, running, paused }
 
@@ -24,6 +26,14 @@ class AppState extends ChangeNotifier {
   static const _selectedThemeKey = 'app_selected_theme';
   static const _learnedChordsKey = 'app_learned_chords';
   static const _serverUrlKey = 'app_server_url';
+  static const _hasOnboardedKey = 'app_has_onboarded';
+  static const _tuningIdKey = 'app_tuning_id';
+  static const _customTuningKey = 'app_custom_tuning';
+  static const _lyricFontScaleKey = 'app_lyric_font_scale';
+  static const _showGuitarNeckKey = 'app_show_guitar_neck';
+  static const _autoScrollKey = 'app_auto_scroll';
+  static const _lastSongTitleKey = 'app_last_song_title';
+  static const _lastSongChordCountKey = 'app_last_song_chord_count';
 
   static const int chordMasteryStreak = 3;
 
@@ -53,6 +63,79 @@ class AppState extends ChangeNotifier {
   Set<String> learnedChords = {};
 
   String serverUrl = defaultServerUrl;
+  bool hasCompletedOnboarding = false;
+  String tuningId = 'padrao';
+  List<String>? customTuningNotes;
+
+  List<TunerNote> get activeTuning {
+    if (tuningId == customTuningId && customTuningNotes != null) {
+      return buildTuning(customTuningNotes!);
+    }
+    final preset = tuningPresets.firstWhere(
+      (p) => p.id == tuningId,
+      orElse: () => tuningPresets.first,
+    );
+    return preset.strings;
+  }
+
+  Future<void> setTuningPreset(String id) async {
+    tuningId = id;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tuningIdKey, id);
+    notifyListeners();
+  }
+
+  Future<void> setCustomTuning(List<String> notes) async {
+    tuningId = customTuningId;
+    customTuningNotes = notes;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tuningIdKey, customTuningId);
+    await prefs.setStringList(_customTuningKey, notes);
+    notifyListeners();
+  }
+
+  double lyricFontScale = 1.0;
+  bool showGuitarNeckInPlayer = true;
+  bool autoScrollInPlayer = true;
+  String? lastSongTitle;
+  int lastSongChordCount = 0;
+
+  Future<void> setLyricFontScale(double value) async {
+    lyricFontScale = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_lyricFontScaleKey, value);
+    notifyListeners();
+  }
+
+  Future<void> setShowGuitarNeckInPlayer(bool value) async {
+    showGuitarNeckInPlayer = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_showGuitarNeckKey, value);
+    notifyListeners();
+  }
+
+  Future<void> setAutoScrollInPlayer(bool value) async {
+    autoScrollInPlayer = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_autoScrollKey, value);
+    notifyListeners();
+  }
+
+  Future<void> setLastSong(String title, int chordCount) async {
+    lastSongTitle = title;
+    lastSongChordCount = chordCount;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastSongTitleKey, title);
+    await prefs.setInt(_lastSongChordCountKey, chordCount);
+    notifyListeners();
+  }
+
+  Future<void> completeOnboarding() async {
+    hasCompletedOnboarding = true;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_hasOnboardedKey, true);
+    notifyListeners();
+  }
 
   Future<void> setServerUrl(String value) async {
     serverUrl = value;
@@ -123,6 +206,14 @@ class AppState extends ChangeNotifier {
     selectedThemeIndex = prefs.getInt(_selectedThemeKey) ?? 0;
     learnedChords = (prefs.getStringList(_learnedChordsKey) ?? []).toSet();
     serverUrl = prefs.getString(_serverUrlKey) ?? defaultServerUrl;
+    hasCompletedOnboarding = prefs.getBool(_hasOnboardedKey) ?? false;
+    tuningId = prefs.getString(_tuningIdKey) ?? 'padrao';
+    customTuningNotes = prefs.getStringList(_customTuningKey);
+    lyricFontScale = prefs.getDouble(_lyricFontScaleKey) ?? 1.0;
+    showGuitarNeckInPlayer = prefs.getBool(_showGuitarNeckKey) ?? true;
+    autoScrollInPlayer = prefs.getBool(_autoScrollKey) ?? true;
+    lastSongTitle = prefs.getString(_lastSongTitleKey);
+    lastSongChordCount = prefs.getInt(_lastSongChordCountKey) ?? 0;
     _ensureDailyChallengeFresh();
     notifyListeners();
   }

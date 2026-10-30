@@ -15,6 +15,8 @@ LyricSheet parseCifra(String raw, {required String title}) {
   final rawLines = raw.replaceAll('​', '').split('\n');
   String? key;
   int? tempo;
+  int? capo;
+  List<String>? strummingPattern;
   final sections = <LyricSection>[];
   List<LyricLine>? currentLines;
   String? currentTitle;
@@ -41,6 +43,23 @@ LyricSheet parseCifra(String raw, {required String title}) {
 
     if (trimmed.toLowerCase().startsWith('tempo:')) {
       tempo = int.tryParse(trimmed.substring(6).trim());
+      i++;
+      continue;
+    }
+
+    if (trimmed.toLowerCase().startsWith('capo:')) {
+      capo = int.tryParse(trimmed.substring(5).trim());
+      i++;
+      continue;
+    }
+
+    if (trimmed.toLowerCase().startsWith('batida:')) {
+      strummingPattern = trimmed
+          .substring(7)
+          .trim()
+          .split(RegExp(r'\s+'))
+          .where((s) => s.isNotEmpty)
+          .toList();
       i++;
       continue;
     }
@@ -103,5 +122,12 @@ LyricSheet parseCifra(String raw, {required String title}) {
   }
   flushSection();
 
-  return LyricSheet(title: title, key: key, tempo: tempo, sections: sections);
+  return LyricSheet(
+    title: title,
+    key: key,
+    tempo: tempo,
+    capo: capo,
+    strummingPattern: strummingPattern,
+    sections: sections,
+  );
 }

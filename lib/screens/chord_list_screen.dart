@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
 import '../models/chord_difficulty.dart';
-import '../screens/chord_practice_screen.dart';
 import '../state/app_state.dart';
 import '../widgets/guitar_neck.dart';
+import 'chord_detail_screen.dart';
 
 class ChordListScreen extends StatefulWidget {
   final String serverUrl;
@@ -59,7 +59,7 @@ class _ChordListScreenState extends State<ChordListScreen> {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => ChordPracticeScreen(
+                    builder: (_) => ChordDetailScreen(
                       serverUrl: widget.serverUrl,
                       inputDevice: widget.inputDevice,
                       chord: chord,

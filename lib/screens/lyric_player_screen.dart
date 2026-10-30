@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
+import '../models/chord_names.dart';
 import '../models/lyric_practice.dart';
 import '../models/lyric_sheet.dart';
 import '../services/chord_recognition_service.dart';
 import '../state/app_state.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/metronome.dart';
+import '../widgets/practice_options_sheet.dart';
 
 class LyricPlayerScreen extends StatefulWidget {
   final String serverUrl;
@@ -32,6 +34,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   late final LyricPracticeMap _practiceMap;
   late int _bpm;
   int _beatsInStep = 0;
+  int _strumBeatIndex = 0;
   String _statusMessage = 'Toque em Iniciar';
 
   String? _lastRecognizedChord;
@@ -68,6 +71,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   }
 
   void _scrollToCurrentLine() {
+    if (!appState.autoScrollInPlayer) return;
     final index = appState.currentStepIndex;
     if (index < 0 || index >= _practiceMap.locations.length) return;
     final loc = _practiceMap.locations[index];
@@ -89,7 +93,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     }
 
     appState.startSession(_practiceMap.score);
+    appState.setLastSong(widget.sheet.title, extractChords(widget.sheet).length);
     _beatsInStep = 0;
+    _strumBeatIndex = 0;
     _lastRecognizedChord = null;
     _lastMatched = null;
     _chordAttempts.clear();
@@ -112,6 +118,12 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
 
   void _onBeat() {
     if (appState.sessionStatus != SessionStatus.running) return;
+
+    final pattern = widget.sheet.strummingPattern;
+    if (pattern != null && pattern.isNotEmpty) {
+      setState(() => _strumBeatIndex = (_strumBeatIndex + 1) % pattern.length);
+    }
+
     final step = appState.currentStep;
     if (step == null) return;
 
@@ -203,6 +215,13 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     );
   }
 
+  String? get _nextChord {
+    final score = _practiceMap.score;
+    final nextIndex = appState.currentStepIndex + 1;
+    if (nextIndex >= score.steps.length) return null;
+    return score.steps[nextIndex].chord;
+  }
+
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
@@ -233,32 +252,92 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
             : ChordMatchState.incorrect);
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.sheet.title)),
+      appBar: AppBar(
+        titleSpacing: 16,
+        toolbarHeight: widget.sheet.artist != null ? 64 : kToolbarHeight,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(widget.sheet.title),
+            if (widget.sheet.artist != null)
+              Text(
+                '${widget.sheet.artist} · $_bpm BPM',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+          ],
+        ),
+        actions: [
+          if (widget.sheet.capo != null)
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text('Capo ${widget.sheet.capo}'),
+            ),
+          IconButton(
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'Opções de prática',
+            onPressed: () => showPracticeOptionsSheet(context),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  const Text('BPM'),
-                  Expanded(
-                    child: Slider(
-                      min: 40,
-                      max: 160,
-                      divisions: 24,
-                      value: _bpm.toDouble(),
-                      label: '$_bpm',
-                      onChanged:
-                          running ? null : (v) => setState(() => _bpm = v.round()),
-                    ),
-                  ),
-                  SizedBox(width: 32, child: Text('$_bpm')),
-                  const SizedBox(width: 12),
-                  Metronome(running: running, bpm: _bpm, onBeat: _onBeat),
-                ],
+            SizedBox(
+              width: 0,
+              height: 0,
+              child: Opacity(
+                opacity: 0,
+                child: Metronome(running: running, bpm: _bpm, onBeat: _onBeat),
               ),
             ),
+            if (widget.sheet.strummingPattern != null &&
+                widget.sheet.strummingPattern!.isNotEmpty)
+              Container(
+                width: double.infinity,
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Batida', style: Theme.of(context).textTheme.titleSmall),
+                        Row(
+                          children: [
+                            Icon(Icons.repeat, size: 14, color: Theme.of(context).colorScheme.outline),
+                            const SizedBox(width: 4),
+                            Text(
+                              'repete',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.outline,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (var i = 0; i < widget.sheet.strummingPattern!.length; i++)
+                          _buildStrumSymbol(
+                            widget.sheet.strummingPattern![i],
+                            running && i == _strumBeatIndex,
+                            chordColor,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             if (running)
               Container(
                 width: double.infinity,
@@ -272,12 +351,14 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                 ),
                 child: Row(
                   children: [
-                    SizedBox(
-                      width: 72,
-                      height: 72,
-                      child: GuitarNeck(chord: expected, matchState: matchState),
-                    ),
-                    const SizedBox(width: 12),
+                    if (appState.showGuitarNeckInPlayer) ...[
+                      SizedBox(
+                        width: 72,
+                        height: 72,
+                        child: GuitarNeck(chord: expected, matchState: matchState),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,7 +393,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                 controller: _scrollController,
                 padding: const EdgeInsets.all(16),
                 children: [
-                  if (widget.sheet.key != null || widget.sheet.tempo != null)
+                  if (widget.sheet.key != null ||
+                      widget.sheet.tempo != null ||
+                      widget.sheet.capo != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: Text(
@@ -320,6 +403,8 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                           if (widget.sheet.key != null) 'Tom: ${widget.sheet.key}',
                           if (widget.sheet.tempo != null)
                             'Tempo original: ${widget.sheet.tempo} BPM',
+                          if (widget.sheet.capo != null)
+                            'Capo na ${widget.sheet.capo}ª casa',
                         ].join('  •  '),
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
@@ -357,30 +442,141 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                border: Border(
+                  top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                ),
+              ),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               child: Column(
                 children: [
-                  Text(_statusMessage, textAlign: TextAlign.center),
-                  const SizedBox(height: 8),
-                  Text(
-                    'XP: ${appState.xp}  •  Nível: ${appState.level}  •  Moedas: ${appState.coins}',
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 56,
+                        height: 56,
+                        child: appState.currentStep != null
+                            ? GuitarNeck(chord: appState.currentStep!.chord)
+                            : const SizedBox(),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ACORDE ATUAL',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.outline,
+                                    letterSpacing: 1,
+                                  ),
+                            ),
+                            Text(
+                              appState.currentStep != null
+                                  ? '${chordFullName(appState.currentStep!.chord)} (${appState.currentStep!.chord})'
+                                  : '—',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            if (_nextChord != null)
+                              Text(
+                                'Próximo: $_nextChord',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        children: [
+                          Text('BPM', style: Theme.of(context).textTheme.bodySmall),
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.remove_circle_outline),
+                                onPressed: running
+                                    ? null
+                                    : () => setState(() => _bpm = (_bpm - 5).clamp(40, 160)),
+                              ),
+                              Text('$_bpm', style: Theme.of(context).textTheme.titleMedium),
+                              IconButton(
+                                icon: const Icon(Icons.add_circle_outline),
+                                onPressed: running
+                                    ? null
+                                    : () => setState(() => _bpm = (_bpm + 5).clamp(40, 160)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
-                  FilledButton.icon(
-                    onPressed: running ? _stop : _start,
-                    icon: Icon(running ? Icons.stop : Icons.play_arrow),
-                    label: Text(running ? 'Parar' : 'Iniciar'),
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(56),
-                      backgroundColor: running ? Colors.red : null,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: _practiceMap.score.steps.isEmpty
+                          ? 0
+                          : appState.currentStepIndex / _practiceMap.score.steps.length,
+                      minHeight: 4,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.skip_previous,
+                          color: Theme.of(context).colorScheme.outlineVariant, size: 32),
+                      const SizedBox(width: 24),
+                      GestureDetector(
+                        onTap: running ? _stop : _start,
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: running ? Colors.red : chordColor,
+                          ),
+                          child: Icon(
+                            running ? Icons.pause : Icons.play_arrow,
+                            color: Colors.white,
+                            size: 32,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      Icon(Icons.skip_next,
+                          color: Theme.of(context).colorScheme.outlineVariant, size: 32),
+                    ],
+                  ),
+                  if (appState.sessionStatus == SessionStatus.idle && _statusMessage != 'Toque em Iniciar') ...[
+                    const SizedBox(height: 8),
+                    Text(_statusMessage, textAlign: TextAlign.center),
+                  ],
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStrumSymbol(String symbol, bool active, Color color) {
+    final isDown = symbol.toUpperCase() == 'D';
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 3),
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: active ? color : color.withValues(alpha: 0.12),
+      ),
+      child: Icon(
+        isDown ? Icons.arrow_downward : Icons.arrow_upward,
+        size: 16,
+        color: active ? Colors.white : color,
       ),
     );
   }
@@ -414,7 +610,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
               line.lyricText,
               style: TextStyle(
                 fontFamily: 'monospace',
-                fontSize: 13,
+                fontSize: 13 * appState.lyricFontScale,
                 fontWeight: isActiveLine ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -435,15 +631,31 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
       }
       final token = match.group(0)!;
       final isActive = tokenIndex == activeTokenIndex;
-      spans.add(
-        TextSpan(
-          text: token,
-          style: TextStyle(
-            color: isActive ? Colors.white : chordColor,
-            backgroundColor: isActive ? chordColor : null,
+      if (isActive) {
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: chordColor,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                token,
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13 * appState.lyricFontScale,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        spans.add(TextSpan(text: token, style: TextStyle(color: chordColor)));
+      }
       lastEnd = match.end;
       tokenIndex++;
     }
@@ -453,10 +665,10 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
 
     return Text.rich(
       TextSpan(
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'monospace',
           fontWeight: FontWeight.bold,
-          fontSize: 13,
+          fontSize: 13 * appState.lyricFontScale,
         ),
         children: spans,
       ),

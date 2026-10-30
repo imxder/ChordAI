@@ -13,7 +13,7 @@ class AppThemeOption {
 }
 
 const List<AppThemeOption> appThemeOptions = [
-  AppThemeOption(name: 'Roxo', color: Colors.deepPurple, cost: 0),
-  AppThemeOption(name: 'Verde', color: Colors.teal, cost: 50),
-  AppThemeOption(name: 'Laranja', color: Colors.deepOrange, cost: 100),
+  AppThemeOption(name: 'Terracota', color: Color(0xFFC1623D), cost: 0),
+  AppThemeOption(name: 'Oliva', color: Color(0xFF6B7A4F), cost: 50),
+  AppThemeOption(name: 'Vinho', color: Color(0xFF8C3B4A), cost: 100),
 ];

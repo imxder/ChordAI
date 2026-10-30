@@ -4,9 +4,10 @@ import '../models/lyric_sheet.dart';
 import 'cifra_parser.dart';
 
 class LyricSheetLibrary {
-  static const List<({String title, String path})> _assets = [
+  static const List<({String title, String artist, String path})> _assets = [
     (
-      title: 'All Too Well - Taylor Swift',
+      title: 'All Too Well',
+      artist: 'Taylor Swift',
       path: 'assets/lyrics/all_too_well.txt',
     ),
   ];
@@ -15,7 +16,18 @@ class LyricSheetLibrary {
     final sheets = <LyricSheet>[];
     for (final entry in _assets) {
       final raw = await rootBundle.loadString(entry.path);
-      sheets.add(parseCifra(raw, title: entry.title));
+      final parsed = parseCifra(raw, title: entry.title);
+      sheets.add(
+        LyricSheet(
+          title: parsed.title,
+          artist: entry.artist,
+          key: parsed.key,
+          tempo: parsed.tempo,
+          capo: parsed.capo,
+          strummingPattern: parsed.strummingPattern,
+          sections: parsed.sections,
+        ),
+      );
     }
     return sheets;
   }

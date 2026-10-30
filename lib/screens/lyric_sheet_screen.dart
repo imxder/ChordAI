@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
 import '../models/lyric_sheet.dart';
+import '../state/app_state.dart';
 import '../widgets/guitar_neck.dart';
+import '../widgets/practice_options_sheet.dart';
 import 'lyric_player_screen.dart';
 
 class LyricSheetScreen extends StatelessWidget {
@@ -23,37 +25,49 @@ class LyricSheetScreen extends StatelessWidget {
     final chordColor = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
-      appBar: AppBar(title: Text(sheet.title)),
+      appBar: AppBar(
+        title: Text(sheet.title),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.tune),
+            tooltip: 'Opções de prática',
+            onPressed: () => showPracticeOptionsSheet(context),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (sheet.key != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      'Tom: ${sheet.key}',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                for (final section in sheet.sections) ...[
-                  if (section.title != null)
+            child: ListenableBuilder(
+              listenable: appState,
+              builder: (context, _) => ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  if (sheet.key != null)
                     Padding(
-                      padding: const EdgeInsets.only(top: 12, bottom: 4),
+                      padding: const EdgeInsets.only(bottom: 16),
                       child: Text(
-                        '[${section.title}]',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: chordColor,
-                            ),
+                        'Tom: ${sheet.key}',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
-                  for (final line in section.lines)
-                    _buildLine(context, line, chordColor),
+                  for (final section in sheet.sections) ...[
+                    if (section.title != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12, bottom: 4),
+                        child: Text(
+                          '[${section.title}]',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: chordColor,
+                              ),
+                        ),
+                      ),
+                    for (final line in section.lines)
+                      _buildLine(context, line, chordColor),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
           Padding(
@@ -95,7 +109,10 @@ class LyricSheetScreen extends StatelessWidget {
         if (hasLyric)
           Text(
             line.lyricText,
-            style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 13 * appState.lyricFontScale,
+            ),
           ),
       ],
     );
@@ -131,10 +148,10 @@ class LyricSheetScreen extends StatelessWidget {
 
     return Text.rich(
       TextSpan(
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'monospace',
           fontWeight: FontWeight.bold,
-          fontSize: 13,
+          fontSize: 13 * appState.lyricFontScale,
         ),
         children: spans,
       ),

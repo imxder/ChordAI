@@ -36,7 +36,7 @@ void main() {
 
   test('classifyPitch identifica a corda mais próxima e o desvio em cents', () {
     final slightlySharp = 110.0 * pow(2, 10 / 1200);
-    final reading = classifyPitch(slightlySharp);
+    final reading = classifyPitch(slightlySharp, guitarStrings);
 
     expect(reading, isNotNull);
     expect(reading!.nearestString.name, 'A2');

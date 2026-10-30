@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/app_theme.dart';
 import '../models/gamification.dart';
 import '../state/app_state.dart';
+import 'settings_screen.dart';
 
 class AchievementsScreen extends StatefulWidget {
   const AchievementsScreen({super.key});
@@ -34,7 +35,20 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
     final progress = appState.dailyChallengeProgress / challenge.targetCount;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Progresso')),
+      appBar: AppBar(
+        title: const Text('Progresso'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Configurações',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+            },
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

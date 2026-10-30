@@ -32,4 +32,36 @@ Primeira linha
     expect(sheet.key, 'C');
     expect(sheet.tempo, isNull);
   });
+
+  test('lê Capo e Batida do cabeçalho da cifra', () {
+    const raw = '''
+Tom: C
+Capo: 2
+Batida: D D U U D U
+
+[Intro]
+   C
+Primeira linha
+''';
+
+    final sheet = parseCifra(raw, title: 'Teste');
+
+    expect(sheet.capo, 2);
+    expect(sheet.strummingPattern, ['D', 'D', 'U', 'U', 'D', 'U']);
+  });
+
+  test('capo e batida são nulos quando não informados', () {
+    const raw = '''
+Tom:  C
+
+[Intro]
+   C
+Primeira linha
+''';
+
+    final sheet = parseCifra(raw, title: 'Teste');
+
+    expect(sheet.capo, isNull);
+    expect(sheet.strummingPattern, isNull);
+  });
 }

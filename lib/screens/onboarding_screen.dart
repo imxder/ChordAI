@@ -1,41 +1,110 @@
 import 'package:flutter/material.dart';
 
+import '../models/chord_difficulty.dart';
+import '../models/lyric_sheet.dart';
 import '../state/app_state.dart';
+import '../theme/app_theme.dart';
+import '../widgets/cifra_line.dart';
+import '../widgets/guitar_neck.dart';
+import '../widgets/page_parts.dart';
 import 'tuning_check_screen.dart';
+import '../theme/ph.dart';
 
 class _OnboardingPage {
-  final IconData icon;
   final String title;
-  final String subtitle;
+  final String body;
+  final WidgetBuilder illustration;
 
   const _OnboardingPage({
-    required this.icon,
     required this.title,
-    required this.subtitle,
+    required this.body,
+    required this.illustration,
   });
 }
 
-const _pages = [
+final _pages = [
   _OnboardingPage(
-    icon: Icons.graphic_eq,
-    title: 'Aprenda violão no seu ritmo',
-    subtitle:
-        'O ChordAI escuta você tocar e avisa se o acorde saiu certo, em '
-        'tempo real — tudo num só app, de graça.',
+    title: 'O app ouve o acorde que você toca',
+    body: 'Toque perto do microfone e veja na hora se o acorde saiu certo.',
+    illustration: (context) => Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        const SizedBox(
+          width: 168,
+          child: GuitarNeck(chord: 'C', matchState: ChordMatchState.correct),
+        ),
+        const SizedBox(width: 20),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const ChordName('C', size: 64),
+              StatusLine(
+                icon: Ph.check,
+                text: 'Certo',
+                color: context.tokens.correct,
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
   ),
   _OnboardingPage(
-    icon: Icons.music_note,
-    title: 'Letra, cifra e partitura',
-    subtitle:
-        'Toque junto com a letra das músicas, acompanhando o tempo e os '
-        'acordes certos pra cada trecho.',
+    title: 'Cifra e letra no seu andamento',
+    body:
+        'Escolha o BPM e acompanhe a música acorde por acorde, com o '
+        'diagrama de cada um na tela.',
+    illustration: (context) => const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CifraLine(
+          line: LyricLine(
+            chordLine: 'Am        F',
+            lyricText: 'Cada acorde fica',
+          ),
+          activeToken: 0,
+          fontScale: 1.4,
+        ),
+        CifraLine(
+          line: LyricLine(
+            chordLine: 'C         G',
+            lyricText: 'em cima da sílaba certa',
+          ),
+          fontScale: 1.4,
+        ),
+      ],
+    ),
   ),
   _OnboardingPage(
-    icon: Icons.emoji_events_outlined,
-    title: 'Evolua com desafios diários',
-    subtitle:
-        'Ganhe XP, suba de nível e desbloqueie conquistas enquanto pratica '
-        'de verdade.',
+    title: 'Seus acordes ficam guardados',
+    body:
+        'Acerte um acorde ${AppState.chordMasteryHits} vezes seguidas e ele '
+        'entra na sua lista de aprendidos, no perfil.',
+    illustration: (context) {
+      final colorScheme = Theme.of(context).colorScheme;
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final (i, chord) in chordsByDifficulty.indexed)
+            Container(
+              width: 64,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: i < 3 ? colorScheme.primary : context.tokens.fill,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ChordName(
+                chord,
+                size: 16,
+                color: i < 3 ? colorScheme.onPrimary : colorScheme.onSurface,
+              ),
+            ),
+        ],
+      );
+    },
   ),
 ];
 
@@ -50,8 +119,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _controller = PageController();
   int _page = 0;
 
+  // Quem marca o onboarding como feito é a tela de afinação; marcar aqui faz o
+  // MaterialApp trocar a home e pular direto pro início.
   void _skip() {
-    appState.completeOnboarding();
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const TuningCheckScreen()),
     );
@@ -59,10 +129,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _continue() {
     if (_page < _pages.length - 1) {
-      _controller.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      final duration = motion(context, const Duration(milliseconds: 280));
+      if (duration == Duration.zero) {
+        _controller.jumpToPage(_page + 1);
+      } else {
+        _controller.nextPage(duration: duration, curve: Curves.easeOutCubic);
+      }
       return;
     }
     Navigator.of(context).pushReplacement(
@@ -78,19 +150,46 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     final isLast = _page == _pages.length - 1;
+    final padding = pagePadding(context);
+
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextButton(
-                  onPressed: _skip,
-                  child: const Text('Pular'),
-                ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                padding.left,
+                8,
+                padding.right - 12,
+                0,
+              ),
+              child: Row(
+                children: [
+                  Semantics(
+                    label: 'Página ${_page + 1} de ${_pages.length}',
+                    excludeSemantics: true,
+                    child: Row(
+                      children: [
+                        for (var i = 0; i < _pages.length; i++)
+                          Container(
+                            width: 8,
+                            height: 8,
+                            margin: const EdgeInsets.only(right: 8),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: i == _page
+                                  ? Theme.of(context).colorScheme.onSurface
+                                  : context.tokens.rule,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton(onPressed: _skip, child: const Text('Pular')),
+                ],
               ),
             ),
             Expanded(
@@ -100,58 +199,53 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPageChanged: (index) => setState(() => _page = index),
                 itemBuilder: (context, index) {
                   final page = _pages[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          page.icon,
-                          size: 96,
-                          color: Theme.of(context).colorScheme.primary,
+                  return LayoutBuilder(
+                    builder: (context, constraints) => SingleChildScrollView(
+                      padding: EdgeInsets.fromLTRB(
+                        padding.left,
+                        24,
+                        padding.right,
+                        24,
+                      ),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight - 48,
                         ),
-                        const SizedBox(height: 32),
-                        Text(
-                          page.title,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineMedium,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox.shrink(),
+                            page.illustration(context),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 32),
+                                Semantics(
+                                  header: true,
+                                  child: Text(
+                                    page.title,
+                                    style: textTheme.headlineLarge,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(page.body, style: textTheme.bodyLarge),
+                              ],
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          page.subtitle,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      ],
+                      ),
                     ),
                   );
                 },
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(_pages.length, (index) {
-                final active = index == _page;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: active ? 24 : 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: active
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                );
-              }),
-            ),
             Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.fromLTRB(padding.left, 8, padding.right, 16),
               child: FilledButton(
                 onPressed: _continue,
                 style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
+                  minimumSize: const Size.fromHeight(50),
                 ),
                 child: Text(isLast ? 'Começar' : 'Continuar'),
               ),

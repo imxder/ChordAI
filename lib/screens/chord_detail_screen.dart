@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
 import '../models/chord_diagrams.dart';
+import '../models/chord_names.dart';
 import '../state/app_state.dart';
+import '../theme/app_theme.dart';
+import '../theme/glass_tokens.dart';
 import '../widgets/guitar_neck.dart';
+import '../widgets/page_parts.dart';
 import 'chord_practice_screen.dart';
+import '../theme/ph.dart';
 
 class ChordDetailScreen extends StatelessWidget {
   final String serverUrl;
@@ -19,79 +24,100 @@ class ChordDetailScreen extends StatelessWidget {
   });
 
   static const _stringLabels = [
-    '6ª corda (Mi grave)',
-    '5ª corda (Lá)',
-    '4ª corda (Ré)',
-    '3ª corda (Sol)',
-    '2ª corda (Si)',
-    '1ª corda (Mi agudo)',
+    '6ª corda · Mi grave',
+    '5ª corda · Lá',
+    '4ª corda · Ré',
+    '3ª corda · Sol',
+    '2ª corda · Si',
+    '1ª corda · Mi agudo',
   ];
 
   String _fretDescription(int? fret) {
     if (fret == null) return 'Não toca';
-    if (fret == 0) return 'Solta (sem pressionar)';
+    if (fret == 0) return 'Solta';
     return 'Casa $fret';
   }
 
   @override
   Widget build(BuildContext context) {
-    final learned = appState.isChordLearned(chord);
+    final textTheme = Theme.of(context).textTheme;
     final fingering = chordFingerings[chord] ?? const [];
 
-    return Scaffold(
-      appBar: AppBar(title: Text(chord)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          SizedBox(
-            height: 220,
-            child: GuitarNeck(chord: chord),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(chord, style: Theme.of(context).textTheme.headlineMedium),
-              if (learned) ...[
-                const SizedBox(width: 8),
-                const Icon(Icons.check_circle, color: Colors.green),
-              ],
-            ],
-          ),
-          const SizedBox(height: 24),
-          Text('Dedilhado', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          for (var i = 0; i < fingering.length; i++)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  Expanded(child: Text(_stringLabels[i])),
-                  Text(_fretDescription(fingering[i])),
-                ],
-              ),
-            ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ChordPracticeScreen(
-                    serverUrl: serverUrl,
-                    inputDevice: inputDevice,
-                    chord: chord,
-                  ),
+    return IosPage(
+      title: chord,
+      bottomBar: BottomActionBar(
+        child: FilledButton.icon(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ChordPracticeScreen(
+                  serverUrl: serverUrl,
+                  inputDevice: inputDevice,
+                  chord: chord,
                 ),
-              );
-            },
-            icon: const Icon(Icons.mic),
-            label: const Text('Tocar e testar'),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(56),
-            ),
-          ),
-        ],
+              ),
+            );
+          },
+          icon: const Icon(Ph.microphoneFill, size: 20),
+          label: const Text('Tocar e testar'),
+          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+        ),
       ),
+      children: [
+        ListenableBuilder(
+          listenable: appState,
+          builder: (context, _) {
+            final learned = appState.isChordLearned(chord);
+            return Material(
+              color: context.tokens.cell,
+              borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(width: 140, child: GuitarNeck(chord: chord)),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Semantics(
+                            header: true,
+                            child: ChordName(chord, size: 52),
+                          ),
+                          Text(
+                            chordFullName(chord),
+                            style: textTheme.bodyLarge,
+                          ),
+                          if (learned) ...[
+                            const SizedBox(height: 8),
+                            StatusLine(
+                              icon: Ph.checkCircleFill,
+                              text: 'Aprendido',
+                              color: context.tokens.correct,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+        GroupedSection(
+          header: 'Onde apertar',
+          children: [
+            for (var i = 0; i < fingering.length; i++)
+              GroupedRow(
+                title: _stringLabels[i],
+                value: _fretDescription(fingering[i]),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

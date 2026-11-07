@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
@@ -5,8 +6,12 @@ import '../models/score.dart';
 import '../services/chord_recognition_service.dart';
 import '../services/score_library.dart';
 import '../state/app_state.dart';
+import '../theme/app_theme.dart';
+import '../theme/glass_tokens.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/metronome.dart';
+import '../widgets/page_parts.dart';
+import '../theme/ph.dart';
 
 class PracticeSessionScreen extends StatefulWidget {
   final String serverUrl;
@@ -30,7 +35,7 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen> {
   Score? _selectedScore;
   int _bpm = 80;
   int _beatsInStep = 0;
-  String _statusMessage = 'Escolha uma partitura e toque em Iniciar';
+  String _statusMessage = 'Escolha uma sequência e toque em Começar';
 
   @override
   void initState() {
@@ -52,12 +57,7 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen> {
   }
 
   void _onAppStateChanged() {
-    if (!mounted) return;
-    setState(() {});
-    final unlocked = appState.consumePendingUnlocked();
-    for (final achievement in unlocked) {
-      _showSnackBar('Conquista desbloqueada: ${achievement.title}');
-    }
+    if (mounted) setState(() {});
   }
 
   Future<void> _start() async {
@@ -66,7 +66,7 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen> {
 
     final hasPermission = await _service.hasPermission();
     if (!hasPermission) {
-      _showSnackBar('Permissão de microfone negada');
+      _showSnackBar('O app precisa de acesso ao microfone');
       return;
     }
 
@@ -76,16 +76,16 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen> {
     _service.start(
       serverUrl: widget.serverUrl,
       onPrediction: (p) => appState.updatePrediction(p),
-      onError: (_) => _showSnackBar('Erro ao conectar com o servidor'),
+      onError: (_) => _showSnackBar('Não consegui falar com o servidor'),
     );
 
-    setState(() => _statusMessage = 'Ouvindo...');
+    setState(() => _statusMessage = 'Ouvindo');
   }
 
   Future<void> _stop() async {
     await _service.stop();
     appState.stopSession();
-    setState(() => _statusMessage = 'Sessão parada');
+    setState(() => _statusMessage = 'Treino parado');
   }
 
   void _onBeat() {
@@ -98,137 +98,200 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen> {
     _beatsInStep = 0;
 
     final recognized = appState.lastPrediction?.chord;
-    final matched = recognized != null &&
+    final matched =
+        recognized != null &&
         recognized.toLowerCase() == step.chord.toLowerCase();
     appState.advanceStep(matched: matched);
 
     if (appState.sessionStatus == SessionStatus.idle) {
       _service.stop();
-      setState(() => _statusMessage =
-          'Sessão concluída! ${appState.sessionHits}/${appState.sessionHits + appState.sessionMisses} acordes certos');
+      final total = appState.sessionHits + appState.sessionMisses;
+      setState(
+        () => _statusMessage =
+            'Treino concluído: ${appState.sessionHits} de $total acordes certos',
+      );
     }
   }
 
+  void _pickScore() {
+    showGlassSheet(
+      context,
+      builder: (sheetContext) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SheetHeader(title: 'Sequência'),
+              GroupedSection(
+                top: 8,
+                children: [
+                  for (final score in _scores)
+                    CheckRow(
+                      title: score.title,
+                      selected: score == _selectedScore,
+                      onTap: () {
+                        setState(() => _selectedScore = score);
+                        Navigator.of(sheetContext).pop();
+                      },
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   void dispose() {
     appState.removeListener(_onAppStateChanged);
+    if (appState.sessionStatus != SessionStatus.idle) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => appState.stopSession(),
+      );
+    }
     _service.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
     final running = appState.sessionStatus == SessionStatus.running;
     final step = appState.currentStep;
     final recognized = appState.lastPrediction?.chord;
     final matchState = step == null
         ? ChordMatchState.neutral
         : (recognized != null &&
-                recognized.toLowerCase() == step.chord.toLowerCase()
-            ? ChordMatchState.correct
-            : ChordMatchState.incorrect);
+                  recognized.toLowerCase() == step.chord.toLowerCase()
+              ? ChordMatchState.correct
+              : ChordMatchState.incorrect);
+    final shownChord = step?.chord ?? _selectedScore?.steps.firstOrNull?.chord;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Sessão de Prática')),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              DropdownButtonFormField<Score>(
-                initialValue: _selectedScore,
-                decoration: const InputDecoration(
-                  labelText: 'Partitura',
-                  border: OutlineInputBorder(),
-                ),
-                items: _scores
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s.title)))
-                    .toList(),
-                onChanged:
-                    running ? null : (s) => setState(() => _selectedScore = s),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  const Text('BPM'),
-                  Expanded(
-                    child: Slider(
-                      min: 40,
-                      max: 160,
-                      divisions: 24,
-                      value: _bpm.toDouble(),
-                      label: '$_bpm',
-                      onChanged: running
-                          ? null
-                          : (v) => setState(() => _bpm = v.round()),
-                    ),
-                  ),
-                  SizedBox(width: 32, child: Text('$_bpm')),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Metronome(running: running, bpm: _bpm, onBeat: _onBeat),
-              const SizedBox(height: 16),
-              if (_selectedScore != null)
-                SizedBox(
-                  height: 56,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _selectedScore!.steps.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final s = _selectedScore!.steps[index];
-                      final active =
-                          running && index == appState.currentStepIndex;
-                      return Container(
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: active
-                              ? Colors.deepPurple
-                              : Colors.deepPurple.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          s.chord,
-                          style: TextStyle(
-                            color: active ? Colors.white : Colors.deepPurple,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: GuitarNeck(chord: step?.chord, matchState: matchState),
-              ),
-              Text(_statusMessage, textAlign: TextAlign.center),
-              const SizedBox(height: 8),
-              Text(
-                'XP: ${appState.xp}  •  Nível: ${appState.level}  •  Moedas: ${appState.coins}',
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: _selectedScore == null
-                    ? null
-                    : (running ? _stop : _start),
-                icon: Icon(running ? Icons.stop : Icons.play_arrow),
-                label: Text(running ? 'Parar' : 'Iniciar'),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56),
-                  backgroundColor: running ? Colors.red : null,
-                ),
-              ),
-            ],
+    return IosPage(
+      title: 'Sequências',
+      bottomBar: BottomActionBar(
+        child: FilledButton.icon(
+          onPressed: _selectedScore == null ? null : (running ? _stop : _start),
+          icon: Icon(running ? Ph.stopFill : Ph.playFill, size: 20),
+          label: Text(running ? 'Parar' : 'Começar'),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(50),
+            backgroundColor: running ? colorScheme.onSurface : null,
+            foregroundColor: running ? colorScheme.surface : null,
           ),
         ),
       ),
+      children: [
+        GroupedSection(
+          top: 8,
+          children: [
+            GroupedRow(
+              title: 'Sequência',
+              value: _selectedScore?.title ?? 'Carregando',
+              onTap: running || _scores.isEmpty ? null : _pickScore,
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 8, 4),
+              child: Row(
+                children: [
+                  Text('Andamento', style: textTheme.bodyLarge),
+                  const Spacer(),
+                  Text(
+                    '$_bpm BPM',
+                    style: textTheme.bodyLarge?.copyWith(
+                      fontFamily: fontChord,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              child: SizedBox(
+                width: double.infinity,
+                child: CupertinoSlider(
+                  min: 40,
+                  max: 160,
+                  divisions: 24,
+                  value: _bpm.toDouble(),
+                  activeColor: colorScheme.primary,
+                  onChanged: running
+                      ? null
+                      : (v) => setState(() => _bpm = v.round()),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (_selectedScore != null) ...[
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 44,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _selectedScore!.steps.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 6),
+              itemBuilder: (context, index) {
+                final s = _selectedScore!.steps[index];
+                final active = running && index == appState.currentStepIndex;
+                return Container(
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: active ? colorScheme.primary : context.tokens.cell,
+                    borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
+                  ),
+                  child: ChordName(
+                    s.chord,
+                    size: 16,
+                    color: active ? colorScheme.onPrimary : null,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
+        Material(
+          color: context.tokens.cell,
+          borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 120,
+                  child: GuitarNeck(chord: shownChord, matchState: matchState),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ChordName(shownChord ?? '–', size: 44),
+                      const SizedBox(height: 8),
+                      StatusLine(text: _statusMessage),
+                    ],
+                  ),
+                ),
+                Metronome(running: running, bpm: _bpm, onBeat: _onBeat),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

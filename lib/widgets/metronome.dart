@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme/app_theme.dart';
+
 class Metronome extends StatefulWidget {
   final bool running;
   final int bpm;
@@ -58,13 +60,24 @@ class _MetronomeState extends State<Metronome> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 100),
-      width: _pulse ? 44 : 32,
-      height: _pulse ? 44 : 32,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: widget.running ? Colors.deepPurple : Colors.grey.shade400,
+    final colorScheme = Theme.of(context).colorScheme;
+    return ExcludeSemantics(
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: Center(
+          child: AnimatedContainer(
+            duration: motion(context, const Duration(milliseconds: 100)),
+            width: _pulse ? 28 : 16,
+            height: _pulse ? 28 : 16,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: widget.running
+                  ? colorScheme.primary
+                  : colorScheme.outlineVariant,
+            ),
+          ),
+        ),
       ),
     );
   }

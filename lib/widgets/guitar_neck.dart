@@ -1,6 +1,9 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../models/chord_diagrams.dart';
+import '../theme/app_theme.dart';
 
 enum ChordMatchState { neutral, correct, incorrect }
 
@@ -17,12 +20,24 @@ class GuitarNeck extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fingering = chord == null ? null : chordFingerings[chord];
-    return AspectRatio(
-      aspectRatio: 0.8,
-      child: CustomPaint(
-        painter: _GuitarNeckPainter(
-          fingering: fingering,
-          matchState: matchState,
+    final colorScheme = Theme.of(context).colorScheme;
+    final dotColor = switch (matchState) {
+      ChordMatchState.correct => context.tokens.correct,
+      ChordMatchState.incorrect => colorScheme.error,
+      ChordMatchState.neutral => colorScheme.primary,
+    };
+    return Semantics(
+      image: true,
+      label: chord == null ? 'Diagrama vazio' : 'Diagrama do acorde $chord',
+      child: AspectRatio(
+        aspectRatio: 0.8,
+        child: CustomPaint(
+          painter: _GuitarNeckPainter(
+            fingering: fingering,
+            lineColor: colorScheme.onSurfaceVariant,
+            nutColor: colorScheme.onSurface,
+            dotColor: dotColor,
+          ),
         ),
       ),
     );
@@ -31,9 +46,16 @@ class GuitarNeck extends StatelessWidget {
 
 class _GuitarNeckPainter extends CustomPainter {
   final List<int?>? fingering;
-  final ChordMatchState matchState;
+  final Color lineColor;
+  final Color nutColor;
+  final Color dotColor;
 
-  _GuitarNeckPainter({required this.fingering, required this.matchState});
+  _GuitarNeckPainter({
+    required this.fingering,
+    required this.lineColor,
+    required this.nutColor,
+    required this.dotColor,
+  });
 
   static const _strings = 6;
   static const _frets = 5;
@@ -41,11 +63,11 @@ class _GuitarNeckPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final linePaint = Paint()
-      ..color = Colors.grey.shade600
-      ..strokeWidth = 1.5;
+      ..color = lineColor
+      ..strokeWidth = max(1.0, size.width * 0.008);
     final nutPaint = Paint()
-      ..color = Colors.grey.shade900
-      ..strokeWidth = 4;
+      ..color = nutColor
+      ..strokeWidth = max(2.5, size.width * 0.028);
 
     final left = size.width * 0.1;
     final right = size.width * 0.9;
@@ -67,31 +89,26 @@ class _GuitarNeckPainter extends CustomPainter {
       canvas.drawLine(Offset(x, top), Offset(x, bottom), linePaint);
     }
 
-    final dotColor = switch (matchState) {
-      ChordMatchState.correct => Colors.green,
-      ChordMatchState.incorrect => Colors.red,
-      ChordMatchState.neutral => Colors.deepPurple,
-    };
     final dotPaint = Paint()..color = dotColor;
     final labelStyle = TextStyle(
-      color: Colors.grey.shade800,
-      fontSize: 12,
-      fontWeight: FontWeight.bold,
+      color: nutColor,
+      fontFamily: fontChord,
+      fontSize: max(9.0, size.width * 0.075),
+      fontWeight: FontWeight.w600,
     );
 
     final frets = fingering;
-    if (frets != null) {
-      for (var s = 0; s < _strings && s < frets.length; s++) {
-        final fret = frets[s];
-        final x = left + stringGap * s;
-        if (fret == null) {
-          _drawLabel(canvas, 'x', Offset(x, top - fretGap * 0.6), labelStyle);
-        } else if (fret == 0) {
-          _drawLabel(canvas, 'o', Offset(x, top - fretGap * 0.6), labelStyle);
-        } else {
-          final y = top + fretGap * (fret - 0.5);
-          canvas.drawCircle(Offset(x, y), stringGap * 0.28, dotPaint);
-        }
+    if (frets == null) return;
+    for (var s = 0; s < _strings && s < frets.length; s++) {
+      final fret = frets[s];
+      final x = left + stringGap * s;
+      if (fret == null) {
+        _drawLabel(canvas, 'x', Offset(x, top - fretGap * 0.6), labelStyle);
+      } else if (fret == 0) {
+        _drawLabel(canvas, 'o', Offset(x, top - fretGap * 0.6), labelStyle);
+      } else {
+        final y = top + fretGap * (fret - 0.5);
+        canvas.drawCircle(Offset(x, y), stringGap * 0.34, dotPaint);
       }
     }
   }
@@ -101,12 +118,17 @@ class _GuitarNeckPainter extends CustomPainter {
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
     )..layout();
-    painter.paint(canvas, center - Offset(painter.width / 2, painter.height / 2));
+    painter.paint(
+      canvas,
+      center - Offset(painter.width / 2, painter.height / 2),
+    );
   }
 
   @override
   bool shouldRepaint(covariant _GuitarNeckPainter oldDelegate) {
     return oldDelegate.fingering != fingering ||
-        oldDelegate.matchState != matchState;
+        oldDelegate.dotColor != dotColor ||
+        oldDelegate.lineColor != lineColor ||
+        oldDelegate.nutColor != nutColor;
   }
 }

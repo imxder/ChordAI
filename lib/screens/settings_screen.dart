@@ -1,6 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../state/app_state.dart';
+import '../theme/app_theme.dart';
+import '../widgets/page_parts.dart';
+import '../theme/ph.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -11,6 +15,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _controller;
+  String? _error;
 
   @override
   void initState() {
@@ -26,46 +31,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _save() async {
     var value = _controller.text.trim();
-    if (value.isEmpty) return;
+    if (value.isEmpty) {
+      setState(() => _error = 'Informe o endereço do servidor');
+      return;
+    }
     if (!value.startsWith('http')) value = 'http://$value';
     await appState.setServerUrl(value);
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Servidor atualizado')));
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Configurações')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final error = _error;
+    return IosPage(
+      title: 'Servidor',
+      trailing: CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: _save,
+        child: const Text(
+          'Salvar',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+      children: [
+        GroupedSection(
+          top: 8,
+          header: 'Endereço',
+          footer:
+              error ??
+              'É o computador que roda o reconhecimento de acordes. Use o IP e a '
+                  'porta que aparecem no terminal do servidor. Só mude se o IP dele '
+                  'mudou na sua rede.',
           children: [
-            const Text(
-              'Endereço do servidor de reconhecimento de acordes. Normalmente '
-              'não precisa mexer aqui — só ajuste se o IP do servidor mudar.',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _controller,
-              decoration: const InputDecoration(
-                labelText: 'Endereço do servidor',
-                hintText: '192.168.0.10:5001',
-                border: OutlineInputBorder(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: TextField(
+                controller: _controller,
+                keyboardType: TextInputType.url,
+                autocorrect: false,
+                onChanged: (_) {
+                  if (_error != null) setState(() => _error = null);
+                },
+                onSubmitted: (_) => _save(),
+                style: const TextStyle(fontFamily: fontChord, fontSize: 16),
+                decoration: InputDecoration(
+                  hintText: '192.168.0.10:5001',
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  suffixIcon: error == null
+                      ? null
+                      : Icon(
+                          Ph.warningCircleFill,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                ),
               ),
-              keyboardType: TextInputType.url,
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _save,
-              child: const Text('Salvar'),
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 }

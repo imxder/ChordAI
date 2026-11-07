@@ -2,8 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config.dart';
+import '../models/app_theme.dart';
+import '../models/chord_difficulty.dart';
 import '../models/chord_prediction.dart';
-import '../models/gamification.dart';
 import '../models/score.dart';
 import '../models/tuner_note.dart';
 import '../models/tuning_preset.dart';
@@ -11,18 +12,9 @@ import '../models/tuning_preset.dart';
 enum SessionStatus { idle, running, paused }
 
 class AppState extends ChangeNotifier {
-  static const _xpKey = 'app_xp';
-  static const _coinsKey = 'app_coins';
   static const _totalCorrectKey = 'app_total_correct';
   static const _totalSessionsKey = 'app_total_sessions';
-  static const _correctChordsKey = 'app_correct_chords';
   static const _lastPracticeDateKey = 'app_last_practice_date';
-  static const _streakDaysKey = 'app_streak_days';
-  static const _unlockedAchievementsKey = 'app_unlocked_achievements';
-  static const _dailyChallengeDateKey = 'app_daily_challenge_date';
-  static const _dailyChallengeProgressKey = 'app_daily_challenge_progress';
-  static const _dailyChallengeCompletedKey = 'app_daily_challenge_completed';
-  static const _unlockedThemesKey = 'app_unlocked_themes';
   static const _selectedThemeKey = 'app_selected_theme';
   static const _learnedChordsKey = 'app_learned_chords';
   static const _serverUrlKey = 'app_server_url';
@@ -32,10 +24,26 @@ class AppState extends ChangeNotifier {
   static const _lyricFontScaleKey = 'app_lyric_font_scale';
   static const _showGuitarNeckKey = 'app_show_guitar_neck';
   static const _autoScrollKey = 'app_auto_scroll';
-  static const _lastSongTitleKey = 'app_last_song_title';
-  static const _lastSongChordCountKey = 'app_last_song_chord_count';
+  static const _appearanceKey = 'app_appearance';
+  static const _profileNameKey = 'app_profile_name';
+  static const _profileExperienceKey = 'app_profile_experience';
 
-  static const int chordMasteryStreak = 3;
+  // Quem instalou uma versão antiga ainda tem esses dados salvos no aparelho.
+  static const _removedKeys = [
+    'app_xp',
+    'app_coins',
+    'app_correct_chords',
+    'app_streak_days',
+    'app_unlocked_achievements',
+    'app_daily_challenge_date',
+    'app_daily_challenge_progress',
+    'app_daily_challenge_completed',
+    'app_unlocked_themes',
+    'app_last_song_title',
+    'app_last_song_chord_count',
+  ];
+
+  static const int chordMasteryHits = 3;
 
   SessionStatus sessionStatus = SessionStatus.idle;
   Score? currentScore;
@@ -44,23 +52,17 @@ class AppState extends ChangeNotifier {
   int sessionHits = 0;
   int sessionMisses = 0;
 
-  int xp = 0;
-  int coins = 0;
   int totalCorrectChords = 0;
   int totalSessionsCompleted = 0;
-  Set<String> correctChords = {};
   String? lastPracticeDateIso;
-  int streakDays = 0;
-  Set<String> unlockedAchievementIds = {};
 
-  String? dailyChallengeDateIso;
-  int dailyChallengeProgress = 0;
-  bool dailyChallengeCompleted = false;
-
-  Set<int> unlockedThemeIndices = {0};
   int selectedThemeIndex = 0;
+  AppAppearance appearance = AppAppearance.paper;
 
   Set<String> learnedChords = {};
+
+  String profileName = '';
+  String? profileExperience;
 
   String serverUrl = defaultServerUrl;
   bool hasCompletedOnboarding = false;
@@ -77,6 +79,23 @@ class AppState extends ChangeNotifier {
     );
     return preset.strings;
   }
+
+  String get activeTuningName {
+    if (tuningId == customTuningId) return 'Personalizada';
+    return tuningPresets
+        .firstWhere((p) => p.id == tuningId, orElse: () => tuningPresets.first)
+        .name;
+  }
+
+  String? get nextChordToLearn {
+    for (final chord in chordsByDifficulty) {
+      if (!learnedChords.contains(chord)) return chord;
+    }
+    return null;
+  }
+
+  int get learnedChordCount =>
+      chordsByDifficulty.where(learnedChords.contains).length;
 
   Future<void> setTuningPreset(String id) async {
     tuningId = id;
@@ -97,8 +116,6 @@ class AppState extends ChangeNotifier {
   double lyricFontScale = 1.0;
   bool showGuitarNeckInPlayer = true;
   bool autoScrollInPlayer = true;
-  String? lastSongTitle;
-  int lastSongChordCount = 0;
 
   Future<void> setLyricFontScale(double value) async {
     lyricFontScale = value;
@@ -121,12 +138,23 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setLastSong(String title, int chordCount) async {
-    lastSongTitle = title;
-    lastSongChordCount = chordCount;
+  Future<void> setAppearance(AppAppearance value) async {
+    appearance = value;
+    notifyListeners();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_lastSongTitleKey, title);
-    await prefs.setInt(_lastSongChordCountKey, chordCount);
+    await prefs.setString(_appearanceKey, value.name);
+  }
+
+  Future<void> setProfile({required String name, String? experience}) async {
+    profileName = name.trim();
+    profileExperience = experience;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_profileNameKey, profileName);
+    if (experience == null) {
+      await prefs.remove(_profileExperienceKey);
+    } else {
+      await prefs.setString(_profileExperienceKey, experience);
+    }
     notifyListeners();
   }
 
@@ -144,67 +172,38 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  final List<Achievement> pendingUnlocked = [];
-
-  final List<String> pendingChordRewards = [];
-
-  int get level => 1 + (xp ~/ 100);
-
-  DailyChallenge get dailyChallenge =>
-      dailyChallengesByWeekday[DateTime.now().weekday]!;
-
   ChordStep? get currentStep {
     final score = currentScore;
     if (score == null || currentStepIndex >= score.steps.length) return null;
     return score.steps[currentStepIndex];
   }
 
-  List<Achievement> consumePendingUnlocked() {
-    final list = List<Achievement>.from(pendingUnlocked);
-    pendingUnlocked.clear();
-    return list;
-  }
-
-  List<String> consumePendingChordRewards() {
-    final list = List<String>.from(pendingChordRewards);
-    pendingChordRewards.clear();
-    return list;
-  }
-
   bool isChordLearned(String chord) => learnedChords.contains(chord);
 
-  void registerChordStreak(String chord, int streak) {
-    if (learnedChords.contains(chord)) return;
-    if (streak < chordMasteryStreak) return;
+  /// Retorna true só na vez em que o acorde passa a contar como aprendido.
+  bool registerChordHits(String chord, int consecutiveHits) {
+    if (learnedChords.contains(chord)) return false;
+    if (consecutiveHits < chordMasteryHits) return false;
     learnedChords.add(chord);
-    pendingChordRewards.add(chord);
-    xp += 25;
-    coins += 10;
+    _markPracticedToday();
     _saveProgress();
     notifyListeners();
+    return true;
   }
 
   Future<void> loadProgress() async {
     final prefs = await SharedPreferences.getInstance();
-    xp = prefs.getInt(_xpKey) ?? 0;
-    coins = prefs.getInt(_coinsKey) ?? 0;
+    for (final key in _removedKeys) {
+      await prefs.remove(key);
+    }
     totalCorrectChords = prefs.getInt(_totalCorrectKey) ?? 0;
     totalSessionsCompleted = prefs.getInt(_totalSessionsKey) ?? 0;
-    correctChords = (prefs.getStringList(_correctChordsKey) ?? []).toSet();
     lastPracticeDateIso = prefs.getString(_lastPracticeDateKey);
-    streakDays = prefs.getInt(_streakDaysKey) ?? 0;
-    unlockedAchievementIds =
-        (prefs.getStringList(_unlockedAchievementsKey) ?? []).toSet();
-    dailyChallengeDateIso = prefs.getString(_dailyChallengeDateKey);
-    dailyChallengeProgress = prefs.getInt(_dailyChallengeProgressKey) ?? 0;
-    dailyChallengeCompleted =
-        prefs.getBool(_dailyChallengeCompletedKey) ?? false;
-    unlockedThemeIndices =
-        (prefs.getStringList(_unlockedThemesKey) ?? ['0'])
-            .map(int.parse)
-            .toSet();
-    selectedThemeIndex = prefs.getInt(_selectedThemeKey) ?? 0;
+    final savedTheme = prefs.getInt(_selectedThemeKey) ?? 0;
+    selectedThemeIndex = savedTheme < appThemeOptions.length ? savedTheme : 0;
     learnedChords = (prefs.getStringList(_learnedChordsKey) ?? []).toSet();
+    profileName = prefs.getString(_profileNameKey) ?? '';
+    profileExperience = prefs.getString(_profileExperienceKey);
     serverUrl = prefs.getString(_serverUrlKey) ?? defaultServerUrl;
     hasCompletedOnboarding = prefs.getBool(_hasOnboardedKey) ?? false;
     tuningId = prefs.getString(_tuningIdKey) ?? 'padrao';
@@ -212,52 +211,27 @@ class AppState extends ChangeNotifier {
     lyricFontScale = prefs.getDouble(_lyricFontScaleKey) ?? 1.0;
     showGuitarNeckInPlayer = prefs.getBool(_showGuitarNeckKey) ?? true;
     autoScrollInPlayer = prefs.getBool(_autoScrollKey) ?? true;
-    lastSongTitle = prefs.getString(_lastSongTitleKey);
-    lastSongChordCount = prefs.getInt(_lastSongChordCountKey) ?? 0;
-    _ensureDailyChallengeFresh();
+    final savedAppearance = prefs.getString(_appearanceKey);
+    appearance = AppAppearance.values.firstWhere(
+      (a) => a.name == savedAppearance,
+      orElse: () => AppAppearance.paper,
+    );
     notifyListeners();
   }
 
   Future<void> _saveProgress() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_xpKey, xp);
-    await prefs.setInt(_coinsKey, coins);
     await prefs.setInt(_totalCorrectKey, totalCorrectChords);
     await prefs.setInt(_totalSessionsKey, totalSessionsCompleted);
-    await prefs.setStringList(_correctChordsKey, correctChords.toList());
     if (lastPracticeDateIso != null) {
       await prefs.setString(_lastPracticeDateKey, lastPracticeDateIso!);
     }
-    await prefs.setInt(_streakDaysKey, streakDays);
-    await prefs.setStringList(
-      _unlockedAchievementsKey,
-      unlockedAchievementIds.toList(),
-    );
-    if (dailyChallengeDateIso != null) {
-      await prefs.setString(_dailyChallengeDateKey, dailyChallengeDateIso!);
-    }
-    await prefs.setInt(_dailyChallengeProgressKey, dailyChallengeProgress);
-    await prefs.setBool(_dailyChallengeCompletedKey, dailyChallengeCompleted);
-    await prefs.setStringList(
-      _unlockedThemesKey,
-      unlockedThemeIndices.map((i) => i.toString()).toList(),
-    );
     await prefs.setInt(_selectedThemeKey, selectedThemeIndex);
     await prefs.setStringList(_learnedChordsKey, learnedChords.toList());
   }
 
-  bool buyTheme(int index, int cost) {
-    if (unlockedThemeIndices.contains(index)) return false;
-    if (coins < cost) return false;
-    coins -= cost;
-    unlockedThemeIndices.add(index);
-    _saveProgress();
-    notifyListeners();
-    return true;
-  }
-
   void selectTheme(int index) {
-    if (!unlockedThemeIndices.contains(index)) return;
+    if (index < 0 || index >= appThemeOptions.length) return;
     selectedThemeIndex = index;
     _saveProgress();
     notifyListeners();
@@ -297,25 +271,9 @@ class AppState extends ChangeNotifier {
   }
 
   void advanceStep({required bool matched}) {
-    _ensureDailyChallengeFresh();
-    final step = currentStep;
-
     if (matched) {
       sessionHits++;
       totalCorrectChords++;
-      xp += 10;
-      if (step != null) {
-        correctChords.add(step.chord);
-        if (!dailyChallengeCompleted &&
-            step.chord.toLowerCase() == dailyChallenge.targetChord.toLowerCase()) {
-          dailyChallengeProgress++;
-          if (dailyChallengeProgress >= dailyChallenge.targetCount) {
-            dailyChallengeCompleted = true;
-            coins += 15;
-            xp += 30;
-          }
-        }
-      }
     } else {
       sessionMisses++;
     }
@@ -331,53 +289,15 @@ class AppState extends ChangeNotifier {
       _saveProgress();
       notifyListeners();
     } else {
-      coins += 5;
       totalSessionsCompleted++;
-      _updateStreak();
-      final perfectSession = sessionMisses == 0 && sessionHits > 0;
-      _checkAchievements(perfectSession: perfectSession);
+      _markPracticedToday();
       _saveProgress();
       stopSession();
     }
   }
 
-  void _ensureDailyChallengeFresh() {
-    final today = _dateOnlyIso(DateTime.now());
-    if (dailyChallengeDateIso != today) {
-      dailyChallengeDateIso = today;
-      dailyChallengeProgress = 0;
-      dailyChallengeCompleted = false;
-    }
-  }
-
-  void _updateStreak() {
-    final today = DateTime.now();
-    final todayIso = _dateOnlyIso(today);
-    if (lastPracticeDateIso == todayIso) return;
-
-    final yesterdayIso = _dateOnlyIso(today.subtract(const Duration(days: 1)));
-    streakDays = (lastPracticeDateIso == yesterdayIso) ? streakDays + 1 : 1;
-    lastPracticeDateIso = todayIso;
-  }
-
-  void _checkAchievements({required bool perfectSession}) {
-    final metConditions = <String, bool>{
-      'first_correct_chord': totalCorrectChords >= 1,
-      'persistent_musician_3': streakDays >= 3,
-      'persistent_musician_7': streakDays >= 7,
-      'rhythm_master': totalSessionsCompleted >= 5,
-      'chord_explorer': correctChords.length >= 8,
-      'perfect_session': perfectSession,
-      'century_club': totalCorrectChords >= 100,
-      'level_5': level >= 5,
-    };
-    for (final achievement in allAchievements) {
-      if (unlockedAchievementIds.contains(achievement.id)) continue;
-      if (metConditions[achievement.id] == true) {
-        unlockedAchievementIds.add(achievement.id);
-        pendingUnlocked.add(achievement);
-      }
-    }
+  void _markPracticedToday() {
+    lastPracticeDateIso = _dateOnlyIso(DateTime.now());
   }
 
   String _dateOnlyIso(DateTime d) {

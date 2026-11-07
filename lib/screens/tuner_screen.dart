@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../models/tuner_note.dart';
-import '../models/tuning_preset.dart';
 import '../services/tuner_service.dart';
 import '../state/app_state.dart';
+import '../theme/app_theme.dart';
+import '../theme/glass_tokens.dart';
+import '../widgets/page_parts.dart';
 import '../widgets/tuning_gauge.dart';
 import 'custom_tuning_screen.dart';
 import 'tuning_select_sheet.dart';
+import '../theme/ph.dart';
 
 class TunerScreen extends StatefulWidget {
   const TunerScreen({super.key});
@@ -16,8 +19,11 @@ class TunerScreen extends StatefulWidget {
 }
 
 class _TunerScreenState extends State<TunerScreen> {
+  static const _toleranceCents = 5.0;
+
   final _service = TunerService();
   bool _listening = false;
+  bool _denied = false;
   TunerReading? _reading;
 
   @override
@@ -33,11 +39,9 @@ class _TunerScreenState extends State<TunerScreen> {
 
   Future<void> _start() async {
     final hasPermission = await _service.hasPermission();
+    if (!mounted) return;
     if (!hasPermission) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Permissão de microfone negada')),
-      );
+      setState(() => _denied = true);
       return;
     }
 
@@ -51,16 +55,6 @@ class _TunerScreenState extends State<TunerScreen> {
     });
   }
 
-  String get _tuningName {
-    if (appState.tuningId == customTuningId) return 'Personalizada';
-    return tuningPresets
-        .firstWhere(
-          (p) => p.id == appState.tuningId,
-          orElse: () => tuningPresets.first,
-        )
-        .name;
-  }
-
   String _stripOctave(String note) => note.replaceAll(RegExp(r'\d+$'), '');
 
   @override
@@ -72,147 +66,165 @@ class _TunerScreenState extends State<TunerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
+    final tokens = context.tokens;
     final reading = _reading;
-    final cents = reading?.cents ?? 0.0;
-    final inTune = reading != null && reading.cents.abs() < 5;
-    final flat = reading != null && reading.cents < -5;
-    final sharp = reading != null && reading.cents > 5;
+    final inTune = reading != null && reading.cents.abs() <= _toleranceCents;
+    final flat = reading != null && !inTune && reading.cents < 0;
     final color = reading == null
-        ? Colors.grey
-        : (inTune ? Colors.green : Colors.orange);
+        ? colorScheme.onSurfaceVariant
+        : (inTune ? tokens.correct : tokens.warning);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Afinador'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: TextButton.icon(
-              onPressed: () => showTuningSelectSheet(context),
-              icon: Text(_tuningName, overflow: TextOverflow.ellipsis),
-              label: const Icon(Icons.expand_more, size: 18),
+    final String status;
+    if (_denied) {
+      status = 'O afinador precisa de acesso ao microfone';
+    } else if (reading == null) {
+      status = _listening ? 'Toque uma corda solta' : 'Preparando o microfone';
+    } else if (inTune) {
+      status = 'Afinada';
+    } else {
+      status = flat ? 'Grave: aperte a tarraxa' : 'Aguda: afrouxe a tarraxa';
+    }
+
+    return IosPage(
+      title: 'Afinador',
+      children: [
+        GroupedSection(
+          top: 8,
+          children: [
+            GroupedRow(
+              title: 'Afinação',
+              value: appState.activeTuningName,
+              onTap: () => showTuningSelectSheet(context),
             ),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '♭ grave',
-                    style: TextStyle(
-                      color: flat ? Colors.orange : colorScheme.outline,
-                      fontWeight: flat ? FontWeight.bold : FontWeight.normal,
-                    ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Material(
+          color: tokens.cell,
+          borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
+            child: Column(
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: TuningGauge(
+                    cents: reading?.cents ?? 0,
+                    color: color,
+                    active: reading != null,
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: inTune
-                          ? Colors.green.withValues(alpha: 0.15)
-                          : colorScheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(20),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('grave', style: textTheme.bodySmall),
+                    Text(
+                      reading == null
+                          ? ''
+                          : '${reading.cents >= 0 ? '+' : ''}${reading.cents.round()} cents',
+                      style: textTheme.bodySmall?.copyWith(
+                        fontFamily: fontChord,
+                      ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (inTune)
-                          const Icon(Icons.check, size: 16, color: Colors.green),
-                        if (inTune) const SizedBox(width: 4),
+                    Text('agudo', style: textTheme.bodySmall),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Semantics(
+                  liveRegion: true,
+                  child: Column(
+                    children: [
+                      Text(
+                        reading == null
+                            ? '–'
+                            : _stripOctave(reading.nearestString.name),
+                        style: textTheme.displayLarge?.copyWith(
+                          color: reading == null
+                              ? colorScheme.outlineVariant
+                              : color,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      StatusLine(
+                        icon: inTune ? Ph.checkCircleFill : null,
+                        text: status,
+                        color: reading == null ? null : color,
+                        textAlign: TextAlign.center,
+                      ),
+                      if (reading != null) ...[
+                        const SizedBox(height: 2),
                         Text(
-                          reading == null
-                              ? 'Ouvindo...'
-                              : (inTune ? 'Afinada' : (flat ? 'Grave' : 'Aguda')),
-                          style: TextStyle(
-                            color: inTune ? Colors.green : colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          '${reading.nearestString.label} · ${reading.nearestString.frequency.toStringAsFixed(1)} Hz',
+                          style: textTheme.bodySmall,
                         ),
                       ],
-                    ),
+                    ],
                   ),
-                  Text(
-                    'agudo ♯',
-                    style: TextStyle(
-                      color: sharp ? Colors.orange : colorScheme.outline,
-                      fontWeight: sharp ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              TuningGauge(cents: cents, color: color, active: reading != null),
-              const SizedBox(height: 16),
-              Text(
-                _stripOctave(reading?.nearestString.name ?? appState.activeTuning.first.name),
-                style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                reading != null
-                    ? '${reading.nearestString.frequency.toStringAsFixed(1)} Hz · ${reading.nearestString.label}'
-                    : _listening
-                        ? 'Toque uma corda'
-                        : 'Permissão de microfone necessária',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 8,
-                alignment: WrapAlignment.center,
-                children: [
-                  for (final note in appState.activeTuning)
-                    _buildStringChip(note, reading?.nearestString.name == note.name, colorScheme),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Card(
-                clipBehavior: Clip.antiAlias,
-                child: ListTile(
-                  leading: const Icon(Icons.add),
-                  title: const Text('Afinação personalizada'),
-                  subtitle: const Text('Defina cada corda manualmente'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const CustomTuningScreen()),
-                    );
-                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            for (final (i, note) in appState.activeTuning.indexed) ...[
+              if (i > 0) const SizedBox(width: 6),
+              Expanded(
+                child: _StringCell(
+                  label: _stripOctave(note.name),
+                  active: reading?.nearestString.name == note.name,
                 ),
               ),
             ],
-          ),
+          ],
         ),
-      ),
+        GroupedSection(
+          children: [
+            GroupedRow(
+              title: 'Afinação personalizada',
+              subtitle: 'Escolha a nota de cada corda',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const CustomTuningScreen()),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
+}
 
-  Widget _buildStringChip(TunerNote note, bool active, ColorScheme colorScheme) {
-    return Container(
-      width: 40,
-      height: 40,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: active ? Colors.green : Colors.white,
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: active ? Colors.green : colorScheme.outlineVariant,
+class _StringCell extends StatelessWidget {
+  final String label;
+  final bool active;
+
+  const _StringCell({required this.label, required this.active});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Semantics(
+      selected: active,
+      child: AnimatedContainer(
+        duration: motion(context, const Duration(milliseconds: 150)),
+        height: 50,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? colorScheme.primary : context.tokens.cell,
+          borderRadius: BorderRadius.circular(GlassTokens.radiusMd),
         ),
-      ),
-      child: Text(
-        _stripOctave(note.name),
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: active ? Colors.white : colorScheme.onSurface,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: fontChord,
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+            color: active ? colorScheme.onPrimary : colorScheme.onSurface,
+          ),
         ),
       ),
     );

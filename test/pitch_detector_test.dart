@@ -133,6 +133,38 @@ void main() {
     expect(averageMs, lessThan(20));
   });
 
+  test('detecta C2 e C#2 (faixa estendida até 50 Hz)', () {
+    for (final note in ['C2', 'C#2']) {
+      final frequency = noteFrequency(note);
+
+      final pure = detectPitch(_sineWave(frequency), sampleRate);
+      expect(pure, isNotNull, reason: 'não detectou $note ($frequency Hz)');
+      expect(_cents(pure!, frequency).abs(), lessThan(1), reason: '$note: detectou $pure Hz');
+
+      final withHarmonics =
+          detectPitch(_harmonics(frequency, [0.15, 0.6, 0.45]), sampleRate);
+      expect(withHarmonics, isNotNull, reason: 'não detectou $note com harmônicos');
+      expect(
+        _cents(withHarmonics!, frequency).abs(),
+        lessThan(5),
+        reason: '$note com harmônicos: detectou $withHarmonics Hz',
+      );
+    }
+  });
+
+  test('E2 desafinado 6 semitons abaixo (~58 Hz) ainda é detectado e vira 6ª corda bem abaixo', () {
+    final detuned = noteFrequency('E2') * pow(2, -6 / 12);
+
+    final detected = detectPitch(_sineWave(detuned), sampleRate);
+    expect(detected, isNotNull, reason: 'não detectou E2 desafinado ($detuned Hz)');
+    expect(_cents(detected!, detuned).abs(), lessThan(1), reason: 'detectou $detected Hz');
+
+    final reading = classifyPitch(detected, guitarStrings);
+    expect(reading, isNotNull);
+    expect(reading!.nearestString.name, 'E2');
+    expect(reading.cents, closeTo(-600, 5));
+  });
+
   test('classifyPitch identifica a corda mais próxima e o desvio em cents', () {
     final slightlySharp = 110.0 * pow(2, 10 / 1200);
     final reading = classifyPitch(slightlySharp, guitarStrings);

@@ -3,7 +3,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-const double defaultMinFreq = 70.0;
+const double defaultMinFreq = 50.0;
 const double defaultMaxFreq = 400.0;
 const double defaultYinThreshold = 0.15;
 const double defaultOctaveMargin = 0.05;

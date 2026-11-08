@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:record/record.dart';
 
+import 'pcm16_decoder.dart';
 import 'pitch_detector.dart';
 import 'pitch_smoother.dart';
 import 'sliding_pcm_buffer.dart';
@@ -16,6 +17,7 @@ class TunerService {
   StreamSubscription<Uint8List>? _subscription;
   SlidingPcmBuffer? _buffer;
   PitchSmoother? _smoother;
+  final Pcm16Decoder _decoder = Pcm16Decoder();
 
   /// Suaviza as leituras de frequência e expõe a histerese do estado
   /// "afinado" (ver PitchSmoother.updateInTune) pra tela do afinador.
@@ -42,9 +44,10 @@ class TunerService {
       hopSize: _hopSizeSamples,
     );
     _smoother = PitchSmoother();
+    _decoder.reset();
 
     _subscription = stream.listen((chunk) {
-      final samples = _bytesToFloatSamples(chunk);
+      final samples = _decoder.decode(chunk);
       for (final window in _buffer!.addSamples(samples)) {
         final estimate = detectPitchWithConfidence(window, sampleRate.toDouble());
         onPitch(_smoother!.update(estimate));
@@ -56,6 +59,7 @@ class TunerService {
     await _subscription?.cancel();
     _subscription = null;
     _buffer = null;
+    _decoder.reset();
     if (await _recorder.isRecording()) {
       await _recorder.stop();
     }
@@ -64,15 +68,5 @@ class TunerService {
   Future<void> dispose() async {
     await stop();
     await _recorder.dispose();
-  }
-
-  List<double> _bytesToFloatSamples(List<int> bytes) {
-    final samples = <double>[];
-    for (var i = 0; i + 1 < bytes.length; i += 2) {
-      var value = bytes[i] | (bytes[i + 1] << 8);
-      if (value >= 0x8000) value -= 0x10000;
-      samples.add(value / 32768.0);
-    }
-    return samples;
   }
 }

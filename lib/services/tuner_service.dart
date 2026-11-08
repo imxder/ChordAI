@@ -5,6 +5,7 @@ import 'package:record/record.dart';
 
 import 'pitch_detector.dart';
 import 'pitch_smoother.dart';
+import 'sliding_pcm_buffer.dart';
 
 class TunerService {
   static const int sampleRate = 22050;
@@ -13,7 +14,7 @@ class TunerService {
 
   final AudioRecorder _recorder = AudioRecorder();
   StreamSubscription<Uint8List>? _subscription;
-  final List<int> _byteBuffer = [];
+  SlidingPcmBuffer? _buffer;
   PitchSmoother? _smoother;
 
   /// Suaviza as leituras de frequência e expõe a histerese do estado
@@ -31,22 +32,21 @@ class TunerService {
       ),
     );
 
-    _byteBuffer.clear();
+    // Janela deslizante com 75% de sobreposição: cada leitura reaproveita a
+    // maior parte da anterior e avança só um salto de 1024 amostras
+    // (~46 ms), em vez de consumir a janela inteira (~186 ms) — assim o
+    // ponteiro atualiza bem mais rápido. O YIN leva ~1 ms por chamada (bem
+    // dentro desse orçamento de 46 ms), então roda direto aqui, sem Isolate.
+    _buffer = SlidingPcmBuffer(
+      windowSize: _windowSizeSamples,
+      hopSize: _hopSizeSamples,
+    );
     _smoother = PitchSmoother();
-    const windowBytes = _windowSizeSamples * 2;
-    const hopBytes = _hopSizeSamples * 2;
 
     _subscription = stream.listen((chunk) {
-      _byteBuffer.addAll(chunk);
-      // Janela deslizante: cada leitura reaproveita a maior parte da
-      // anterior e avança só um salto de 1024 amostras (~46 ms), em vez de
-      // consumir a janela inteira — assim a latência cai de ~186 ms pra
-      // ~46 ms entre leituras.
-      while (_byteBuffer.length >= windowBytes) {
-        final windowBytesList = _byteBuffer.sublist(0, windowBytes);
-        _byteBuffer.removeRange(0, hopBytes);
-        final samples = _bytesToFloatSamples(windowBytesList);
-        final estimate = detectPitchWithConfidence(samples, sampleRate.toDouble());
+      final samples = _bytesToFloatSamples(chunk);
+      for (final window in _buffer!.addSamples(samples)) {
+        final estimate = detectPitchWithConfidence(window, sampleRate.toDouble());
         onPitch(_smoother!.update(estimate));
       }
     });
@@ -55,7 +55,7 @@ class TunerService {
   Future<void> stop() async {
     await _subscription?.cancel();
     _subscription = null;
-    _byteBuffer.clear();
+    _buffer = null;
     if (await _recorder.isRecording()) {
       await _recorder.stop();
     }

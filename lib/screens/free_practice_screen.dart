@@ -3,11 +3,15 @@ import 'package:record/record.dart';
 
 import '../models/chord_names.dart';
 import '../models/chord_prediction.dart';
-import '../services/chord_recognition_service.dart';
+import '../services/chord_recognizer.dart';
+import '../services/chord_recognizer_factory.dart';
+import '../services/on_device_chord_service.dart';
+import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../theme/glass_tokens.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
+import '../widgets/recognition_mode_badge.dart';
 import '../theme/ph.dart';
 
 class FreePracticeScreen extends StatefulWidget {
@@ -25,7 +29,8 @@ class FreePracticeScreen extends StatefulWidget {
 }
 
 class _FreePracticeScreenState extends State<FreePracticeScreen> {
-  final _service = ChordRecognitionService();
+  late final ChordRecognizer _service =
+      createChordRecognizer(appState.chordRecognitionMode);
 
   bool _listening = false;
   String? _chord;
@@ -66,7 +71,9 @@ class _FreePracticeScreenState extends State<FreePracticeScreen> {
     _service.start(
       serverUrl: widget.serverUrl,
       onPrediction: _handlePrediction,
-      onError: (_) => _showSnackBar('Não consegui falar com o servidor'),
+      onError: (_) => _showSnackBar(
+        chordRecognitionErrorMessage(appState.chordRecognitionMode),
+      ),
     );
   }
 
@@ -110,6 +117,7 @@ class _FreePracticeScreenState extends State<FreePracticeScreen> {
 
     return IosPage(
       title: 'Reconhecer acorde',
+      trailing: const RecognitionModeBadge(),
       bottomBar: BottomActionBar(
         child: FilledButton.icon(
           onPressed: _toggle,
@@ -197,6 +205,15 @@ class _FreePracticeScreenState extends State<FreePracticeScreen> {
             style: textTheme.bodySmall,
           ),
         ),
+        if (_service case final OnDeviceChordService service)
+          if (service.lastInferenceMicros != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
+              child: Text(
+                'Inferência: ${(service.lastInferenceMicros! / 1000).toStringAsFixed(1)} ms',
+                style: textTheme.bodySmall,
+              ),
+            ),
       ],
     );
   }

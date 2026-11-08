@@ -3,12 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:record/record.dart';
 
 import '../models/chord_prediction.dart';
-import '../services/chord_recognition_service.dart';
+import '../services/chord_recognizer.dart';
+import '../services/chord_recognizer_factory.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../theme/glass_tokens.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
+import '../widgets/recognition_mode_badge.dart';
 import '../theme/ph.dart';
 
 class ChordPracticeScreen extends StatefulWidget {
@@ -28,7 +30,8 @@ class ChordPracticeScreen extends StatefulWidget {
 }
 
 class _ChordPracticeScreenState extends State<ChordPracticeScreen> {
-  final _service = ChordRecognitionService();
+  late final ChordRecognizer _service =
+      createChordRecognizer(appState.chordRecognitionMode);
 
   bool _listening = false;
   int _hits = 0;
@@ -60,7 +63,9 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen> {
     _service.start(
       serverUrl: widget.serverUrl,
       onPrediction: _handlePrediction,
-      onError: (_) => _showSnackBar('Não consegui falar com o servidor'),
+      onError: (_) => _showSnackBar(
+        chordRecognitionErrorMessage(appState.chordRecognitionMode),
+      ),
     );
   }
 
@@ -137,6 +142,7 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen> {
 
     return IosPage(
       title: 'Testar ${widget.chord}',
+      trailing: const RecognitionModeBadge(),
       bottomBar: BottomActionBar(
         child: FilledButton.icon(
           onPressed: _listening ? _stop : _start,

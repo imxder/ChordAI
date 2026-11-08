@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../models/chord_recognition_mode.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/page_parts.dart';
@@ -41,9 +42,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Navigator.of(context).pop();
   }
 
+  Future<void> _selectMode(ChordRecognitionMode mode) async {
+    await appState.setChordRecognitionMode(mode);
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final error = _error;
+    final mode = appState.chordRecognitionMode;
     return IosPage(
       title: 'Servidor',
       trailing: CupertinoButton(
@@ -57,38 +64,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         GroupedSection(
           top: 8,
-          header: 'Endereço',
-          footer:
-              error ??
-              'É o computador que roda o reconhecimento de acordes. Use o IP e a '
-                  'porta que aparecem no terminal do servidor. Só mude se o IP dele '
-                  'mudou na sua rede.',
+          header: 'Reconhecimento de acordes',
+          footer: mode.description,
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: TextField(
-                controller: _controller,
-                keyboardType: TextInputType.url,
-                autocorrect: false,
-                onChanged: (_) {
-                  if (_error != null) setState(() => _error = null);
-                },
-                onSubmitted: (_) => _save(),
-                style: const TextStyle(fontFamily: fontChord, fontSize: 16),
-                decoration: InputDecoration(
-                  hintText: '192.168.0.10:5001',
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  suffixIcon: error == null
-                      ? null
-                      : Icon(
-                          Ph.warningCircleFill,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                ),
+            for (final option in ChordRecognitionMode.values)
+              CheckRow(
+                title: option.label,
+                selected: mode == option,
+                onTap: () => _selectMode(option),
               ),
-            ),
           ],
         ),
+        if (mode == ChordRecognitionMode.server)
+          GroupedSection(
+            header: 'Endereço',
+            footer:
+                error ??
+                'É o computador que roda o reconhecimento de acordes. Use o IP e a '
+                    'porta que aparecem no terminal do servidor. Só mude se o IP dele '
+                    'mudou na sua rede.',
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: TextField(
+                  controller: _controller,
+                  keyboardType: TextInputType.url,
+                  autocorrect: false,
+                  onChanged: (_) {
+                    if (_error != null) setState(() => _error = null);
+                  },
+                  onSubmitted: (_) => _save(),
+                  style: const TextStyle(fontFamily: fontChord, fontSize: 16),
+                  decoration: InputDecoration(
+                    hintText: '192.168.0.10:5001',
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    suffixIcon: error == null
+                        ? null
+                        : Icon(
+                            Ph.warningCircleFill,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
       ],
     );
   }

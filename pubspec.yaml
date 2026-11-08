@@ -16,9 +16,12 @@ dependencies:
   http: ^1.6.0
   shared_preferences: ^2.5.5
   liquid_glass_widgets: 1.17.0
+  tflite_flutter: ^0.12.1
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0
 
@@ -27,6 +30,7 @@ flutter:
   assets:
     - assets/scores/
     - assets/lyrics/
+    - assets/models/
   fonts:
     - family: IBMPlexMono
       fonts:

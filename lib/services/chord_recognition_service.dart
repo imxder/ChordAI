@@ -6,8 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:record/record.dart';
 
 import '../models/chord_prediction.dart';
+import 'chord_recognizer.dart';
 
-class ChordRecognitionService {
+class ChordRecognitionService implements ChordRecognizer {
   static const Duration windowDuration = Duration(milliseconds: 1500);
 
   final AudioRecorder _recorder = AudioRecorder();
@@ -16,28 +17,38 @@ class ChordRecognitionService {
   int _issuedSeq = 0;
   int _lastAppliedSeq = 0;
 
+  @override
   bool get isRunning => _running;
 
+  @override
   Future<bool> hasPermission() => _recorder.hasPermission();
 
+  @override
   Future<List<InputDevice>> listInputDevices() => _recorder.listInputDevices();
 
+  @override
   void selectDevice(InputDevice? device) {
     _selectedDevice = device;
   }
 
-  void start({
-    required String serverUrl,
+  @override
+  Future<void> start({
+    String? serverUrl,
     required void Function(ChordPrediction prediction) onPrediction,
     required void Function(Object error) onError,
-  }) {
+  }) async {
     if (_running) return;
+    if (serverUrl == null) {
+      onError(ArgumentError('serverUrl é obrigatório no modo servidor'));
+      return;
+    }
     _running = true;
     _issuedSeq = 0;
     _lastAppliedSeq = 0;
     _loop(serverUrl, onPrediction, onError);
   }
 
+  @override
   Future<void> stop() async {
     _running = false;
     if (await _recorder.isRecording()) {
@@ -45,6 +56,7 @@ class ChordRecognitionService {
     }
   }
 
+  @override
   Future<void> dispose() async {
     await stop();
     await _recorder.dispose();

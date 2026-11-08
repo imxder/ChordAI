@@ -8,7 +8,8 @@ import '../models/chord_prediction.dart';
 import '../models/lyric_practice.dart';
 import '../models/lyric_sheet.dart';
 import '../models/score.dart';
-import '../services/chord_recognition_service.dart';
+import '../services/chord_recognizer.dart';
+import '../services/chord_recognizer_factory.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/cifra_line.dart';
@@ -16,6 +17,7 @@ import '../widgets/guitar_neck.dart';
 import '../widgets/metronome.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/practice_options_sheet.dart';
+import '../widgets/recognition_mode_badge.dart';
 import 'lyric_sheet_screen.dart';
 import '../theme/ph.dart';
 
@@ -39,7 +41,8 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   static const _minBpm = 40;
   static const _maxBpm = 160;
 
-  final _service = ChordRecognitionService();
+  late final ChordRecognizer _service =
+      createChordRecognizer(appState.chordRecognitionMode);
   final _scrollController = ScrollController();
   final Map<int, GlobalKey> _lineKeys = {};
 
@@ -117,7 +120,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     _service.start(
       serverUrl: widget.serverUrl,
       onPrediction: _onPrediction,
-      onError: (_) => _showSnackBar('Não consegui falar com o servidor'),
+      onError: (_) => _showSnackBar(
+        chordRecognitionErrorMessage(appState.chordRecognitionMode),
+      ),
     );
   }
 
@@ -326,10 +331,17 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
             .withValues(alpha: 0.86),
         border: null,
         transitionBetweenRoutes: false,
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () => showPracticeOptionsSheet(context),
-          child: const Icon(Ph.textAa, semanticLabel: 'Leitura das cifras'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const RecognitionModeBadge(),
+            const SizedBox(width: 8),
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: () => showPracticeOptionsSheet(context),
+              child: const Icon(Ph.textAa, semanticLabel: 'Leitura das cifras'),
+            ),
+          ],
         ),
       ),
       body: Column(

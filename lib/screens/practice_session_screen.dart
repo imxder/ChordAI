@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
 import '../models/score.dart';
-import '../services/chord_recognition_service.dart';
+import '../services/chord_recognizer.dart';
+import '../services/chord_recognizer_factory.dart';
 import '../services/score_library.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -11,6 +12,7 @@ import '../theme/glass_tokens.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/metronome.dart';
 import '../widgets/page_parts.dart';
+import '../widgets/recognition_mode_badge.dart';
 import '../theme/ph.dart';
 
 class PracticeSessionScreen extends StatefulWidget {
@@ -28,7 +30,8 @@ class PracticeSessionScreen extends StatefulWidget {
 }
 
 class _PracticeSessionScreenState extends State<PracticeSessionScreen> {
-  final _service = ChordRecognitionService();
+  late final ChordRecognizer _service =
+      createChordRecognizer(appState.chordRecognitionMode);
   final _scoreLibrary = ScoreLibrary();
 
   List<Score> _scores = [];
@@ -76,7 +79,9 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen> {
     _service.start(
       serverUrl: widget.serverUrl,
       onPrediction: (p) => appState.updatePrediction(p),
-      onError: (_) => _showSnackBar('Não consegui falar com o servidor'),
+      onError: (_) => _showSnackBar(
+        chordRecognitionErrorMessage(appState.chordRecognitionMode),
+      ),
     );
 
     setState(() => _statusMessage = 'Ouvindo');
@@ -178,6 +183,7 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen> {
 
     return IosPage(
       title: 'Sequências',
+      trailing: const RecognitionModeBadge(),
       bottomBar: BottomActionBar(
         child: FilledButton.icon(
           onPressed: _selectedScore == null ? null : (running ? _stop : _start),

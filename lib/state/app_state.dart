@@ -5,6 +5,7 @@ import '../config.dart';
 import '../models/app_theme.dart';
 import '../models/chord_difficulty.dart';
 import '../models/chord_prediction.dart';
+import '../models/chord_recognition_mode.dart';
 import '../models/score.dart';
 import '../models/tuner_note.dart';
 import '../models/tuning_preset.dart';
@@ -27,6 +28,7 @@ class AppState extends ChangeNotifier {
   static const _appearanceKey = 'app_appearance';
   static const _profileNameKey = 'app_profile_name';
   static const _profileExperienceKey = 'app_profile_experience';
+  static const _chordRecognitionModeKey = 'app_chord_recognition_mode';
 
   // Quem instalou uma versão antiga ainda tem esses dados salvos no aparelho.
   static const _removedKeys = [
@@ -65,6 +67,9 @@ class AppState extends ChangeNotifier {
   String? profileExperience;
 
   String serverUrl = defaultServerUrl;
+  // Servidor é o padrão até validarmos o reconhecimento no aparelho; depois
+  // trocamos pra ChordRecognitionMode.onDevice.
+  ChordRecognitionMode chordRecognitionMode = ChordRecognitionMode.server;
   bool hasCompletedOnboarding = false;
   String tuningId = 'padrao';
   List<String>? customTuningNotes;
@@ -172,6 +177,13 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setChordRecognitionMode(ChordRecognitionMode mode) async {
+    chordRecognitionMode = mode;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_chordRecognitionModeKey, mode.name);
+    notifyListeners();
+  }
+
   ChordStep? get currentStep {
     final score = currentScore;
     if (score == null || currentStepIndex >= score.steps.length) return null;
@@ -205,6 +217,11 @@ class AppState extends ChangeNotifier {
     profileName = prefs.getString(_profileNameKey) ?? '';
     profileExperience = prefs.getString(_profileExperienceKey);
     serverUrl = prefs.getString(_serverUrlKey) ?? defaultServerUrl;
+    final savedMode = prefs.getString(_chordRecognitionModeKey);
+    chordRecognitionMode = ChordRecognitionMode.values.firstWhere(
+      (m) => m.name == savedMode,
+      orElse: () => ChordRecognitionMode.server,
+    );
     hasCompletedOnboarding = prefs.getBool(_hasOnboardedKey) ?? false;
     tuningId = prefs.getString(_tuningIdKey) ?? 'padrao';
     customTuningNotes = prefs.getStringList(_customTuningKey);

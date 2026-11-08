@@ -3,10 +3,12 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:chordai/services/pitch_detector.dart';
+import 'package:chordai/services/pitch_smoother.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _fixturesDir = 'test/fixtures/strings';
 const _windowSize = 4096;
+const _hopSize = 1024;
 const _minHitRate = 0.9;
 
 class _Wav {
@@ -94,6 +96,9 @@ void main() {
     test('gravação $note', () {
       final expected = _noteFrequency(note);
       final wav = _readWav(file);
+
+      // Saída bruta do detector (janelas de 4096 amostras, sem sobreposição):
+      // só reportada, não é mais a exigência do teste (ver saída suavizada).
       var voiced = 0;
       var hits = 0;
       final misses = <String>[];
@@ -110,10 +115,52 @@ void main() {
         }
       }
       expect(voiced, greaterThan(0), reason: '$note: nenhuma janela com som');
+      // ignore: avoid_print
+      print(
+        '$note (bruto): $hits de $voiced janelas certas; erradas: ${misses.join(', ')}',
+      );
+
+      // Saída suavizada (o que de fato aparece na tela): janela deslizante
+      // com salto de 1024 amostras, igual ao TunerService, passando pelo
+      // PitchSmoother. O relógio sintético avança no ritmo do áudio, não do
+      // relógio real, pra reproduzir o timeout de silêncio sem precisar
+      // esperar de verdade.
+      var smoothedAt = DateTime(2000);
+      final hopDuration = Duration(
+        microseconds: (_hopSize * 1000000 / wav.sampleRate).round(),
+      );
+      final smoother = PitchSmoother(clock: () => smoothedAt);
+      var smoothedVoiced = 0;
+      var smoothedHits = 0;
+      final smoothedMisses = <String>[];
+      for (
+        var start = 0;
+        start + _windowSize <= wav.samples.length;
+        start += _hopSize
+      ) {
+        final window = wav.samples.sublist(start, start + _windowSize);
+        final estimate = detectPitchWithConfidence(window, wav.sampleRate);
+        final smoothedFrequency = smoother.update(estimate);
+        smoothedAt = smoothedAt.add(hopDuration);
+        if (smoothedFrequency == null) continue;
+        smoothedVoiced++;
+        final cents = 1200 * log(smoothedFrequency / expected) / ln2;
+        if (cents.abs() <= 50) {
+          smoothedHits++;
+        } else {
+          smoothedMisses.add(smoothedFrequency.toStringAsFixed(1));
+        }
+      }
       expect(
-        hits / voiced,
+        smoothedVoiced,
+        greaterThan(0),
+        reason: '$note: PitchSmoother nunca deu leitura',
+      );
+      expect(
+        smoothedHits / smoothedVoiced,
         greaterThanOrEqualTo(_minHitRate),
-        reason: '$note: $hits de $voiced janelas certas; erradas: ${misses.join(', ')}',
+        reason:
+            '$note (suavizado): $smoothedHits de $smoothedVoiced leituras certas; erradas: ${smoothedMisses.join(', ')}',
       );
     });
   }

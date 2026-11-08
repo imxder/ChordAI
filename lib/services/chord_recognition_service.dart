@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -12,6 +13,8 @@ class ChordRecognitionService {
   final AudioRecorder _recorder = AudioRecorder();
   bool _running = false;
   InputDevice? _selectedDevice;
+  int _issuedSeq = 0;
+  int _lastAppliedSeq = 0;
 
   bool get isRunning => _running;
 
@@ -30,6 +33,8 @@ class ChordRecognitionService {
   }) {
     if (_running) return;
     _running = true;
+    _issuedSeq = 0;
+    _lastAppliedSeq = 0;
     _loop(serverUrl, onPrediction, onError);
   }
 
@@ -51,22 +56,47 @@ class ChordRecognitionService {
     void Function(Object error) onError,
   ) async {
     while (_running) {
-      String? filePath;
       try {
-        filePath = await _recordWindow();
-        if (!_running) break;
-        final prediction = await _predict(filePath, serverUrl);
-        if (_running) onPrediction(prediction);
-      } catch (e) {
-        if (_running) onError(e);
-        await Future.delayed(const Duration(seconds: 1));
-      } finally {
-        if (filePath != null) {
+        final filePath = await _recordWindow();
+        if (!_running) {
           try {
             await File(filePath).delete();
           } catch (_) {}
+          break;
         }
+        final seq = ++_issuedSeq;
+        // Não espera a resposta do servidor: a próxima janela já começa a
+        // gravar enquanto esta é enviada, senão a latência de rede (pior
+        // ainda num servidor remoto) se soma ao atraso de 1.5s do modelo.
+        unawaited(_predictAndReport(filePath, serverUrl, seq, onPrediction, onError));
+      } catch (e) {
+        if (_running) onError(e);
+        await Future.delayed(const Duration(seconds: 1));
       }
+    }
+  }
+
+  Future<void> _predictAndReport(
+    String filePath,
+    String serverUrl,
+    int seq,
+    void Function(ChordPrediction) onPrediction,
+    void Function(Object error) onError,
+  ) async {
+    try {
+      final prediction = await _predict(filePath, serverUrl);
+      // Descarta respostas que chegaram fora de ordem (uma janela mais
+      // recente já pode ter sido reportada enquanto esta estava em trânsito).
+      if (_running && seq > _lastAppliedSeq) {
+        _lastAppliedSeq = seq;
+        onPrediction(prediction);
+      }
+    } catch (e) {
+      if (_running) onError(e);
+    } finally {
+      try {
+        await File(filePath).delete();
+      } catch (_) {}
     }
   }
 

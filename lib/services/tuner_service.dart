@@ -4,14 +4,21 @@ import 'dart:typed_data';
 import 'package:record/record.dart';
 
 import 'pitch_detector.dart';
+import 'pitch_smoother.dart';
 
 class TunerService {
   static const int sampleRate = 22050;
   static const int _windowSizeSamples = 4096;
+  static const int _hopSizeSamples = 1024;
 
   final AudioRecorder _recorder = AudioRecorder();
   StreamSubscription<Uint8List>? _subscription;
   final List<int> _byteBuffer = [];
+  PitchSmoother? _smoother;
+
+  /// Suaviza as leituras de frequência e expõe a histerese do estado
+  /// "afinado" (ver PitchSmoother.updateInTune) pra tela do afinador.
+  PitchSmoother? get smoother => _smoother;
 
   Future<bool> hasPermission() => _recorder.hasPermission();
 
@@ -25,15 +32,22 @@ class TunerService {
     );
 
     _byteBuffer.clear();
+    _smoother = PitchSmoother();
     const windowBytes = _windowSizeSamples * 2;
+    const hopBytes = _hopSizeSamples * 2;
 
     _subscription = stream.listen((chunk) {
       _byteBuffer.addAll(chunk);
+      // Janela deslizante: cada leitura reaproveita a maior parte da
+      // anterior e avança só um salto de 1024 amostras (~46 ms), em vez de
+      // consumir a janela inteira — assim a latência cai de ~186 ms pra
+      // ~46 ms entre leituras.
       while (_byteBuffer.length >= windowBytes) {
         final windowBytesList = _byteBuffer.sublist(0, windowBytes);
-        _byteBuffer.removeRange(0, windowBytes);
+        _byteBuffer.removeRange(0, hopBytes);
         final samples = _bytesToFloatSamples(windowBytesList);
-        onPitch(detectPitch(samples, sampleRate.toDouble()));
+        final estimate = detectPitchWithConfidence(samples, sampleRate.toDouble());
+        onPitch(_smoother!.update(estimate));
       }
     });
   }

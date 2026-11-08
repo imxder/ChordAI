@@ -4,8 +4,10 @@ import 'package:record/record.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import '../models/chord_names.dart';
+import '../models/chord_prediction.dart';
 import '../models/lyric_practice.dart';
 import '../models/lyric_sheet.dart';
+import '../models/score.dart';
 import '../services/chord_recognition_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -114,7 +116,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
 
     _service.start(
       serverUrl: widget.serverUrl,
-      onPrediction: (p) => appState.updatePrediction(p),
+      onPrediction: _onPrediction,
       onError: (_) => _showSnackBar('Não consegui falar com o servidor'),
     );
   }
@@ -122,6 +124,13 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   Future<void> _stop() async {
     await _service.stop();
     appState.stopSession();
+  }
+
+  /// Verdadeiro quando o próximo acorde é diferente do atual, ou seja,
+  /// quando dá pra saber que o usuário avançou só de ouvir a troca.
+  bool _hasDetectableTransition(ChordStep step) {
+    final next = _nextChord;
+    return next != null && next.toLowerCase() != step.chord.toLowerCase();
   }
 
   void _onBeat() {
@@ -135,24 +144,54 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     final step = appState.currentStep;
     if (step == null) return;
 
+    // Quando dá pra ouvir a troca de acorde, é ela que decide quando avançar
+    // (ver _onPrediction) — o metrônomo só força a passagem quando não tem
+    // como detectar a troca (último acorde da música, ou dois acordes iguais
+    // em sequência).
+    if (_hasDetectableTransition(step)) {
+      _beatsInStep = 0;
+      return;
+    }
+
     _beatsInStep++;
     if (_beatsInStep < step.beats) return;
     _beatsInStep = 0;
+    _advanceStep(matched: true);
+  }
 
-    final recognized = appState.lastPrediction?.chord;
-    final matched =
-        recognized != null &&
-        recognized.toLowerCase() == step.chord.toLowerCase();
+  void _onPrediction(ChordPrediction prediction) {
+    appState.updatePrediction(prediction);
+    if (appState.sessionStatus != SessionStatus.running) return;
 
-    _chordAttempts[step.chord] = (_chordAttempts[step.chord] ?? 0) + 1;
-    if (matched) {
-      _chordCorrect[step.chord] = (_chordCorrect[step.chord] ?? 0) + 1;
-    }
+    final step = appState.currentStep;
+    final recognized = prediction.chord;
+    if (step == null || recognized == null) return;
+
+    final isCurrent = recognized.toLowerCase() == step.chord.toLowerCase();
+    final isNext =
+        _hasDetectableTransition(step) &&
+        recognized.toLowerCase() == _nextChord!.toLowerCase();
 
     setState(() {
       _lastRecognizedChord = recognized;
-      _lastMatched = matched;
+      _lastMatched = isCurrent || isNext;
     });
+
+    if (isNext) {
+      _advanceStep(matched: true);
+    } else if (!isCurrent) {
+      _chordAttempts[step.chord] = (_chordAttempts[step.chord] ?? 0) + 1;
+    }
+  }
+
+  void _advanceStep({required bool matched}) {
+    final step = appState.currentStep;
+    if (step != null) {
+      _chordAttempts[step.chord] = (_chordAttempts[step.chord] ?? 0) + 1;
+      if (matched) {
+        _chordCorrect[step.chord] = (_chordCorrect[step.chord] ?? 0) + 1;
+      }
+    }
 
     appState.advanceStep(matched: matched);
 
@@ -164,6 +203,11 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
             'Música concluída: ${appState.sessionHits} de $total acordes certos',
       );
       _showSummaryDialog();
+    } else {
+      setState(() {
+        _lastRecognizedChord = null;
+        _lastMatched = null;
+      });
     }
   }
 

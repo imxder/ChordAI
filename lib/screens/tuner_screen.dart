@@ -19,12 +19,11 @@ class TunerScreen extends StatefulWidget {
 }
 
 class _TunerScreenState extends State<TunerScreen> {
-  static const _toleranceCents = 5.0;
-
   final _service = TunerService();
   bool _listening = false;
   bool _denied = false;
   TunerReading? _reading;
+  bool _inTune = false;
 
   @override
   void initState() {
@@ -51,6 +50,7 @@ class _TunerScreenState extends State<TunerScreen> {
       if (!mounted) return;
       setState(() {
         _reading = classifyPitch(frequency, appState.activeTuning);
+        _inTune = _service.smoother?.updateInTune(_reading?.cents) ?? false;
       });
     });
   }
@@ -70,7 +70,7 @@ class _TunerScreenState extends State<TunerScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final tokens = context.tokens;
     final reading = _reading;
-    final inTune = reading != null && reading.cents.abs() <= _toleranceCents;
+    final inTune = _inTune;
     final flat = reading != null && !inTune && reading.cents < 0;
     final color = reading == null
         ? colorScheme.onSurfaceVariant

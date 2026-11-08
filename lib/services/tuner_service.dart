@@ -3,15 +3,25 @@ import 'dart:typed_data';
 
 import 'package:record/record.dart';
 
+import 'pcm16_decoder.dart';
 import 'pitch_detector.dart';
+import 'pitch_smoother.dart';
+import 'sliding_pcm_buffer.dart';
 
 class TunerService {
   static const int sampleRate = 22050;
   static const int _windowSizeSamples = 4096;
+  static const int _hopSizeSamples = 1024;
 
   final AudioRecorder _recorder = AudioRecorder();
   StreamSubscription<Uint8List>? _subscription;
-  final List<int> _byteBuffer = [];
+  SlidingPcmBuffer? _buffer;
+  PitchSmoother? _smoother;
+  final Pcm16Decoder _decoder = Pcm16Decoder();
+
+  /// Suaviza as leituras de frequência e expõe a histerese do estado
+  /// "afinado" (ver PitchSmoother.updateInTune) pra tela do afinador.
+  PitchSmoother? get smoother => _smoother;
 
   Future<bool> hasPermission() => _recorder.hasPermission();
 
@@ -24,16 +34,23 @@ class TunerService {
       ),
     );
 
-    _byteBuffer.clear();
-    const windowBytes = _windowSizeSamples * 2;
+    // Janela deslizante com 75% de sobreposição: cada leitura reaproveita a
+    // maior parte da anterior e avança só um salto de 1024 amostras
+    // (~46 ms), em vez de consumir a janela inteira (~186 ms) — assim o
+    // ponteiro atualiza bem mais rápido. O YIN leva ~1 ms por chamada (bem
+    // dentro desse orçamento de 46 ms), então roda direto aqui, sem Isolate.
+    _buffer = SlidingPcmBuffer(
+      windowSize: _windowSizeSamples,
+      hopSize: _hopSizeSamples,
+    );
+    _smoother = PitchSmoother();
+    _decoder.reset();
 
     _subscription = stream.listen((chunk) {
-      _byteBuffer.addAll(chunk);
-      while (_byteBuffer.length >= windowBytes) {
-        final windowBytesList = _byteBuffer.sublist(0, windowBytes);
-        _byteBuffer.removeRange(0, windowBytes);
-        final samples = _bytesToFloatSamples(windowBytesList);
-        onPitch(detectPitch(samples, sampleRate.toDouble()));
+      final samples = _decoder.decode(chunk);
+      for (final window in _buffer!.addSamples(samples)) {
+        final estimate = detectPitchWithConfidence(window, sampleRate.toDouble());
+        onPitch(_smoother!.update(estimate));
       }
     });
   }
@@ -41,7 +58,8 @@ class TunerService {
   Future<void> stop() async {
     await _subscription?.cancel();
     _subscription = null;
-    _byteBuffer.clear();
+    _buffer = null;
+    _decoder.reset();
     if (await _recorder.isRecording()) {
       await _recorder.stop();
     }
@@ -50,15 +68,5 @@ class TunerService {
   Future<void> dispose() async {
     await stop();
     await _recorder.dispose();
-  }
-
-  List<double> _bytesToFloatSamples(List<int> bytes) {
-    final samples = <double>[];
-    for (var i = 0; i + 1 < bytes.length; i += 2) {
-      var value = bytes[i] | (bytes[i + 1] << 8);
-      if (value >= 0x8000) value -= 0x10000;
-      samples.add(value / 32768.0);
-    }
-    return samples;
   }
 }

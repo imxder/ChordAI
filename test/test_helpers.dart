@@ -48,7 +48,9 @@ Future<void> loadAppFonts() async {
     await loader.load();
   }
   final pubCache = Platform.environment['PUB_CACHE'] ??
-      '${Platform.environment['LOCALAPPDATA']}/Pub/Cache';
+      (Platform.isWindows
+          ? '${Platform.environment['LOCALAPPDATA']}/Pub/Cache'
+          : '${Platform.environment['HOME']}/.pub-cache');
   final cupertinoDirs = Directory('$pubCache/hosted/pub.dev')
       .listSync()
       .whereType<Directory>()

@@ -10,6 +10,11 @@ class LyricSheetLibrary {
       artist: 'Taylor Swift',
       path: 'assets/lyrics/all_too_well.txt',
     ),
+    (
+      title: 'Riptide',
+      artist: 'Vance Joy',
+      path: 'assets/lyrics/riptide.txt',
+    ),
   ];
 
   Future<List<LyricSheet>> loadAll() async {

@@ -17,7 +17,6 @@ import 'package:chordai/screens/tuner_screen.dart';
 import 'package:chordai/screens/tuning_check_screen.dart';
 import 'package:chordai/services/lyric_sheet_library.dart';
 import 'package:chordai/state/app_state.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -84,12 +83,14 @@ void main() {
 
       for (final tab in ['Músicas', 'Acordes', 'Perfil']) {
         await tester.tap(find.descendant(
-          of: find.byType(GlassTabBar),
+          of: find.byKey(appTabBarKey),
           matching: find.text(tab),
         ).first);
         await tester.pump(const Duration(milliseconds: 300));
       }
-    });
+    }, variant: TargetPlatformVariant(
+      {TargetPlatform.android, TargetPlatform.iOS},
+    ));
 
     testWidgets('tocar junto em andamento cabe na tela (${setup.key})', (tester) async {
       sheet = (await tester.runAsync(() => LyricSheetLibrary().loadAll()))!.first;

@@ -8,6 +8,9 @@ import 'home_screen.dart';
 import 'lyric_sheet_list_screen.dart';
 import 'profile_screen.dart';
 import '../theme/ph.dart';
+import '../theme/platform_style.dart';
+
+const appTabBarKey = Key('app_tab_bar');
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -47,6 +50,11 @@ class _AppShellState extends State<AppShell> {
 
   void _select(int index) => setState(() => _index = index);
 
+  void _onTabSelected(int index) {
+    if (index != _index) HapticFeedback.selectionClick();
+    _select(index);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -56,7 +64,7 @@ class _AppShellState extends State<AppShell> {
         if (!didPop) _select(0);
       },
       child: Scaffold(
-        extendBody: true,
+        extendBody: useLiquidGlass,
         body: ListenableBuilder(
           listenable: appState,
           builder: (context, _) => IndexedStack(
@@ -72,18 +80,30 @@ class _AppShellState extends State<AppShell> {
             ],
           ),
         ),
-        bottomNavigationBar: GlassTabBar.bottom(
-          tabs: _tabs,
-          selectedIndex: _index,
-          onTabSelected: (index) {
-            if (index != _index) HapticFeedback.selectionClick();
-            _select(index);
-          },
-          selectedIconColor: colorScheme.primary,
-          selectedLabelColor: colorScheme.primary,
-          unselectedIconColor: colorScheme.onSurface,
-          unselectedLabelColor: colorScheme.onSurface,
-        ),
+        bottomNavigationBar: useLiquidGlass
+            ? GlassTabBar.bottom(
+                key: appTabBarKey,
+                tabs: _tabs,
+                selectedIndex: _index,
+                onTabSelected: _onTabSelected,
+                selectedIconColor: colorScheme.primary,
+                selectedLabelColor: colorScheme.primary,
+                unselectedIconColor: colorScheme.onSurface,
+                unselectedLabelColor: colorScheme.onSurface,
+              )
+            : NavigationBar(
+                key: appTabBarKey,
+                selectedIndex: _index,
+                onDestinationSelected: _onTabSelected,
+                destinations: [
+                  for (final tab in _tabs)
+                    NavigationDestination(
+                      icon: tab.icon!,
+                      selectedIcon: tab.activeIcon,
+                      label: tab.label!,
+                    ),
+                ],
+              ),
       ),
     );
   }

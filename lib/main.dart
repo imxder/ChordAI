@@ -8,11 +8,16 @@ import 'screens/app_shell.dart';
 import 'screens/onboarding_screen.dart';
 import 'state/app_state.dart';
 import 'theme/app_theme.dart';
+import 'theme/platform_style.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Sem o await, quem já passou pelo onboarding veria ele piscar ao abrir o app.
   await appState.loadProgress();
+  if (!useLiquidGlass) {
+    runApp(const ChordAIApp());
+    return;
+  }
   // Compila os shaders do vidro antes da primeira tela, senão ela engasga.
   await LiquidGlassWidgets.initialize();
   runApp(

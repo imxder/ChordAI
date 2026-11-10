@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import '../models/chord_names.dart';
 import '../models/chord_prediction.dart';
@@ -462,8 +461,8 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(padding.left - 6, 0, padding.right - 6, 0),
-      child: GlassContainer(
-        shape: const LiquidRoundedSuperellipse(borderRadius: 28),
+      child: FloatingPanel(
+        radius: 28,
         child: SafeArea(
           top: false,
           child: Padding(

@@ -5,6 +5,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import '../theme/app_theme.dart';
 import '../theme/glass_tokens.dart';
 import '../theme/ph.dart';
+import '../theme/platform_style.dart';
 
 class IosPage extends StatelessWidget {
   final String title;
@@ -401,6 +402,21 @@ Future<T?> showGlassSheet<T>(
   double size = 0.55,
   bool startFull = false,
 }) {
+  if (!useLiquidGlass) {
+    return showModalBottomSheet<T>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight:
+              MediaQuery.sizeOf(sheetContext).height * (startFull ? 0.92 : size),
+        ),
+        child: builder(sheetContext),
+      ),
+    );
+  }
   final dark = Theme.of(context).brightness == Brightness.dark;
   return GlassModalSheet.show<T>(
     context: context,
@@ -426,12 +442,44 @@ class BottomActionBar extends StatelessWidget {
       minimum: const EdgeInsets.only(bottom: 8),
       child: Padding(
         padding: EdgeInsets.fromLTRB(padding.left - 6, 0, padding.right - 6, 4),
-        child: GlassContainer(
-          shape: const LiquidRoundedSuperellipse(borderRadius: 32),
+        child: FloatingPanel(
+          radius: 32,
           padding: const EdgeInsets.all(6),
           child: child,
         ),
       ),
+    );
+  }
+}
+
+class FloatingPanel extends StatelessWidget {
+  final double radius;
+  final EdgeInsetsGeometry padding;
+  final Widget child;
+
+  const FloatingPanel({
+    super.key,
+    required this.radius,
+    required this.child,
+    this.padding = EdgeInsets.zero,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (useLiquidGlass) {
+      return GlassContainer(
+        shape: LiquidRoundedSuperellipse(borderRadius: radius),
+        padding: padding,
+        child: child,
+      );
+    }
+    return Material(
+      color: context.tokens.cell,
+      elevation: 3,
+      shadowColor: Colors.black26,
+      borderRadius: BorderRadius.circular(radius),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(padding: padding, child: child),
     );
   }
 }

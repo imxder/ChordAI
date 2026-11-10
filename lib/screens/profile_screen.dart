@@ -120,9 +120,9 @@ class ProfileScreen extends StatelessWidget {
               onTap: () => showPracticeOptionsSheet(context),
             ),
             GroupedRow(
-              leading: const IconBadge(Ph.desktopFill),
-              title: 'Servidor',
-              value: appState.serverUrl.replaceFirst(RegExp(r'^https?://'), ''),
+              leading: const IconBadge(Ph.microphoneFill),
+              title: 'Reconhecimento',
+              value: appState.chordRecognitionMode.label,
               onTap: () => Navigator.of(
                 context,
               ).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),

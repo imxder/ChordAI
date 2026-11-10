@@ -1,6 +1,6 @@
 enum ChordRecognitionMode {
-  server('Servidor', 'Reconhece pelo computador na mesma rede (ou Tailscale)'),
-  onDevice('No aparelho', 'Reconhece direto no celular, sem precisar de servidor');
+  onDevice('No aparelho', 'Reconhece direto no celular, sem internet nem computador'),
+  server('Servidor', 'Avançado: precisa de um computador na mesma rede rodando o ChordAI-backend');
 
   const ChordRecognitionMode(this.label, this.description);
 

@@ -21,7 +21,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: appState.serverUrl);
+    _controller = TextEditingController(
+      text: appState.serverUrl.replaceFirst(RegExp(r'^https?://'), ''),
+    );
   }
 
   @override
@@ -44,45 +46,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _selectMode(ChordRecognitionMode mode) async {
     await appState.setChordRecognitionMode(mode);
-    setState(() {});
+    setState(() => _error = null);
   }
 
   @override
   Widget build(BuildContext context) {
     final error = _error;
     final mode = appState.chordRecognitionMode;
+    final usesServer = mode == ChordRecognitionMode.server;
     return IosPage(
-      title: 'Servidor',
-      trailing: CupertinoButton(
-        padding: EdgeInsets.zero,
-        onPressed: _save,
-        child: const Text(
-          'Salvar',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-      ),
+      title: 'Reconhecimento',
+      trailing: usesServer
+          ? CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: _save,
+              child: const Text(
+                'Salvar',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            )
+          : null,
       children: [
         GroupedSection(
           top: 8,
           header: 'Reconhecimento de acordes',
-          footer: mode.description,
           children: [
             for (final option in ChordRecognitionMode.values)
               CheckRow(
                 title: option.label,
+                subtitle: option.description,
                 selected: mode == option,
                 onTap: () => _selectMode(option),
               ),
           ],
         ),
-        if (mode == ChordRecognitionMode.server)
+        if (usesServer)
           GroupedSection(
-            header: 'Endereço',
+            header: 'Endereço do servidor',
             footer:
                 error ??
-                'É o computador que roda o reconhecimento de acordes. Use o IP e a '
-                    'porta que aparecem no terminal do servidor. Só mude se o IP dele '
-                    'mudou na sua rede.',
+                'Só funciona com um computador na mesma rede Wi-Fi do celular '
+                    'rodando o ChordAI-backend. Use o IP e a porta que aparecem no '
+                    'terminal do servidor, ou o nome do computador na rede '
+                    '(ex.: meu-mac.local:5001), que não muda quando o IP muda.',
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),

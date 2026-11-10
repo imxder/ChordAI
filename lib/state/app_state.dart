@@ -29,6 +29,7 @@ class AppState extends ChangeNotifier {
   static const _profileNameKey = 'app_profile_name';
   static const _profileExperienceKey = 'app_profile_experience';
   static const _chordRecognitionModeKey = 'app_chord_recognition_mode';
+  static const _onDeviceDefaultMigratedKey = 'app_on_device_default_migrated';
 
   // Quem instalou uma versão antiga ainda tem esses dados salvos no aparelho.
   static const _removedKeys = [
@@ -67,9 +68,7 @@ class AppState extends ChangeNotifier {
   String? profileExperience;
 
   String serverUrl = defaultServerUrl;
-  // Servidor é o padrão até validarmos o reconhecimento no aparelho; depois
-  // trocamos pra ChordRecognitionMode.onDevice.
-  ChordRecognitionMode chordRecognitionMode = ChordRecognitionMode.server;
+  ChordRecognitionMode chordRecognitionMode = ChordRecognitionMode.onDevice;
   bool hasCompletedOnboarding = false;
   String tuningId = 'padrao';
   List<String>? customTuningNotes;
@@ -217,10 +216,17 @@ class AppState extends ChangeNotifier {
     profileName = prefs.getString(_profileNameKey) ?? '';
     profileExperience = prefs.getString(_profileExperienceKey);
     serverUrl = prefs.getString(_serverUrlKey) ?? defaultServerUrl;
+    if (!(prefs.getBool(_onDeviceDefaultMigratedKey) ?? false)) {
+      await prefs.setString(
+        _chordRecognitionModeKey,
+        ChordRecognitionMode.onDevice.name,
+      );
+      await prefs.setBool(_onDeviceDefaultMigratedKey, true);
+    }
     final savedMode = prefs.getString(_chordRecognitionModeKey);
     chordRecognitionMode = ChordRecognitionMode.values.firstWhere(
       (m) => m.name == savedMode,
-      orElse: () => ChordRecognitionMode.server,
+      orElse: () => ChordRecognitionMode.onDevice,
     );
     hasCompletedOnboarding = prefs.getBool(_hasOnboardedKey) ?? false;
     tuningId = prefs.getString(_tuningIdKey) ?? 'padrao';

@@ -38,7 +38,7 @@ class ChordRecognitionService implements ChordRecognizer {
     required void Function(Object error) onError,
   }) async {
     if (_running) return;
-    if (serverUrl == null) {
+    if (serverUrl == null || serverUrl.isEmpty) {
       onError(ArgumentError('serverUrl é obrigatório no modo servidor'));
       return;
     }

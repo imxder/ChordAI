@@ -88,7 +88,8 @@ class AppState extends ChangeNotifier {
     if (tuningId == customTuningId) return 'Personalizada';
     return tuningPresets
         .firstWhere((p) => p.id == tuningId, orElse: () => tuningPresets.first)
-        .name;
+        .name
+        .replaceFirst(RegExp(r'\s*\(.*\)$'), '');
   }
 
   String? get nextChordToLearn {

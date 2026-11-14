@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:record/record.dart';
 
 import '../models/chord_names.dart';
@@ -20,7 +23,7 @@ String sheetMeta(LyricSheet sheet) {
   ].join(' · ');
 }
 
-class LyricSheetScreen extends StatelessWidget {
+class LyricSheetScreen extends StatefulWidget {
   final LyricSheet sheet;
   final String serverUrl;
   final InputDevice? inputDevice;
@@ -33,73 +36,208 @@ class LyricSheetScreen extends StatelessWidget {
   });
 
   @override
+  State<LyricSheetScreen> createState() => _LyricSheetScreenState();
+}
+
+class _LyricSheetScreenState extends State<LyricSheetScreen>
+    with SingleTickerProviderStateMixin {
+  static const _speeds = [12.0, 18.0, 26.0, 36.0, 50.0];
+
+  final _scroll = ScrollController();
+  late final Ticker _ticker = createTicker(_onTick);
+  Duration _lastTick = Duration.zero;
+  int _speed = 2;
+  bool _autoScroll = false;
+  bool _dragging = false;
+
+  LyricSheet get sheet => widget.sheet;
+
+  void _onTick(Duration elapsed) {
+    final seconds = (elapsed - _lastTick).inMicroseconds / 1000000;
+    _lastTick = elapsed;
+    if (_dragging || !_scroll.hasClients) return;
+    final position = _scroll.position;
+    if (position.pixels >= position.maxScrollExtent) {
+      _setAutoScroll(false);
+      return;
+    }
+    final step = _speeds[_speed] * appState.lyricFontScale * seconds;
+    _scroll.jumpTo(min(position.maxScrollExtent, position.pixels + step));
+  }
+
+  void _setAutoScroll(bool on) {
+    if (on == _autoScroll) return;
+    setState(() => _autoScroll = on);
+    if (on) {
+      _lastTick = Duration.zero;
+      _ticker.start();
+    } else {
+      _ticker.stop();
+    }
+  }
+
+  void _changeSpeed(int delta) {
+    setState(() => _speed = (_speed + delta).clamp(0, _speeds.length - 1));
+  }
+
+  bool _onScrollNotification(ScrollNotification notification) {
+    if (notification is ScrollStartNotification &&
+        notification.dragDetails != null) {
+      _dragging = true;
+    } else if (notification is ScrollEndNotification) {
+      _dragging = false;
+    }
+    return false;
+  }
+
+  void _openPlayer() {
+    _setAutoScroll(false);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LyricPlayerScreen(
+          serverUrl: widget.serverUrl,
+          inputDevice: widget.inputDevice,
+          sheet: sheet,
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  Widget _buildBottomBar() {
+    if (_autoScroll) {
+      return Row(
+        children: [
+          IconButton(
+            tooltip: 'Rolar mais devagar',
+            onPressed: _speed == 0 ? null : () => _changeSpeed(-1),
+            icon: const Icon(Ph.minus),
+          ),
+          Expanded(
+            child: Semantics(
+              liveRegion: true,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text('Velocidade ${_speed + 1}'),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Rolar mais rápido',
+            onPressed: _speed == _speeds.length - 1
+                ? null
+                : () => _changeSpeed(1),
+            icon: const Icon(Ph.plus),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: FilledButton.icon(
+              onPressed: () => _setAutoScroll(false),
+              icon: const Icon(Ph.stopFill, size: 20),
+              label: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text('Parar'),
+              ),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(50),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: OutlinedButton.icon(
+            onPressed: () => _setAutoScroll(true),
+            icon: const Icon(Ph.arrowDown, size: 20),
+            label: const FittedBox(fit: BoxFit.scaleDown, child: Text('Rolar')),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          flex: 3,
+          child: FilledButton.icon(
+            onPressed: _openPlayer,
+            icon: const Icon(Ph.playFill, size: 20),
+            label: const FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text('Tocar junto'),
+            ),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final meta = sheetMeta(sheet);
 
     return ListenableBuilder(
       listenable: appState,
-      builder: (context, _) => IosPage(
-        title: sheet.title,
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () => showPracticeOptionsSheet(context),
-          child: const Icon(Ph.textAa, semanticLabel: 'Leitura das cifras'),
-        ),
-        bottomBar: BottomActionBar(
-          child: FilledButton.icon(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => LyricPlayerScreen(
-                    serverUrl: serverUrl,
-                    inputDevice: inputDevice,
-                    sheet: sheet,
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Ph.playFill, size: 20),
-            label: const Text('Tocar junto'),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(50),
-            ),
+      builder: (context, _) => NotificationListener<ScrollNotification>(
+        onNotification: _onScrollNotification,
+        child: IosPage(
+          title: sheet.title,
+          controller: _scroll,
+          trailing: CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () => showPracticeOptionsSheet(context),
+            child: const Icon(Ph.textAa, semanticLabel: 'Leitura das cifras'),
           ),
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Semantics(
-                  header: true,
-                  child: Text(sheet.title, style: textTheme.headlineMedium),
-                ),
-                if (sheet.artist != null)
-                  Text(
-                    sheet.artist!,
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+          bottomBar: BottomActionBar(child: _buildBottomBar()),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Semantics(
+                    header: true,
+                    child: Text(sheet.title, style: textTheme.headlineMedium),
+                  ),
+                  if (sheet.artist != null)
+                    Text(
+                      sheet.artist!,
+                      style: textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                if (meta.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(meta, style: textTheme.bodySmall),
+                  if (meta.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(meta, style: textTheme.bodySmall),
+                  ],
                 ],
-              ],
-            ),
-          ),
-          for (final section in sheet.sections) ...[
-            if (section.title != null) SheetSectionLabel(section.title!),
-            for (final line in section.lines)
-              CifraLine(
-                line: line,
-                fontScale: appState.lyricFontScale,
-                onChordTap: (chord) => _showChordDialog(context, chord),
               ),
+            ),
+            for (final section in sheet.sections) ...[
+              if (section.title != null) SheetSectionLabel(section.title!),
+              for (final line in section.lines)
+                CifraLine(
+                  line: line,
+                  fontScale: appState.lyricFontScale,
+                  onChordTap: (chord) => _showChordDialog(context, chord),
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

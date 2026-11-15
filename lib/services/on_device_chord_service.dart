@@ -7,6 +7,7 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 
 import '../models/chord_model_info.dart';
 import '../models/chord_prediction.dart';
+import '../models/on_device_model.dart';
 import 'chord_recognizer.dart';
 import 'chord_stabilizer.dart';
 import 'latest_samples_buffer.dart';
@@ -17,6 +18,9 @@ import 'pcm16_decoder.dart';
 /// STFT) já está dentro do `.tflite`, então aqui só grava áudio, monta a
 /// janela de 1,5s e lê a saída — nenhuma FFT/chroma/MFCC em Dart.
 class OnDeviceChordService implements ChordRecognizer {
+  OnDeviceChordService(this._modelSource);
+
+  final OnDeviceModel Function() _modelSource;
   final AudioRecorder _recorder = AudioRecorder();
   final Pcm16Decoder _decoder = Pcm16Decoder();
 
@@ -27,6 +31,7 @@ class OnDeviceChordService implements ChordRecognizer {
   Interpreter? _interpreter;
   IsolateInterpreter? _isolateInterpreter;
   ChordModelInfo? _modelInfo;
+  OnDeviceModel? _loadedModel;
   InputDevice? _selectedDevice;
   bool _running = false;
   bool _inferring = false;
@@ -58,10 +63,13 @@ class OnDeviceChordService implements ChordRecognizer {
     if (_running) return;
 
     try {
-      _modelInfo ??= await ChordModelInfo.load();
-      _interpreter ??= await Interpreter.fromAsset('assets/models/chord_model.tflite');
+      final model = _modelSource();
+      if (_loadedModel != model) await _unloadModel();
+      _modelInfo ??= await ChordModelInfo.load(model.assetDir);
+      _interpreter ??= await Interpreter.fromAsset(_modelInfo!.modelAsset);
       _isolateInterpreter ??=
           await IsolateInterpreter.create(address: _interpreter!.address);
+      _loadedModel = model;
     } catch (e) {
       onError(e);
       return;
@@ -180,13 +188,19 @@ class OnDeviceChordService implements ChordRecognizer {
     }
   }
 
-  @override
-  Future<void> dispose() async {
-    await stop();
+  Future<void> _unloadModel() async {
     await _isolateInterpreter?.close();
     _isolateInterpreter = null;
     _interpreter?.close();
     _interpreter = null;
+    _modelInfo = null;
+    _loadedModel = null;
+  }
+
+  @override
+  Future<void> dispose() async {
+    await stop();
+    await _unloadModel();
     await _recorder.dispose();
   }
 }

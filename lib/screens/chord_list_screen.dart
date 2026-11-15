@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
-import '../models/chord_difficulty.dart';
 import '../models/chord_names.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -28,7 +27,7 @@ class ChordListScreen extends StatelessWidget {
       listenable: appState,
       builder: (context, _) {
         final cells = [
-          for (final chord in chordsByDifficulty)
+          for (final chord in appState.chordsInModel)
             _ChordCell(
               chord: chord,
               onTap: () => Navigator.of(context).push(
@@ -50,7 +49,7 @@ class ChordListScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(4, 0, 4, 16),
               child: Text(
                 'Em ordem de dificuldade. ${appState.learnedChordCount} de '
-                '${chordsByDifficulty.length} aprendidos.',
+                '${appState.chordsInModel.length} aprendidos.',
                 style: textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),

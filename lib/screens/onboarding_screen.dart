@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../models/chord_difficulty.dart';
 import '../models/lyric_sheet.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -87,7 +86,7 @@ final _pages = [
         spacing: 8,
         runSpacing: 8,
         children: [
-          for (final (i, chord) in chordsByDifficulty.indexed)
+          for (final (i, chord) in appState.chordsInModel.indexed)
             Container(
               width: 64,
               height: 44,

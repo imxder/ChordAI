@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 /// assets em vez de hardcoded, pra acompanhar automaticamente se o backend
 /// gerar uma versão nova do modelo com limiares diferentes.
 class ChordModelInfo {
+  final String assetDir;
   final int sampleRate;
   final int inputSamples;
   final double confidenceThreshold;
@@ -15,6 +16,7 @@ class ChordModelInfo {
   final String noneLabel;
 
   const ChordModelInfo({
+    required this.assetDir,
     required this.sampleRate,
     required this.inputSamples,
     required this.confidenceThreshold,
@@ -23,15 +25,20 @@ class ChordModelInfo {
     required this.noneLabel,
   });
 
-  static Future<ChordModelInfo> load() async {
+  String get modelAsset => '$assetDir/chord_model.tflite';
+
+  Set<String> get chords => labels.where((l) => l != noneLabel).toSet();
+
+  static Future<ChordModelInfo> load(String assetDir) async {
     final infoJson = jsonDecode(
-      await rootBundle.loadString('assets/models/model_info.json'),
+      await rootBundle.loadString('$assetDir/model_info.json'),
     ) as Map<String, dynamic>;
     final labelsJson =
-        jsonDecode(await rootBundle.loadString('assets/models/labels.json'))
+        jsonDecode(await rootBundle.loadString('$assetDir/labels.json'))
             as List<dynamic>;
 
     return ChordModelInfo(
+      assetDir: assetDir,
       sampleRate: infoJson['sample_rate'] as int,
       inputSamples: infoJson['input_samples'] as int,
       confidenceThreshold: (infoJson['confidence_threshold'] as num).toDouble(),

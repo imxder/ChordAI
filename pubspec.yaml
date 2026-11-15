@@ -30,7 +30,8 @@ flutter:
   assets:
     - assets/scores/
     - assets/lyrics/
-    - assets/models/
+    - assets/models/v3/
+    - assets/models/v3_meu/
   fonts:
     - family: IBMPlexMono
       fonts:

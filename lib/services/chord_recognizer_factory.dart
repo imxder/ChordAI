@@ -1,4 +1,5 @@
 import '../models/chord_recognition_mode.dart';
+import '../state/app_state.dart';
 import 'chord_recognition_service.dart';
 import 'chord_recognizer.dart';
 import 'on_device_chord_service.dart';
@@ -8,7 +9,7 @@ ChordRecognizer createChordRecognizer(ChordRecognitionMode mode) {
     case ChordRecognitionMode.server:
       return ChordRecognitionService();
     case ChordRecognitionMode.onDevice:
-      return OnDeviceChordService();
+      return OnDeviceChordService(() => appState.onDeviceModel);
   }
 }
 

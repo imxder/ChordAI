@@ -51,7 +51,9 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen> {
   }
 
   Future<void> _loadScores() async {
-    final scores = await _scoreLibrary.loadAll();
+    final scores = await _scoreLibrary.loadAll(
+      onlyChords: appState.chordsInModel.toSet(),
+    );
     if (!mounted) return;
     setState(() {
       _scores = scores;

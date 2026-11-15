@@ -92,7 +92,7 @@ void main() {
     expect(prefs.containsKey('app_unlocked_achievements'), isFalse);
     expect(appState.learnedChords, {'Em', 'Am'});
     expect(appState.selectedThemeIndex, 0);
-    expect(appState.nextChordToLearn, 'C');
+    expect(appState.nextChordToLearn, 'A');
   });
 
   test('acorde só conta como aprendido depois dos acertos seguidos', () {

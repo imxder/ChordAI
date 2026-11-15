@@ -33,7 +33,7 @@ void main() {
 
     await tester.tap(find.text('Aprender acordes'));
     await settle(tester);
-    expect(find.text('Em ordem de dificuldade. 0 de 8 aprendidos.'), findsOneWidget);
+    expect(find.text('Em ordem de dificuldade. 0 de 9 aprendidos.'), findsOneWidget);
   });
 
   testWidgets('a barra de baixo troca de aba sem empilhar telas', (tester) async {
@@ -47,7 +47,7 @@ void main() {
 
     await tester.tap(find.text('Acordes').last);
     await settle(tester);
-    expect(find.text('Em ordem de dificuldade. 0 de 8 aprendidos.'), findsOneWidget);
+    expect(find.text('Em ordem de dificuldade. 0 de 9 aprendidos.'), findsOneWidget);
   });
 
   testWidgets('não sobrou nada da gamificação', (tester) async {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/app_theme.dart';
-import '../models/chord_difficulty.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../theme/glass_tokens.dart';
@@ -56,7 +55,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         GroupedSection(
           header:
-              'Acordes aprendidos: $learned de ${chordsByDifficulty.length}',
+              'Acordes aprendidos: $learned de ${appState.chordsInModel.length}',
           children: [
             Padding(
               padding: const EdgeInsets.all(14),
@@ -64,7 +63,7 @@ class ProfileScreen extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  for (final chord in chordsByDifficulty)
+                  for (final chord in appState.chordsInModel)
                     _LearnedChordTile(chord: chord),
                 ],
               ),

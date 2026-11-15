@@ -4,8 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config.dart';
 import '../models/app_theme.dart';
 import '../models/chord_difficulty.dart';
+import '../models/chord_model_info.dart';
 import '../models/chord_prediction.dart';
 import '../models/chord_recognition_mode.dart';
+import '../models/on_device_model.dart';
 import '../models/score.dart';
 import '../models/tuner_note.dart';
 import '../models/tuning_preset.dart';
@@ -30,6 +32,7 @@ class AppState extends ChangeNotifier {
   static const _profileExperienceKey = 'app_profile_experience';
   static const _chordRecognitionModeKey = 'app_chord_recognition_mode';
   static const _onDeviceDefaultMigratedKey = 'app_on_device_default_migrated';
+  static const _onDeviceModelKey = 'app_on_device_model';
 
   // Quem instalou uma versão antiga ainda tem esses dados salvos no aparelho.
   static const _removedKeys = [
@@ -69,6 +72,8 @@ class AppState extends ChangeNotifier {
 
   String serverUrl = defaultServerUrl;
   ChordRecognitionMode chordRecognitionMode = ChordRecognitionMode.onDevice;
+  OnDeviceModel onDeviceModel = OnDeviceModel.v3;
+  Set<String>? _modelChords;
   bool hasCompletedOnboarding = false;
   String tuningId = 'padrao';
   List<String>? customTuningNotes;
@@ -92,15 +97,34 @@ class AppState extends ChangeNotifier {
         .replaceFirst(RegExp(r'\s*\(.*\)$'), '');
   }
 
+  List<String> get chordsInModel {
+    final chords = _modelChords;
+    if (chords == null) return chordsByDifficulty;
+    return chordsByDifficulty.where(chords.contains).toList();
+  }
+
+  OnDeviceModel get _chordListModel =>
+      chordRecognitionMode == ChordRecognitionMode.server
+      ? OnDeviceModel.v3
+      : onDeviceModel;
+
+  static final Map<OnDeviceModel, Set<String>> _chordsByModel = {};
+
+  Future<void> _refreshModelChords() async {
+    final model = _chordListModel;
+    _modelChords = _chordsByModel[model] ??=
+        (await ChordModelInfo.load(model.assetDir)).chords;
+  }
+
   String? get nextChordToLearn {
-    for (final chord in chordsByDifficulty) {
+    for (final chord in chordsInModel) {
       if (!learnedChords.contains(chord)) return chord;
     }
     return null;
   }
 
   int get learnedChordCount =>
-      chordsByDifficulty.where(learnedChords.contains).length;
+      chordsInModel.where(learnedChords.contains).length;
 
   Future<void> setTuningPreset(String id) async {
     tuningId = id;
@@ -181,6 +205,15 @@ class AppState extends ChangeNotifier {
     chordRecognitionMode = mode;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_chordRecognitionModeKey, mode.name);
+    await _refreshModelChords();
+    notifyListeners();
+  }
+
+  Future<void> setOnDeviceModel(OnDeviceModel model) async {
+    onDeviceModel = model;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_onDeviceModelKey, model.name);
+    await _refreshModelChords();
     notifyListeners();
   }
 
@@ -229,6 +262,12 @@ class AppState extends ChangeNotifier {
       (m) => m.name == savedMode,
       orElse: () => ChordRecognitionMode.onDevice,
     );
+    final savedModel = prefs.getString(_onDeviceModelKey);
+    onDeviceModel = OnDeviceModel.values.firstWhere(
+      (m) => m.name == savedModel,
+      orElse: () => OnDeviceModel.v3,
+    );
+    await _refreshModelChords();
     hasCompletedOnboarding = prefs.getBool(_hasOnboardedKey) ?? false;
     tuningId = prefs.getString(_tuningIdKey) ?? 'padrao';
     customTuningNotes = prefs.getStringList(_customTuningKey);

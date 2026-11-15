@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../models/chord_difficulty.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../theme/glass_tokens.dart';
@@ -31,7 +30,7 @@ class HomeScreen extends StatelessWidget {
         icon: Ph.guitarDuotone,
         title: 'Aprender acordes',
         detail:
-            '${appState.learnedChordCount} de ${chordsByDifficulty.length} aprendidos',
+            '${appState.learnedChordCount} de ${appState.chordsInModel.length} aprendidos',
         onTap: onOpenChords,
       ),
       _HomeTile(

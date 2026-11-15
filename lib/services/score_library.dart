@@ -11,12 +11,23 @@ class ScoreLibrary {
     'assets/scores/all_too_well.json',
   ];
 
-  Future<List<Score>> loadAll() async {
+  Future<List<Score>> loadAll({Set<String>? onlyChords}) async {
     final scores = <Score>[];
     for (final path in _assetPaths) {
       final raw = await rootBundle.loadString(path);
       final json = jsonDecode(raw) as Map<String, dynamic>;
-      scores.add(Score.fromJson(json));
+      final score = Score.fromJson(json);
+      scores.add(
+        onlyChords == null
+            ? score
+            : Score(
+                title: score.title,
+                steps: [
+                  for (final step in score.steps)
+                    if (onlyChords.contains(step.chord)) step,
+                ],
+              ),
+      );
     }
     return scores;
   }

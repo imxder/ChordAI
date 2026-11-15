@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:chordai/models/chord_model_info.dart';
+import 'package:chordai/models/on_device_model.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -17,7 +18,8 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 /// aparelho).
 List<double> _parseWavPcm16(Uint8List bytes) {
   final data = ByteData.sublistView(bytes);
-  String tag(int offset) => String.fromCharCodes(bytes.sublist(offset, offset + 4));
+  String tag(int offset) =>
+      String.fromCharCodes(bytes.sublist(offset, offset + 4));
   if (tag(0) != 'RIFF' || tag(8) != 'WAVE') {
     throw const FormatException('não é um WAV');
   }
@@ -53,46 +55,54 @@ List<double> _parseWavPcm16(Uint8List bytes) {
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('saída do modelo bate com example_expected.json', (tester) async {
-    final modelInfo = await ChordModelInfo.load();
+  for (final model in OnDeviceModel.values) {
+    testWidgets(
+      'saída do modelo ${model.folder} bate com example_expected.json',
+      (tester) async {
+        final modelInfo = await ChordModelInfo.load(model.assetDir);
 
-    final wavBytes =
-        (await rootBundle.load('assets/models/example.wav')).buffer.asUint8List();
-    final samples = _parseWavPcm16(wavBytes);
-    expect(samples.length, modelInfo.inputSamples);
+        final wavBytes = (await rootBundle.load(
+          '${model.assetDir}/example.wav',
+        )).buffer.asUint8List();
+        final samples = _parseWavPcm16(wavBytes);
+        expect(samples.length, modelInfo.inputSamples);
 
-    final expectedJson = jsonDecode(
-      await rootBundle.loadString('assets/models/example_expected.json'),
-    ) as Map<String, dynamic>;
-    final expectedFloat32 = expectedJson['float32'] as Map<String, dynamic>;
-    final expectedProbabilities =
-        (expectedFloat32['probabilities'] as Map<String, dynamic>)
-            .map((key, value) => MapEntry(key, (value as num).toDouble()));
+        final expectedJson = jsonDecode(
+          await rootBundle.loadString(
+            '${model.assetDir}/example_expected.json',
+          ),
+        ) as Map<String, dynamic>;
+        final expectedFloat32 = expectedJson['float32'] as Map<String, dynamic>;
+        final expectedProbabilities =
+            (expectedFloat32['probabilities'] as Map<String, dynamic>).map(
+              (key, value) => MapEntry(key, (value as num).toDouble()),
+            );
 
-    final interpreter =
-        await Interpreter.fromAsset('assets/models/chord_model.tflite');
-    final input = [Float32List.fromList(samples)];
-    final output = [List<double>.filled(modelInfo.labels.length, 0.0)];
-    interpreter.run(input, output);
-    interpreter.close();
+        final interpreter = await Interpreter.fromAsset(modelInfo.modelAsset);
+        final input = [Float32List.fromList(samples)];
+        final output = [List<double>.filled(modelInfo.labels.length, 0.0)];
+        interpreter.run(input, output);
+        interpreter.close();
 
-    for (var i = 0; i < modelInfo.labels.length; i++) {
-      final label = modelInfo.labels[i];
-      expect(
-        output[0][i],
-        closeTo(expectedProbabilities[label]!, 1e-3),
-        reason: 'probabilidade de $label',
-      );
-    }
+        for (var i = 0; i < modelInfo.labels.length; i++) {
+          final label = modelInfo.labels[i];
+          expect(
+            output[0][i],
+            closeTo(expectedProbabilities[label]!, 1e-3),
+            reason: 'probabilidade de $label',
+          );
+        }
 
-    var bestIndex = 0;
-    for (var i = 1; i < output[0].length; i++) {
-      if (output[0][i] > output[0][bestIndex]) bestIndex = i;
-    }
-    expect(modelInfo.labels[bestIndex], expectedFloat32['top_class']);
-    expect(
-      output[0][bestIndex],
-      closeTo((expectedFloat32['top_confidence'] as num).toDouble(), 1e-3),
+        var bestIndex = 0;
+        for (var i = 1; i < output[0].length; i++) {
+          if (output[0][i] > output[0][bestIndex]) bestIndex = i;
+        }
+        expect(modelInfo.labels[bestIndex], expectedFloat32['top_class']);
+        expect(
+          output[0][bestIndex],
+          closeTo((expectedFloat32['top_confidence'] as num).toDouble(), 1e-3),
+        );
+      },
     );
-  });
+  }
 }

@@ -1,6 +1,7 @@
 {
   "title": "Todos os Acordes",
   "steps": [
+    {"chord": "A", "beats": 4},
     {"chord": "Am", "beats": 4},
     {"chord": "Bb", "beats": 4},
     {"chord": "Bdim", "beats": 4},

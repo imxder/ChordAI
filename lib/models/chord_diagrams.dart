@@ -1,4 +1,5 @@
 const Map<String, List<int?>> chordFingerings = {
+  'A': [null, 0, 2, 2, 2, 0],
   'Am': [null, 0, 2, 2, 1, 0],
   'Bb': [null, 1, 3, 3, 3, 1],
   'Bdim': [null, 2, 3, 4, 3, null],

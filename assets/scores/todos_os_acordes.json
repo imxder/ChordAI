@@ -1,11 +1,14 @@
 {
   "title": "Todos os Acordes",
   "steps": [
+    {"chord": "A", "beats": 4},
     {"chord": "Am", "beats": 4},
     {"chord": "Bb", "beats": 4},
     {"chord": "Bdim", "beats": 4},
     {"chord": "C", "beats": 4},
+    {"chord": "D", "beats": 4},
     {"chord": "Dm", "beats": 4},
+    {"chord": "E", "beats": 4},
     {"chord": "Em", "beats": 4},
     {"chord": "F", "beats": 4},
     {"chord": "G", "beats": 4}

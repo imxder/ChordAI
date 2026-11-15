@@ -55,7 +55,7 @@ String difficultyLabel(Set<String> chords) {
     if (idx > maxIndex) maxIndex = idx;
   }
   if (maxIndex < 0) return 'Desconhecida';
-  if (maxIndex <= 1) return 'Fácil';
-  if (maxIndex <= 4) return 'Médio';
+  if (maxIndex <= chordsByDifficulty.indexOf('A')) return 'Fácil';
+  if (maxIndex <= chordsByDifficulty.indexOf('Dm')) return 'Médio';
   return 'Difícil';
 }

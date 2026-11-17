@@ -44,7 +44,7 @@ No iPhone 11, cada leitura leva cerca de 60 ms.
 
 ### Servidor (avançado)
 
-O app grava janelas de 1,5 s e envia para a API Flask do [ChordAI-backend](https://github.com/imxder/ChordAI-backend) (`POST /predict_chord`), que devolve o acorde e a confiança. Precisa de um computador na mesma rede Wi-Fi do celular rodando o backend. O endereço é configurado na mesma tela: o IP e a porta que aparecem no terminal do servidor, ou o nome do computador na rede. A porta padrão do backend é a 5000. No Mac eu uso a 5001, porque o AirPlay ocupa a 5000 (por exemplo, `meu-mac.local:5001`).
+O app grava janelas de 1,5 s e envia para a API Flask do [ChordAI-backend](https://github.com/imxder/ChordAI-backend) (`POST /predict_chord`), que devolve o acorde e a confiança. Precisa de um computador na mesma rede Wi-Fi do celular rodando o backend. O endereço é configurado na mesma tela: o IP e a porta que aparecem no terminal do servidor, ou o nome do computador na rede. A porta é a 5000 (ou 5001 no Mac, porque o AirPlay ocupa a 5000), por exemplo `192.168.0.10:5000` ou `meu-mac.local:5001`.
 
 **O modo servidor usa outro modelo.** A API Flask carrega o modelo antigo do backend (`trained_model/`, com a chroma calculada no servidor), que não é nem o v3 nem o v3_meu. Então, pro mesmo áudio, o resultado pode ser diferente do modo no aparelho. O que o teste de equivalência confere (veja abaixo) é se cada modelo no aparelho dá as mesmas probabilidades que o backend calculou pra ele.
 

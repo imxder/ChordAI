@@ -35,6 +35,10 @@
     "float32": "chord_model.tflite",
     "int8_dynamic": "chord_model_int8.tflite"
   },
+  "sha256": {
+    "float32": "3bbc78a96221ab833508538cfe136ca47e7803102c94a054f9b254166818f4e6",
+    "int8_dynamic": "620f8436527a3715a3bc9b8dc13f0625ccee8bb81c5bdbf9c78513e490652ab5"
+  },
   "feature_inside_model": {
     "type": "chroma_stft8192",
     "sample_rate": 22050,

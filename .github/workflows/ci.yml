@@ -1,0 +1,59 @@
+# Roda em todo push e em todo PR.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  testes:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      # Instala o Flutter na mesma versão que eu uso, lida do .fvmrc.
+      # O cache guarda o SDK entre uma execução e outra.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: .fvmrc
+          cache: true
+
+      - name: Dependências
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      # O integration_test de equivalência do modelo não roda aqui: ele precisa
+      # da biblioteca nativa do TFLite de um aparelho de verdade.
+      - name: Testes
+        run: flutter test
+
+      # Confere se os .tflite em assets/models/ são os das releases do backend.
+      - name: Hash dos modelos
+        run: python3 tool/conferir_modelos.py
+
+  apk:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      # O Gradle do Android precisa do Java. O Android SDK já vem no runner.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: .fvmrc
+          cache: true
+
+      # Gera o APK release do mesmo jeito que a release gera, mas assinado com a
+      # chave de debug (aqui não tem a keystore). Serve pra pegar erro do R8 ou
+      # do Gradle antes de eu criar uma tag.
+      - name: APK release
+        run: flutter build apk --release
+
+      - name: Tamanho do APK
+        run: ls -lh build/app/outputs/flutter-apk/app-release.apk

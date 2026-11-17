@@ -109,8 +109,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 error ??
                 'Só funciona com um computador na mesma rede Wi-Fi do celular '
                     'rodando o ChordAI-backend. Use o IP e a porta que aparecem no '
-                    'terminal do servidor, ou o nome do computador na rede '
-                    '(ex.: meu-mac.local:5001), que não muda quando o IP muda.',
+                    'terminal do servidor, 5000 (ou 5001 no Mac), ou o nome do '
+                    'computador na rede (ex.: meu-mac.local:5001), que não muda '
+                    'quando o IP muda.',
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -124,7 +125,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onSubmitted: (_) => _save(),
                   style: const TextStyle(fontFamily: fontChord, fontSize: 16),
                   decoration: InputDecoration(
-                    hintText: '192.168.0.10:5001',
+                    hintText: '192.168.0.10:5000',
                     contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     suffixIcon: error == null
                         ? null

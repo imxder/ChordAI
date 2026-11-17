@@ -67,8 +67,9 @@ class OnDeviceChordService implements ChordRecognizer {
       if (_loadedModel != model) await _unloadModel();
       _modelInfo ??= await ChordModelInfo.load(model.assetDir);
       _interpreter ??= await Interpreter.fromAsset(_modelInfo!.modelAsset);
-      _isolateInterpreter ??=
-          await IsolateInterpreter.create(address: _interpreter!.address);
+      _isolateInterpreter ??= await IsolateInterpreter.create(
+        address: _interpreter!.address,
+      );
       _loadedModel = model;
     } catch (e) {
       onError(e);

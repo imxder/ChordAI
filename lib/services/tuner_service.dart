@@ -49,7 +49,10 @@ class TunerService {
     _subscription = stream.listen((chunk) {
       final samples = _decoder.decode(chunk);
       for (final window in _buffer!.addSamples(samples)) {
-        final estimate = detectPitchWithConfidence(window, sampleRate.toDouble());
+        final estimate = detectPitchWithConfidence(
+          window,
+          sampleRate.toDouble(),
+        );
         onPitch(_smoother!.update(estimate));
       }
     });

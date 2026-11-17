@@ -54,13 +54,14 @@ class _TuningGaugePainter extends CustomPainter {
       final angle = angleDeg * pi / 180;
       final isMajor = i % 3 == 0;
       final tickLength = isMajor ? 12.0 : 7.0;
-      final start = center +
+      final start =
+          center +
           Offset(
             (outerRadius - tickLength) * sin(angle),
             -(outerRadius - tickLength) * cos(angle),
           );
-      final end = center +
-          Offset(outerRadius * sin(angle), -outerRadius * cos(angle));
+      final end =
+          center + Offset(outerRadius * sin(angle), -outerRadius * cos(angle));
       final paint = Paint()
         ..color = isMajor ? majorTickColor : tickColor
         ..strokeWidth = isMajor ? 2.5 : 1.5
@@ -70,7 +71,8 @@ class _TuningGaugePainter extends CustomPainter {
 
     final needleAngle = (cents / 50) * (pi / 2);
     final needleLength = outerRadius - 22;
-    final needleEnd = center +
+    final needleEnd =
+        center +
         Offset(
           needleLength * sin(needleAngle),
           -needleLength * cos(needleAngle),

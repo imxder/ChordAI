@@ -112,8 +112,9 @@ class AppState extends ChangeNotifier {
 
   Future<void> _refreshModelChords() async {
     final model = _chordListModel;
-    _modelChords = _chordsByModel[model] ??=
-        (await ChordModelInfo.load(model.assetDir)).chords;
+    _modelChords = _chordsByModel[model] ??= (await ChordModelInfo.load(
+      model.assetDir,
+    )).chords;
   }
 
   String? get nextChordToLearn {

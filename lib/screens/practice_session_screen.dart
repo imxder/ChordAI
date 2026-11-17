@@ -30,8 +30,9 @@ class PracticeSessionScreen extends StatefulWidget {
 }
 
 class _PracticeSessionScreenState extends State<PracticeSessionScreen> {
-  late final ChordRecognizer _service =
-      createChordRecognizer(appState.chordRecognitionMode);
+  late final ChordRecognizer _service = createChordRecognizer(
+    appState.chordRecognitionMode,
+  );
   final _scoreLibrary = ScoreLibrary();
 
   List<Score> _scores = [];

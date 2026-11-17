@@ -114,7 +114,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     'quando o IP muda.',
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
                 child: TextField(
                   controller: _controller,
                   keyboardType: TextInputType.url,

@@ -1,7 +1,18 @@
 import 'dart:math';
 
 const List<String> _noteOrder = [
-  'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
+  'C',
+  'C#',
+  'D',
+  'D#',
+  'E',
+  'F',
+  'F#',
+  'G',
+  'G#',
+  'A',
+  'A#',
+  'B',
 ];
 
 double noteFrequency(String note) {
@@ -12,7 +23,8 @@ double noteFrequency(String note) {
   final name = match.group(1)!;
   final octave = int.parse(match.group(2)!);
   final semitoneIndex = _noteOrder.indexOf(name);
-  final semitonesFromA4 = (octave - 4) * 12 + (semitoneIndex - _noteOrder.indexOf('A'));
+  final semitonesFromA4 =
+      (octave - 4) * 12 + (semitoneIndex - _noteOrder.indexOf('A'));
   return 440 * pow(2, semitonesFromA4 / 12).toDouble();
 }
 
@@ -34,11 +46,19 @@ const List<String> _stringLabels = [
 ];
 
 List<TunerNote> buildTuning(List<String> notes) {
-  return List.generate(notes.length, (i) => TunerNote(notes[i], _stringLabels[i]));
+  return List.generate(
+    notes.length,
+    (i) => TunerNote(notes[i], _stringLabels[i]),
+  );
 }
 
 List<TunerNote> guitarStrings = buildTuning(const [
-  'E2', 'A2', 'D3', 'G3', 'B3', 'E4',
+  'E2',
+  'A2',
+  'D3',
+  'G3',
+  'B3',
+  'E4',
 ]);
 
 class TunerReading {

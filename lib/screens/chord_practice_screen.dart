@@ -30,8 +30,9 @@ class ChordPracticeScreen extends StatefulWidget {
 }
 
 class _ChordPracticeScreenState extends State<ChordPracticeScreen> {
-  late final ChordRecognizer _service =
-      createChordRecognizer(appState.chordRecognitionMode);
+  late final ChordRecognizer _service = createChordRecognizer(
+    appState.chordRecognitionMode,
+  );
 
   bool _listening = false;
   int _hits = 0;

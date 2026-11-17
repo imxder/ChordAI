@@ -13,7 +13,10 @@ void main() {
           lines: [
             LyricLine(chordLine: 'C', lyricText: 'Primeira linha'),
             LyricLine(lyricText: 'Linha sem acorde'),
-            LyricLine(chordLine: 'G      Am', lyricText: 'Duas trocas na mesma linha'),
+            LyricLine(
+              chordLine: 'G      Am',
+              lyricText: 'Duas trocas na mesma linha',
+            ),
           ],
         ),
       ],
@@ -38,7 +41,10 @@ void main() {
     const sheet = LyricSheet(
       title: 'Teste',
       sections: [
-        LyricSection(title: 'Intro', lines: [LyricLine(lyricText: 'só letra')]),
+        LyricSection(
+          title: 'Intro',
+          lines: [LyricLine(lyricText: 'só letra')],
+        ),
       ],
     );
 

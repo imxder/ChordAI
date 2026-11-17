@@ -21,7 +21,8 @@ class _Wav {
 _Wav _readWav(File file) {
   final bytes = file.readAsBytesSync();
   final data = ByteData.sublistView(bytes);
-  String tag(int offset) => String.fromCharCodes(bytes.sublist(offset, offset + 4));
+  String tag(int offset) =>
+      String.fromCharCodes(bytes.sublist(offset, offset + 4));
   if (tag(0) != 'RIFF' || tag(8) != 'WAVE') {
     throw FormatException('${file.path} não é WAV');
   }
@@ -61,7 +62,8 @@ double _noteFrequency(String name) {
   final match = RegExp(r'^([A-G])(#?)(-?\d)$').firstMatch(name);
   if (match == null) throw FormatException('nome de nota inválido: $name');
   const semitones = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11};
-  final midi = (int.parse(match[3]!) + 1) * 12 +
+  final midi =
+      (int.parse(match[3]!) + 1) * 12 +
       semitones[match[1]]! +
       (match[2]!.isEmpty ? 0 : 1);
   return 440.0 * pow(2, (midi - 69) / 12);
@@ -79,20 +81,27 @@ void main() {
   final dir = Directory(_fixturesDir);
   final files = dir.existsSync()
       ? (dir
-          .listSync()
-          .whereType<File>()
-          .where((f) => f.path.toLowerCase().endsWith('.wav'))
-          .toList()
-        ..sort((a, b) => a.path.compareTo(b.path)))
+            .listSync()
+            .whereType<File>()
+            .where((f) => f.path.toLowerCase().endsWith('.wav'))
+            .toList()
+          ..sort((a, b) => a.path.compareTo(b.path)))
       : <File>[];
 
   if (files.isEmpty) {
-    test('gravações reais de cordas', () {}, skip: 'nenhum .wav em $_fixturesDir');
+    test(
+      'gravações reais de cordas',
+      () {},
+      skip: 'nenhum .wav em $_fixturesDir',
+    );
     return;
   }
 
   for (final file in files) {
-    final note = file.uri.pathSegments.last.replaceAll(RegExp(r'\.wav$', caseSensitive: false), '');
+    final note = file.uri.pathSegments.last.replaceAll(
+      RegExp(r'\.wav$', caseSensitive: false),
+      '',
+    );
     test('gravação $note', () {
       final expected = _noteFrequency(note);
       final wav = _readWav(file);
@@ -102,12 +111,18 @@ void main() {
       var voiced = 0;
       var hits = 0;
       final misses = <String>[];
-      for (var start = 0; start + _windowSize <= wav.samples.length; start += _windowSize) {
+      for (
+        var start = 0;
+        start + _windowSize <= wav.samples.length;
+        start += _windowSize
+      ) {
         final window = wav.samples.sublist(start, start + _windowSize);
         if (_rms(window) < silenceRmsThreshold) continue;
         voiced++;
         final detected = detectPitch(window, wav.sampleRate);
-        final cents = detected == null ? null : 1200 * log(detected / expected) / ln2;
+        final cents = detected == null
+            ? null
+            : 1200 * log(detected / expected) / ln2;
         if (cents != null && cents.abs() <= 50) {
           hits++;
         } else {

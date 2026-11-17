@@ -21,16 +21,19 @@ void main() {
       expect(result?.status, 'too_short');
     });
 
-    test('só emite depois de pelo menos 2 das últimas 3 inferências concordarem', () {
-      var now = DateTime(2000);
-      final stabilizer = ChordStabilizer(clock: () => now);
+    test(
+      'só emite depois de pelo menos 2 das últimas 3 inferências concordarem',
+      () {
+        var now = DateTime(2000);
+        final stabilizer = ChordStabilizer(clock: () => now);
 
-      expect(stabilizer.process(_okAm), isNull);
-      expect(stabilizer.process(_okAm), isNull);
-      final third = stabilizer.process(_okAm);
-      expect(third?.status, 'ok');
-      expect(third?.chord, 'Am');
-    });
+        expect(stabilizer.process(_okAm), isNull);
+        expect(stabilizer.process(_okAm), isNull);
+        final third = stabilizer.process(_okAm);
+        expect(third?.status, 'ok');
+        expect(third?.chord, 'Am');
+      },
+    );
 
     test('um outlier isolado entre dois iguais não impede a emissão', () {
       var now = DateTime(2000);

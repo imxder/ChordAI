@@ -24,7 +24,9 @@ LyricSheet parseCifra(String raw, {required String title}) {
 
   void flushSection() {
     if (hasOpenedSection) {
-      sections.add(LyricSection(title: currentTitle, lines: currentLines ?? []));
+      sections.add(
+        LyricSection(title: currentTitle, lines: currentLines ?? []),
+      );
     }
     currentLines = null;
     currentTitle = null;
@@ -103,7 +105,8 @@ LyricSheet parseCifra(String raw, {required String title}) {
       final hasNext = i + 1 < rawLines.length;
       final next = hasNext ? rawLines[i + 1] : '';
       final nextTrimmed = next.trim();
-      final nextIsLyric = nextTrimmed.isNotEmpty &&
+      final nextIsLyric =
+          nextTrimmed.isNotEmpty &&
           !_isChordLine(next) &&
           !nextTrimmed.startsWith('[') &&
           !nextTrimmed.toLowerCase().startsWith('tom:');

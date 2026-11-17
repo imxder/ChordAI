@@ -27,7 +27,9 @@ Future<void> loadAppFonts() async {
     ('PhosphorFill', 'Phosphor-Fill.ttf'),
     ('PhosphorDuotone', 'Phosphor-Duotone.ttf'),
   ]) {
-    await (FontLoader(family)..addFont(rootBundle.load('assets/fonts/$file'))).load();
+    await (FontLoader(
+      family,
+    )..addFont(rootBundle.load('assets/fonts/$file'))).load();
   }
   // No iPhone o texto sai em SF Pro; no teste a Roboto faz esse papel.
   for (final family in [
@@ -47,7 +49,8 @@ Future<void> loadAppFonts() async {
     }
     await loader.load();
   }
-  final pubCache = Platform.environment['PUB_CACHE'] ??
+  final pubCache =
+      Platform.environment['PUB_CACHE'] ??
       (Platform.isWindows
           ? '${Platform.environment['LOCALAPPDATA']}/Pub/Cache'
           : '${Platform.environment['HOME']}/.pub-cache');
@@ -65,12 +68,14 @@ Future<void> loadAppFonts() async {
   }
   final flutterRoot = Platform.environment['FLUTTER_ROOT'];
   if (flutterRoot != null) {
-    final icons = File('$flutterRoot/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+    final icons = File(
+      '$flutterRoot/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    );
     if (icons.existsSync()) {
       final bytes = icons.readAsBytesSync();
-      await (FontLoader('MaterialIcons')
-            ..addFont(Future.value(ByteData.sublistView(bytes))))
-          .load();
+      await (FontLoader(
+        'MaterialIcons',
+      )..addFont(Future.value(ByteData.sublistView(bytes)))).load();
     }
   }
   _fontsLoaded = true;
@@ -80,12 +85,15 @@ void mockPlatform() {
   SharedPreferences.setMockInitialValues({});
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(
-    const MethodChannel('com.llfbandit.record/messages'),
-    (call) async => call.method == 'hasPermission' ? false : null,
-  );
+        const MethodChannel('com.llfbandit.record/messages'),
+        (call) async => call.method == 'hasPermission' ? false : null,
+      );
 }
 
-Widget appUnderTest(Widget home, {AppAppearance appearance = AppAppearance.paper}) {
+Widget appUnderTest(
+  Widget home, {
+  AppAppearance appearance = AppAppearance.paper,
+}) {
   return MaterialApp(
     locale: const Locale('pt', 'BR'),
     supportedLocales: const [Locale('pt', 'BR')],

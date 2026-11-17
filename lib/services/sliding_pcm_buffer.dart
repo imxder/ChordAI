@@ -14,9 +14,9 @@ class SlidingPcmBuffer {
   int _nextWindowEnd;
 
   SlidingPcmBuffer({required this.windowSize, required this.hopSize})
-      : assert(hopSize > 0 && hopSize <= windowSize),
-        _ring = Float32List(windowSize),
-        _nextWindowEnd = windowSize;
+    : assert(hopSize > 0 && hopSize <= windowSize),
+      _ring = Float32List(windowSize),
+      _nextWindowEnd = windowSize;
 
   /// Adiciona amostras novas e devolve, na ordem em que ficaram completas,
   /// todas as janelas de [windowSize] amostras que esse chunk fechou — pode

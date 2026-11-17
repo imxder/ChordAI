@@ -15,16 +15,17 @@ void main() {
       sections: [
         LyricSection(
           title: 'Intro',
-          lines: [
-            LyricLine(chordLine: 'C', lyricText: 'Linha de teste'),
-          ],
+          lines: [LyricLine(chordLine: 'C', lyricText: 'Linha de teste')],
         ),
       ],
     );
 
     await tester.pumpWidget(
       appUnderTest(
-        const LyricSheetScreen(sheet: sheet, serverUrl: 'http://localhost:5001'),
+        const LyricSheetScreen(
+          sheet: sheet,
+          serverUrl: 'http://localhost:5001',
+        ),
       ),
     );
 

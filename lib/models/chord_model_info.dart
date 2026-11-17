@@ -33,16 +33,17 @@ class ChordModelInfo {
     final infoJson = jsonDecode(
       await rootBundle.loadString('$assetDir/model_info.json'),
     ) as Map<String, dynamic>;
-    final labelsJson =
-        jsonDecode(await rootBundle.loadString('$assetDir/labels.json'))
-            as List<dynamic>;
+    final labelsJson = jsonDecode(
+      await rootBundle.loadString('$assetDir/labels.json'),
+    ) as List<dynamic>;
 
     return ChordModelInfo(
       assetDir: assetDir,
       sampleRate: infoJson['sample_rate'] as int,
       inputSamples: infoJson['input_samples'] as int,
       confidenceThreshold: (infoJson['confidence_threshold'] as num).toDouble(),
-      silenceRmsThreshold: (infoJson['silence_rms_threshold'] as num).toDouble(),
+      silenceRmsThreshold: (infoJson['silence_rms_threshold'] as num)
+          .toDouble(),
       labels: labelsJson.cast<String>(),
       noneLabel: infoJson['none_label'] as String,
     );

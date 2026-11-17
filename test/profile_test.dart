@@ -96,9 +96,15 @@ void main() {
   });
 
   test('acorde só conta como aprendido depois dos acertos seguidos', () {
-    expect(appState.registerChordHits('Em', AppState.chordMasteryHits - 1), isFalse);
+    expect(
+      appState.registerChordHits('Em', AppState.chordMasteryHits - 1),
+      isFalse,
+    );
     expect(appState.registerChordHits('Em', AppState.chordMasteryHits), isTrue);
-    expect(appState.registerChordHits('Em', AppState.chordMasteryHits + 1), isFalse);
+    expect(
+      appState.registerChordHits('Em', AppState.chordMasteryHits + 1),
+      isFalse,
+    );
     expect(appState.isChordLearned('Em'), isTrue);
     expect(appState.lastPracticeDateIso, isNotNull);
   });

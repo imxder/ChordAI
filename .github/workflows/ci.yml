@@ -21,6 +21,10 @@ jobs:
       - name: Dependências
         run: flutter pub get
 
+      # Para se algum arquivo .dart não estiver no padrão do dart format.
+      - name: Formatação
+        run: dart format --output=none --set-exit-if-changed .
+
       - name: Analyze
         run: flutter analyze
 

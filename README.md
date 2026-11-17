@@ -1,5 +1,7 @@
 # ChordAI
 
+[![CI](https://github.com/imxder/ChordAI/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/imxder/ChordAI/actions/workflows/ci.yml)
+
 Esse é o app do meu TCC de Engenharia de Software. A ideia é ajudar quem tá começando no violão: você toca o acorde e o app escuta e diz se saiu certo. Também tem afinador, cifras pra tocar junto com a música e um guia pra iniciante.
 
 Fiz em Flutter, então roda no iPhone, no Android e no Windows. O modelo que reconhece os acordes eu treinei no [ChordAI-backend](https://github.com/imxder/ChordAI-backend).

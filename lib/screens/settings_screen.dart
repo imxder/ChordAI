@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../models/chord_recognition_mode.dart';
 import '../models/on_device_model.dart';
+import '../services/server_address.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/page_parts.dart';
@@ -34,13 +35,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _save() async {
-    var value = _controller.text.trim();
-    if (value.isEmpty) {
-      setState(() => _error = 'Informe o endereço do servidor');
+    final address = ServerAddress.parse(_controller.text);
+    if (!address.isValid) {
+      setState(() => _error = address.error);
       return;
     }
-    if (!value.startsWith('http')) value = 'http://$value';
-    await appState.setServerUrl(value);
+    await appState.setServerUrl(address.url!);
     if (!mounted) return;
     Navigator.of(context).pop();
   }
@@ -141,7 +141,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ],
           ),
+        if (usesServer)
+          const GroupedSection(
+            header: 'Antes de usar',
+            children: [
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: StatusLine(
+                  icon: Ph.warningCircleFill,
+                  text: serverModeWarning,
+                ),
+              ),
+            ],
+          ),
       ],
     );
   }
 }
+
+/// Aviso do modo servidor: o áudio sai do celular sem criptografia.
+const serverModeWarning =
+    'Nesse modo o som do microfone vai pro computador que você indicou, '
+    'sem criptografia: outra pessoa na mesma rede Wi-Fi poderia ver esse '
+    'áudio. Só use numa rede em que você confia, como a da sua casa.';

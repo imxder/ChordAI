@@ -1,6 +1,6 @@
 # Política de privacidade
 
-Última atualização: 17/11/2026
+Última atualização: 18/11/2026
 
 Eu sou o Alexandre Salgado e fiz o ChordAI como meu TCC de Engenharia de Software na Católica SC. Aqui eu explico, seguindo a LGPD (Lei 13.709/2018), quais dados o app usa, pra quê, onde eles ficam e o que você pode fazer com eles.
 
@@ -30,9 +30,9 @@ No modo "No aparelho", que é o padrão, o som é analisado na memória do celul
 
 O modo "Servidor" é uma opção avançada, desligada por padrão. Ele só funciona se você tiver um computador na mesma rede Wi-Fi rodando o ChordAI-backend, e o endereço desse computador é você quem digita nas configurações.
 
-Nesse modo, o app grava pedaços de um segundo e meio de áudio numa pasta temporária do celular, manda cada pedaço pra esse computador e apaga o arquivo assim que a resposta chega. O servidor analisa o áudio na memória, devolve só o nome do acorde e não guarda o áudio.
+Nesse modo, o app grava pedaços de um segundo e meio de áudio numa pasta temporária do celular, manda cada pedaço pra esse computador e apaga o arquivo assim que a resposta chega. Se o app fechar no meio de um envio, o arquivo que sobrou é apagado da próxima vez que o modo servidor começa a ouvir. O servidor analisa o áudio na memória, devolve só o nome do acorde e não guarda o áudio.
 
-O áudio vai direto do seu celular pro computador que você configurou, sem passar por mim. A conexão é HTTP, sem criptografia, então outra pessoa na mesma rede Wi-Fi poderia ver esse tráfego. Use esse modo só numa rede em que você confia.
+O áudio vai direto do seu celular pro computador que você configurou, sem passar por mim. A conexão é HTTP, sem criptografia, então outra pessoa na mesma rede Wi-Fi poderia ver esse tráfego. Por isso o app só aceita HTTP pra endereço da rede local (como 192.168.0.10 ou meu-mac.local); pra um endereço fora dela, só HTTPS. Use esse modo só numa rede em que você confia.
 
 ## Compartilhamento com terceiros
 

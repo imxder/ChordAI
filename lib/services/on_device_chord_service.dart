@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:record/record.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
@@ -12,6 +13,7 @@ import 'chord_recognizer.dart';
 import 'chord_stabilizer.dart';
 import 'latest_samples_buffer.dart';
 import 'pcm16_decoder.dart';
+import 'tocar_junto_log.dart';
 
 /// Reconhece acordes no aparelho com o modelo TFLite exportado pelo backend
 /// (ver ChordAI-backend/export/README.md): a extração de feature (chroma da
@@ -97,7 +99,9 @@ class OnDeviceChordService implements ChordRecognizer {
     );
 
     _subscription = stream.listen((chunk) {
-      _buffer?.addSamples(_decoder.decode(chunk));
+      final amostras = _decoder.decode(chunk);
+      _buffer?.addSamples(amostras);
+      TocarJuntoLog.blocoDeAudio(amostras);
     });
 
     _inferenceTimer = Timer.periodic(
@@ -139,7 +143,15 @@ class OnDeviceChordService implements ChordRecognizer {
     void Function(ChordPrediction) onPrediction,
   ) {
     final stabilized = _stabilizer?.process(raw);
-    if (stabilized != null) onPrediction(stabilized);
+    if (raw.status == 'silence' || raw.status == 'too_short') {
+      TocarJuntoLog.evento('crua ${raw.status}');
+    }
+    if (stabilized != null) {
+      TocarJuntoLog.evento(
+        'filtro ${stabilized.status} ${stabilized.chord ?? '-'} ${stabilized.confidence.toStringAsFixed(2)}',
+      );
+      onPrediction(stabilized);
+    }
   }
 
   Future<ChordPrediction> _infer(Float32List window) async {
@@ -159,6 +171,13 @@ class OnDeviceChordService implements ChordRecognizer {
     }
     final label = info.labels[bestIndex];
     final confidence = probabilities[bestIndex];
+    if (kDebugMode) {
+      final ordem = List.generate(probabilities.length, (i) => i)
+        ..sort((a, b) => probabilities[b].compareTo(probabilities[a]));
+      TocarJuntoLog.evento(
+        'crua $label ${confidence.toStringAsFixed(2)} 2o=${info.labels[ordem[1]]} ${probabilities[ordem[1]].toStringAsFixed(2)} inferencia_us=$lastInferenceMicros',
+      );
+    }
 
     if (label == info.noneLabel || confidence < info.confidenceThreshold) {
       return ChordPrediction(status: 'unknown', confidence: confidence);

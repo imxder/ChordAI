@@ -7,6 +7,7 @@ import 'package:record/record.dart';
 
 import '../models/chord_prediction.dart';
 import 'chord_recognizer.dart';
+import 'tocar_junto_log.dart';
 
 class ChordRecognitionService implements ChordRecognizer {
   static const Duration windowDuration = Duration(milliseconds: 1500);
@@ -134,7 +135,11 @@ class ChordRecognitionService implements ChordRecognizer {
     void Function(Object error) onError,
   ) async {
     try {
+      final enviada = DateTime.now();
       final prediction = await _predict(filePath, serverUrl);
+      TocarJuntoLog.evento(
+        'servidor ${prediction.status} ${prediction.chord ?? '-'} rede_ms=${DateTime.now().difference(enviada).inMilliseconds}',
+      );
       // Descarta respostas que chegaram fora de ordem (uma janela mais
       // recente já pode ter sido reportada enquanto esta estava em trânsito).
       if (_running && seq > _lastAppliedSeq) {

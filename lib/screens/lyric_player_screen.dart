@@ -9,6 +9,7 @@ import '../models/lyric_sheet.dart';
 import '../models/score.dart';
 import '../services/chord_recognizer.dart';
 import '../services/chord_recognizer_factory.dart';
+import '../services/tocar_junto_log.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/cifra_line.dart';
@@ -110,6 +111,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     }
 
     appState.startSession(_practiceMap.score);
+    TocarJuntoLog.evento(
+      'comecou ${widget.sheet.title} bpm=$_bpm passos=${_practiceMap.score.steps.length} modo=${appState.chordRecognitionMode.name} modelo=${appState.onDeviceModel.name}',
+    );
     _beatsInStep = 0;
     _strumBeatIndex = 0;
     _lastRecognizedChord = null;
@@ -128,6 +132,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   }
 
   Future<void> _stop() async {
+    TocarJuntoLog.evento('parou no passo ${appState.currentStepIndex}');
     await _service.stop();
     appState.stopSession();
   }
@@ -141,6 +146,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
 
   void _onBeat() {
     if (appState.sessionStatus != SessionStatus.running) return;
+    TocarJuntoLog.evento('batida');
 
     final pattern = widget.sheet.strummingPattern;
     if (pattern != null && pattern.isNotEmpty) {
@@ -166,6 +172,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   }
 
   void _onPrediction(ChordPrediction prediction) {
+    TocarJuntoLog.evento(
+      'tela_recebeu ${prediction.status} ${prediction.chord ?? '-'}',
+    );
     appState.updatePrediction(prediction);
     if (appState.sessionStatus != SessionStatus.running) return;
 
@@ -192,6 +201,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
 
   void _advanceStep({required bool matched}) {
     final step = appState.currentStep;
+    TocarJuntoLog.evento(
+      'avancou de ${appState.currentStepIndex} ${step?.chord ?? '-'} para ${appState.currentStepIndex + 1}',
+    );
     if (step != null) {
       _chordAttempts[step.chord] = (_chordAttempts[step.chord] ?? 0) + 1;
       if (matched) {

@@ -104,7 +104,8 @@ void main() {
       await openSettings(tester);
       await tester.enterText(find.byType(TextField), '192.168.0.10:5000/');
       await tester.tap(find.text('Salvar'));
-      await settle(tester);
+      // espera a animação de voltar terminar (aqui não tem a aba Músicas girando)
+      await tester.pumpAndSettle();
 
       expect(appState.serverUrl, 'http://192.168.0.10:5000');
       expect(find.byType(SettingsScreen), findsNothing);

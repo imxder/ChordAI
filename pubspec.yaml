@@ -28,6 +28,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - PRIVACY.md
     - assets/scores/
     - assets/lyrics/
     - assets/models/v3/

@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:chordai/models/lyric_sheet.dart';
 import 'package:chordai/models/score.dart';
+import 'package:chordai/screens/lyric_player_screen.dart';
 import 'package:chordai/services/cifra_parser.dart';
 import 'package:chordai/services/play_along_engine.dart';
+import 'package:chordai/state/app_state.dart';
 import 'package:chordai/widgets/cifra_line.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -89,5 +91,38 @@ void main() {
     expect(am.style!.decoration, isNull);
     expect(g.style!.decoration, TextDecoration.lineThrough);
     expect(am.style!.color, isNot(g.style!.color));
+  });
+
+  testWidgets('BPM muda de 1 em 1 e segurando o botão vai mudando sozinho', (
+    tester,
+  ) async {
+    mockPlatform();
+    await tester.runAsync(() => appState.loadProgress());
+    setScreen(tester, const Size(500, 1200));
+    final cifra = parseCifra('Tempo: 100\nAm  G\nletra\n', title: 'x');
+    await tester.pumpWidget(
+      appUnderTest(LyricPlayerScreen(sheet: cifra, serverUrl: 'http://x')),
+    );
+    await tester.tap(find.bySemanticsLabel('Diminuir andamento'));
+    await tester.pump();
+    expect(find.text('99'), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel('Aumentar andamento'));
+    await tester.tap(find.bySemanticsLabel('Aumentar andamento'));
+    await tester.pump();
+    expect(find.text('101'), findsOneWidget);
+    final gesto = await tester.startGesture(
+      tester.getCenter(find.bySemanticsLabel('Diminuir andamento')),
+    );
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 900));
+    await gesto.up();
+    await tester.pump();
+    final bpm = int.parse(
+      tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => t.data ?? '')
+          .firstWhere((t) => RegExp(r'^\d{2,3}$').hasMatch(t)),
+    );
+    expect(bpm, lessThan(95));
   });
 }

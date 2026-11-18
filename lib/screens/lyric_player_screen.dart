@@ -62,6 +62,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   String? _finishedMessage;
   PlayAlongEngine? _engine;
   Timer? _ticker;
+  Timer? _bpmRepeat;
   final Set<int> _reported = {};
   String? _hearing;
 
@@ -224,6 +225,20 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     _engine?.setBpm(_bpm);
   }
 
+  void _startBpmRepeat(int delta) {
+    _bpmRepeat?.cancel();
+    _changeBpm(delta);
+    _bpmRepeat = Timer.periodic(
+      const Duration(milliseconds: 90),
+      (_) => _changeBpm(delta),
+    );
+  }
+
+  void _stopBpmRepeat() {
+    _bpmRepeat?.cancel();
+    _bpmRepeat = null;
+  }
+
   void _showSummaryDialog() {
     final engine = _engine!;
     final perChord = engine.perChord;
@@ -343,6 +358,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   @override
   void dispose() {
     _ticker?.cancel();
+    _bpmRepeat?.cancel();
     appState.removeListener(_onAppStateChanged);
     // Sem isso a sessão continuava "rodando" depois de sair da tela.
     if (appState.sessionStatus != SessionStatus.idle) {
@@ -608,10 +624,18 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    IconButton(
-                      tooltip: 'Diminuir andamento',
-                      icon: const Icon(Ph.minus),
-                      onPressed: _bpm <= _minBpm ? null : () => _changeBpm(-5),
+                    GestureDetector(
+                      onLongPressStart: (_) => _startBpmRepeat(-1),
+                      onLongPressEnd: (_) => _stopBpmRepeat(),
+                      child: IconButton(
+                        icon: Icon(
+                          Ph.minus,
+                          semanticLabel: 'Diminuir andamento',
+                        ),
+                        onPressed: _bpm <= _minBpm
+                            ? null
+                            : () => _changeBpm(-1),
+                      ),
                     ),
                     Semantics(
                       label: '$_bpm batidas por minuto',
@@ -633,10 +657,16 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                         ),
                       ),
                     ),
-                    IconButton(
-                      tooltip: 'Aumentar andamento',
-                      icon: const Icon(Ph.plus),
-                      onPressed: _bpm >= _maxBpm ? null : () => _changeBpm(5),
+                    GestureDetector(
+                      onLongPressStart: (_) => _startBpmRepeat(1),
+                      onLongPressEnd: (_) => _stopBpmRepeat(),
+                      child: IconButton(
+                        icon: Icon(
+                          Ph.plus,
+                          semanticLabel: 'Aumentar andamento',
+                        ),
+                        onPressed: _bpm >= _maxBpm ? null : () => _changeBpm(1),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(

@@ -24,12 +24,14 @@ class LyricPlayerScreen extends StatefulWidget {
   final String serverUrl;
   final InputDevice? inputDevice;
   final LyricSheet sheet;
+  final ChordRecognizer? recognizer;
 
   const LyricPlayerScreen({
     super.key,
     required this.serverUrl,
     required this.sheet,
     this.inputDevice,
+    this.recognizer,
   });
 
   @override
@@ -40,9 +42,8 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   static const _minBpm = 40;
   static const _maxBpm = 160;
 
-  late final ChordRecognizer _service = createChordRecognizer(
-    appState.chordRecognitionMode,
-  );
+  late final ChordRecognizer _service =
+      widget.recognizer ?? createChordRecognizer(appState.chordRecognitionMode);
   final _scrollController = ScrollController();
   final Map<int, GlobalKey> _lineKeys = {};
 

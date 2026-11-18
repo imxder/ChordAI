@@ -17,7 +17,7 @@ jobs:
 
       # Instala o Flutter na mesma versão que eu uso, lida do .fvmrc.
       # O cache guarda o SDK entre uma execução e outra.
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version-file: .fvmrc
           cache: true
@@ -46,7 +46,7 @@ jobs:
       # sonar-project.properties. Roda depois do flutter pub get, que a análise
       # de Dart precisa.
       - name: SonarCloud
-        uses: SonarSource/sonarqube-scan-action@v8
+        uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -61,7 +61,7 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version-file: .fvmrc
           cache: true

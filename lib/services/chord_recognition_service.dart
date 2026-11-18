@@ -57,7 +57,7 @@ class ChordRecognitionService implements ChordRecognizer {
 
   static final windowFilePattern = RegExp(r'^chordai_janela_\d+\.wav$');
 
-  /// Até a versão 0.1.0 o nome era chord_<hora>.wav.
+  /// Até a versão 0.1.0 o nome era `chord_<hora>.wav`.
   static final _oldWindowFilePattern = RegExp(r'^chord_\d+\.wav$');
 
   /// Apaga as janelas que sobraram em [dir] e devolve quantas apagou.

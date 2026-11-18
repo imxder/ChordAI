@@ -58,11 +58,12 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
 
   late final LyricPracticeMap _practiceMap;
   late int _bpm;
-  int _strumBeatIndex = 0;
+  int _lastEighth = -1;
   String? _finishedMessage;
   PlayAlongEngine? _engine;
   Timer? _ticker;
   final Set<int> _reported = {};
+  String? _hearing;
 
   @override
   void initState() {
@@ -118,9 +119,10 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     TocarJuntoLog.evento(
       'comecou ${widget.sheet.title} bpm=$_bpm passos=${_practiceMap.score.steps.length} modo=${appState.chordRecognitionMode.name} modelo=${appState.onDeviceModel.name} esperar=${appState.playAlongWaitsForMe}',
     );
-    _strumBeatIndex = 0;
+    _lastEighth = -1;
     _finishedMessage = null;
     _reported.clear();
+    _hearing = null;
     _stopwatch
       ..reset()
       ..start();
@@ -167,10 +169,6 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     if (beat) {
       TocarJuntoLog.evento('batida');
       SystemSound.play(SystemSoundType.click);
-      final pattern = widget.sheet.strummingPattern;
-      if (!engine.countingIn && pattern != null && pattern.isNotEmpty) {
-        _strumBeatIndex = (_strumBeatIndex + 1) % pattern.length;
-      }
     }
     for (var i = 0; i < engine.results.length; i++) {
       final result = engine.results[i];
@@ -186,9 +184,11 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
       TocarJuntoLog.evento('cifra no passo ${engine.index}');
       appState.setSessionStep(engine.index);
     }
+    final eighth = engine.eighthInBar;
     if (engine.finished) {
       _finish();
-    } else if (beat) {
+    } else if (beat || eighth != _lastEighth) {
+      _lastEighth = eighth;
       setState(() {});
     }
   }
@@ -199,7 +199,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     );
     appState.updatePrediction(prediction);
     if (appState.sessionStatus != SessionStatus.running) return;
-    _engine?.reading(prediction.status == 'ok' ? prediction.chord : null);
+    final heard = prediction.status == 'ok' ? prediction.chord : null;
+    _engine?.reading(heard);
+    if (heard != _hearing && mounted) setState(() => _hearing = heard);
   }
 
   void _finish() {
@@ -305,6 +307,27 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     );
   }
 
+  Map<int, Map<int, bool>> _tokenResults() {
+    final engine = _engine;
+    final out = <int, Map<int, bool>>{};
+    if (engine == null) return out;
+    for (var i = 0; i < engine.results.length; i++) {
+      final result = engine.results[i];
+      if (result != StepResult.hit && result != StepResult.miss) continue;
+      final loc = _practiceMap.locations[i];
+      (out[_lineKeyId(loc.sectionIndex, loc.lineIndex)] ??=
+              {})[loc.tokenIndex] =
+          result == StepResult.hit;
+    }
+    return out;
+  }
+
+  int get _nextBeats {
+    final steps = _practiceMap.score.steps;
+    final nextIndex = appState.currentStepIndex + 1;
+    return nextIndex < steps.length ? steps[nextIndex].beats : 0;
+  }
+
   String? get _nextChord {
     final steps = _practiceMap.score.steps;
     final nextIndex = appState.currentStepIndex + 1;
@@ -343,7 +366,10 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
             activeIndex < _practiceMap.locations.length)
         ? _practiceMap.locations[activeIndex]
         : null;
-    final pattern = widget.sheet.strummingPattern;
+    final strokes = parseStrumPattern(
+      widget.sheet.strummingPattern ?? const [],
+    );
+    final results = _tokenResults();
     final meta = sheetMeta(widget.sheet);
     final padding = pagePadding(context);
 
@@ -369,7 +395,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
       ),
       body: Column(
         children: [
-          if (pattern != null && pattern.isNotEmpty)
+          if (strokes.isNotEmpty)
             Container(
               width: double.infinity,
               padding: EdgeInsets.fromLTRB(padding.left, 4, padding.right, 10),
@@ -383,18 +409,15 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                   Expanded(
                     child: Semantics(
                       label:
-                          'Batida: ${pattern.map((s) => s.toUpperCase() == 'D' ? 'baixo' : 'cima').join(', ')}',
+                          'Batida: ${strokes.map((s) => switch (s.kind) {
+                            StrumKind.down => 'baixo',
+                            StrumKind.up => 'cima',
+                            StrumKind.muted => 'abafado',
+                          }).join(', ')}',
                       excludeSemantics: true,
-                      child: Wrap(
-                        spacing: 4,
-                        runSpacing: 4,
-                        children: [
-                          for (var i = 0; i < pattern.length; i++)
-                            _StrumSymbol(
-                              down: pattern[i].toUpperCase() == 'D',
-                              active: running && i == _strumBeatIndex,
-                            ),
-                        ],
+                      child: _StrumBar(
+                        strokes: strokes,
+                        activeEighth: running ? _engine?.eighthInBar : null,
                       ),
                     ),
                   ),
@@ -437,6 +460,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                                 activeLoc.lineIndex == li)
                             ? activeLoc.tokenIndex
                             : null,
+                        tokenResults: results[_lineKeyId(si, li)] ?? const {},
                       ),
                     ),
                 ],
@@ -462,7 +486,6 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     final engine = _engine;
     final judged = running ? engine?.lastJudged : null;
     final StatusLine status;
-    bool? lastHit;
     if (!running) {
       status = StatusLine(
         text:
@@ -477,20 +500,18 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
       final judgedChord = steps[judged].chord;
       switch (engine.results[judged]) {
         case StepResult.hit:
-          lastHit = true;
           status = StatusLine(
             icon: Ph.check,
-            text: 'Certo: $judgedChord',
+            text: 'Acertou o $judgedChord',
             color: tokens.correct,
           );
         case StepResult.miss:
-          lastHit = false;
           final wrong = engine.wrongChordHeard(judged);
           status = StatusLine(
             icon: Ph.x,
             text: wrong == null
                 ? 'Não ouvi o $judgedChord'
-                : 'Você tocou $wrong',
+                : 'No lugar do $judgedChord, ouvi $wrong',
             color: colorScheme.error,
           );
         case StepResult.notCounted:
@@ -520,11 +541,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                         width: 64,
                         child: GuitarNeck(
                           chord: chord,
-                          matchState: lastHit == null
-                              ? ChordMatchState.neutral
-                              : (lastHit
-                                    ? ChordMatchState.correct
-                                    : ChordMatchState.incorrect),
+                          matchState: ChordMatchState.neutral,
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -551,10 +568,30 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                                 ),
                             ],
                           ),
+                          if (running && engine != null && !engine.countingIn)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: _BeatDots(
+                                beats: engine.currentStep?.beats ?? 0,
+                                lit: engine.beatInStep.floor() + 1,
+                              ),
+                            ),
                           if (running && _nextChord != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                'Depois: $_nextChord ($_nextBeats tempos)',
+                                style: textTheme.bodySmall,
+                              ),
+                            ),
+                          if (running && engine != null && !engine.countingIn)
                             Text(
-                              'Depois: $_nextChord',
-                              style: textTheme.bodySmall,
+                              _hearing == null
+                                  ? 'Ouvindo: nada ainda'
+                                  : 'Ouvindo: $_hearing',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                             ),
                         ],
                       ),
@@ -631,29 +668,115 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   }
 }
 
-class _StrumSymbol extends StatelessWidget {
-  final bool down;
+class _StrumBar extends StatelessWidget {
+  final List<StrumStroke> strokes;
+  final int? activeEighth;
+
+  const _StrumBar({required this.strokes, required this.activeEighth});
+
+  static const _labels = ['1', '&', '2', '&', '3', '&', '4', '&'];
+
+  @override
+  Widget build(BuildContext context) {
+    final timed = strokes.every((s) => s.eighth != null);
+    if (!timed) {
+      return Wrap(
+        spacing: 4,
+        children: [
+          for (final s in strokes) _StrumCell(stroke: s, active: false),
+        ],
+      );
+    }
+    final bySlot = {for (final s in strokes) s.eighth!: s};
+    return Row(
+      children: [
+        for (var slot = 0; slot < 8; slot++)
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _StrumCell(stroke: bySlot[slot], active: slot == activeEighth),
+                const SizedBox(height: 2),
+                Text(
+                  _labels[slot],
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: slot == activeEighth
+                        ? FontWeight.w700
+                        : FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _StrumCell extends StatelessWidget {
+  final StrumStroke? stroke;
   final bool active;
 
-  const _StrumSymbol({required this.down, required this.active});
+  const _StrumCell({required this.stroke, required this.active});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final kind = stroke?.kind;
     return Container(
       width: 28,
       height: 28,
       decoration: BoxDecoration(
-        color: active ? colorScheme.primary : null,
+        color: active
+            ? (kind == null ? colorScheme.outlineVariant : colorScheme.primary)
+            : null,
         border: Border.all(
           color: active ? colorScheme.primary : context.tokens.rule,
         ),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Icon(
-        down ? Ph.arrowDown : Ph.arrowUp,
-        size: 16,
-        color: active ? colorScheme.onPrimary : colorScheme.onSurface,
+      child: kind == null
+          ? null
+          : Icon(
+              switch (kind) {
+                StrumKind.down => Ph.arrowDown,
+                StrumKind.up => Ph.arrowUp,
+                StrumKind.muted => Ph.x,
+              },
+              size: 16,
+              color: active ? colorScheme.onPrimary : colorScheme.onSurface,
+            ),
+    );
+  }
+}
+
+class _BeatDots extends StatelessWidget {
+  final int beats;
+  final int lit;
+
+  const _BeatDots({required this.beats, required this.lit});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label: 'Tempo ${lit.clamp(1, beats)} de $beats',
+      excludeSemantics: true,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < beats; i++)
+            Container(
+              width: 12,
+              height: 12,
+              margin: const EdgeInsets.only(right: 6),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: i < lit ? colorScheme.primary : null,
+                border: Border.all(color: colorScheme.primary),
+              ),
+            ),
+        ],
       ),
     );
   }

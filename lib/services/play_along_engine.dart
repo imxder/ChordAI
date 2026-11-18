@@ -68,6 +68,21 @@ class PlayAlongEngine {
 
   bool get countingIn => !finished && position < 0;
 
+  double get beatInStep {
+    final pos = position;
+    if (pos < 0) return 0;
+    final start = mode == PlayAlongMode.waitForMe
+        ? _waitStartBeat
+        : _startBeat[index];
+    return max(0, pos - start);
+  }
+
+  int get eighthInBar {
+    final pos = position;
+    final inBar = ((pos % 4) + 4) % 4;
+    return (inBar * 2).floor();
+  }
+
   int get countInLeft => max(1, (-position).ceil());
 
   ChordStep? get currentStep => index < steps.length ? steps[index] : null;

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:chordai/models/chord_prediction.dart';
+import 'package:chordai/models/score.dart';
 import 'package:chordai/services/chord_recognizer.dart';
 import 'package:chordai/services/chord_stabilizer.dart';
 import 'package:record/record.dart';
@@ -81,6 +82,7 @@ class ReconhecedorFalso implements ChordRecognizer {
   final List<Tocado> tocados;
   final DateTime Function() agora;
   final bool servidor;
+  final bool estabilizar;
   final int redeMs;
 
   final List<Leitura> cruas = [];
@@ -94,6 +96,7 @@ class ReconhecedorFalso implements ChordRecognizer {
     required this.tocados,
     required this.agora,
     this.servidor = false,
+    this.estabilizar = false,
     this.redeMs = 300,
   });
 
@@ -141,7 +144,7 @@ class ReconhecedorFalso implements ChordRecognizer {
           ? const ChordPrediction(status: 'too_short')
           : modelo.ler(tocados, ms);
       cruas.add(Leitura(ms, leitura));
-      final saida = estabilizador.process(leitura);
+      final saida = estabilizar ? estabilizador.process(leitura) : leitura;
       if (saida != null) {
         repassadas.add(Leitura(ms, saida));
         onPrediction(saida);
@@ -157,6 +160,30 @@ class ReconhecedorFalso implements ChordRecognizer {
 
   @override
   Future<void> dispose() => stop();
+}
+
+List<Tocado> tocarPelaCifra(
+  List<ChordStep> passos, {
+  required int bpm,
+  int contagem = 4,
+  int atrasoMs = 0,
+  Map<int, String?> trocas = const {},
+}) {
+  final tempoMs = 60000 / bpm;
+  var inicio = contagem * tempoMs + atrasoMs;
+  final out = <Tocado>[];
+  for (var i = 0; i < passos.length; i++) {
+    final fim = inicio + passos[i].beats * tempoMs;
+    out.add(
+      Tocado(
+        trocas.containsKey(i) ? trocas[i] : passos[i].chord,
+        inicio.round(),
+        fim.round(),
+      ),
+    );
+    inicio = fim;
+  }
+  return out;
 }
 
 List<Tocado> tocarNoTempo(

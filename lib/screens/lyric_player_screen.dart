@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:record/record.dart';
 
 import '../models/chord_names.dart';
 import '../models/chord_prediction.dart';
+import '../models/chord_recognition_mode.dart';
 import '../models/lyric_practice.dart';
 import '../models/lyric_sheet.dart';
 import '../services/chord_recognizer.dart';
@@ -14,7 +18,6 @@ import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/cifra_line.dart';
 import '../widgets/guitar_neck.dart';
-import '../widgets/metronome.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/practice_options_sheet.dart';
 import '../widgets/recognition_mode_badge.dart';
@@ -26,6 +29,7 @@ class LyricPlayerScreen extends StatefulWidget {
   final InputDevice? inputDevice;
   final LyricSheet sheet;
   final ChordRecognizer? recognizer;
+  final Duration Function()? elapsed;
 
   const LyricPlayerScreen({
     super.key,
@@ -33,6 +37,7 @@ class LyricPlayerScreen extends StatefulWidget {
     required this.sheet,
     this.inputDevice,
     this.recognizer,
+    this.elapsed,
   });
 
   @override
@@ -42,20 +47,22 @@ class LyricPlayerScreen extends StatefulWidget {
 class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   static const _minBpm = 40;
   static const _maxBpm = 160;
+  static const _tick = Duration(milliseconds: 30);
 
   late final ChordRecognizer _service =
-      widget.recognizer ?? createChordRecognizer(appState.chordRecognitionMode);
+      widget.recognizer ??
+      createChordRecognizer(appState.chordRecognitionMode, rawReadings: true);
   final _scrollController = ScrollController();
   final Map<int, GlobalKey> _lineKeys = {};
+  final _stopwatch = Stopwatch();
 
   late final LyricPracticeMap _practiceMap;
   late int _bpm;
   int _strumBeatIndex = 0;
   String? _finishedMessage;
   PlayAlongEngine? _engine;
-
-  String? get _lastRecognizedChord => _engine?.lastHeard;
-  bool? get _lastMatched => _engine?.lastMatched;
+  Timer? _ticker;
+  final Set<int> _reported = {};
 
   @override
   void initState() {
@@ -109,14 +116,28 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
 
     appState.startSession(_practiceMap.score);
     TocarJuntoLog.evento(
-      'comecou ${widget.sheet.title} bpm=$_bpm passos=${_practiceMap.score.steps.length} modo=${appState.chordRecognitionMode.name} modelo=${appState.onDeviceModel.name}',
+      'comecou ${widget.sheet.title} bpm=$_bpm passos=${_practiceMap.score.steps.length} modo=${appState.chordRecognitionMode.name} modelo=${appState.onDeviceModel.name} esperar=${appState.playAlongWaitsForMe}',
     );
     _strumBeatIndex = 0;
     _finishedMessage = null;
-    _engine = PlayAlongEngine(
+    _reported.clear();
+    _stopwatch
+      ..reset()
+      ..start();
+    final engine = PlayAlongEngine(
       steps: _practiceMap.score.steps,
-      onAdvance: _advanceStep,
-    );
+      knownChords: appState.chordsInModel.toSet(),
+      bpm: _bpm,
+      elapsed: widget.elapsed ?? () => _stopwatch.elapsed,
+      mode: appState.playAlongWaitsForMe
+          ? PlayAlongMode.waitForMe
+          : PlayAlongMode.followTempo,
+      readingsToHitLongChord:
+          appState.chordRecognitionMode == ChordRecognitionMode.server ? 1 : 2,
+    )..start();
+    _engine = engine;
+    _ticker?.cancel();
+    _ticker = Timer.periodic(_tick, (_) => _onTick());
 
     _service.start(
       serverUrl: widget.serverUrl,
@@ -129,20 +150,47 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
 
   Future<void> _stop() async {
     TocarJuntoLog.evento('parou no passo ${appState.currentStepIndex}');
+    _ticker?.cancel();
+    _ticker = null;
+    _stopwatch.stop();
     await _service.stop();
     appState.stopSession();
+    if (mounted) setState(() {});
   }
 
-  void _onBeat() {
-    if (appState.sessionStatus != SessionStatus.running) return;
-    TocarJuntoLog.evento('batida');
-
-    final pattern = widget.sheet.strummingPattern;
-    if (pattern != null && pattern.isNotEmpty) {
-      setState(() => _strumBeatIndex = (_strumBeatIndex + 1) % pattern.length);
+  void _onTick() {
+    final engine = _engine;
+    if (engine == null || appState.sessionStatus != SessionStatus.running) {
+      return;
     }
-
-    _engine?.beat();
+    final beat = engine.update();
+    if (beat) {
+      TocarJuntoLog.evento('batida');
+      SystemSound.play(SystemSoundType.click);
+      final pattern = widget.sheet.strummingPattern;
+      if (!engine.countingIn && pattern != null && pattern.isNotEmpty) {
+        _strumBeatIndex = (_strumBeatIndex + 1) % pattern.length;
+      }
+    }
+    for (var i = 0; i < engine.results.length; i++) {
+      final result = engine.results[i];
+      if (_reported.contains(i)) continue;
+      if (result == StepResult.hit || result == StepResult.miss) {
+        _reported.add(i);
+        appState.recordChordResult(hit: result == StepResult.hit);
+      } else if (result == StepResult.notCounted && i < engine.index) {
+        _reported.add(i);
+      }
+    }
+    if (engine.index != appState.currentStepIndex) {
+      TocarJuntoLog.evento('cifra no passo ${engine.index}');
+      appState.setSessionStep(engine.index);
+    }
+    if (engine.finished) {
+      _finish();
+    } else if (beat) {
+      setState(() {});
+    }
   }
 
   void _onPrediction(ChordPrediction prediction) {
@@ -151,39 +199,43 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     );
     appState.updatePrediction(prediction);
     if (appState.sessionStatus != SessionStatus.running) return;
-    setState(() => _engine?.reading(prediction.chord));
+    _engine?.reading(prediction.status == 'ok' ? prediction.chord : null);
   }
 
-  void _advanceStep({required bool matched}) {
-    final step = appState.currentStep;
-    TocarJuntoLog.evento(
-      'avancou de ${appState.currentStepIndex} ${step?.chord ?? '-'} para ${appState.currentStepIndex + 1}',
+  void _finish() {
+    _ticker?.cancel();
+    _ticker = null;
+    _stopwatch.stop();
+    _service.stop();
+    final engine = _engine!;
+    final total = engine.hits + engine.misses;
+    appState.stopSession();
+    setState(
+      () => _finishedMessage =
+          'Música concluída: ${engine.hits} de $total acordes certos',
     );
-    appState.advanceStep(matched: matched);
+    _showSummaryDialog();
+  }
 
-    if (appState.sessionStatus == SessionStatus.idle) {
-      _service.stop();
-      final total = appState.sessionHits + appState.sessionMisses;
-      setState(
-        () => _finishedMessage =
-            'Música concluída: ${appState.sessionHits} de $total acordes certos',
-      );
-      _showSummaryDialog();
-    } else {
-      setState(() {});
-    }
+  void _changeBpm(int delta) {
+    setState(() => _bpm = (_bpm + delta).clamp(_minBpm, _maxBpm));
+    _engine?.setBpm(_bpm);
   }
 
   void _showSummaryDialog() {
     final engine = _engine!;
-    final attempts = engine.attempts;
-    final correct = engine.correct;
-    double rate(String chord) => (correct[chord] ?? 0) / attempts[chord]!;
-    final chords = attempts.keys.toList()
+    final perChord = engine.perChord;
+    double rate(String chord) {
+      final (hit, total) = perChord[chord]!;
+      return total == 0 ? 0 : hit / total;
+    }
+
+    final chords = perChord.keys.toList()
       ..sort((a, b) => rate(a).compareTo(rate(b)));
     final weakest = chords.isNotEmpty && rate(chords.first) < 1
         ? chords.first
         : null;
+    final notCounted = engine.notCountedChords;
 
     showDialog(
       context: context,
@@ -218,15 +270,25 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            '${correct[chord] ?? 0}/${attempts[chord]}',
+                            '${perChord[chord]!.$1} de ${perChord[chord]!.$2}',
                             style: const TextStyle(fontFamily: fontChord),
                           ),
                         ],
                       ),
                     ),
+                  if (notCounted.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Não contaram: ${notCounted.join(', ')} (o modelo não conhece)',
+                    ),
+                  ],
                   if (weakest != null) ...[
                     const SizedBox(height: 12),
                     Text('Vale treinar mais o $weakest.'),
+                  ],
+                  if (_finishedMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Text(_finishedMessage!),
                   ],
                 ],
               ),
@@ -257,6 +319,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
 
   @override
   void dispose() {
+    _ticker?.cancel();
     appState.removeListener(_onAppStateChanged);
     // Sem isso a sessão continuava "rodando" depois de sair da tela.
     if (appState.sessionStatus != SessionStatus.idle) {
@@ -306,9 +369,6 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
       ),
       body: Column(
         children: [
-          Offstage(
-            child: Metronome(running: running, bpm: _bpm, onBeat: _onBeat),
-          ),
           if (pattern != null && pattern.isNotEmpty)
             Container(
               width: double.infinity,
@@ -399,25 +459,46 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
         (steps.isNotEmpty ? steps.first.chord : null);
     final padding = pagePadding(context);
 
+    final engine = _engine;
+    final judged = running ? engine?.lastJudged : null;
     final StatusLine status;
+    bool? lastHit;
     if (!running) {
       status = StatusLine(
         text:
             _finishedMessage ??
             (steps.isEmpty ? 'Esta cifra não tem acordes' : 'Primeiro acorde'),
       );
-    } else if (_lastMatched == null) {
+    } else if (engine != null && engine.countingIn) {
+      status = StatusLine(text: 'Prepare-se… ${engine.countInLeft}');
+    } else if (engine == null || judged == null) {
       status = const StatusLine(text: 'Toque este acorde');
-    } else if (_lastMatched!) {
-      status = StatusLine(icon: Ph.check, text: 'Certo', color: tokens.correct);
     } else {
-      status = StatusLine(
-        icon: Ph.x,
-        text: _lastRecognizedChord == null
-            ? 'Não ouvi nada'
-            : 'Você tocou $_lastRecognizedChord',
-        color: colorScheme.error,
-      );
+      final judgedChord = steps[judged].chord;
+      switch (engine.results[judged]) {
+        case StepResult.hit:
+          lastHit = true;
+          status = StatusLine(
+            icon: Ph.check,
+            text: 'Certo: $judgedChord',
+            color: tokens.correct,
+          );
+        case StepResult.miss:
+          lastHit = false;
+          final wrong = engine.wrongChordHeard(judged);
+          status = StatusLine(
+            icon: Ph.x,
+            text: wrong == null
+                ? 'Não ouvi o $judgedChord'
+                : 'Você tocou $wrong',
+            color: colorScheme.error,
+          );
+        case StepResult.notCounted:
+        case StepResult.pending:
+          status = StatusLine(
+            text: '$judgedChord não conta: o modelo não conhece',
+          );
+      }
     }
 
     return Padding(
@@ -439,9 +520,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                         width: 64,
                         child: GuitarNeck(
                           chord: chord,
-                          matchState: _lastMatched == null || !running
+                          matchState: lastHit == null
                               ? ChordMatchState.neutral
-                              : (_lastMatched!
+                              : (lastHit
                                     ? ChordMatchState.correct
                                     : ChordMatchState.incorrect),
                         ),
@@ -493,11 +574,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                     IconButton(
                       tooltip: 'Diminuir andamento',
                       icon: const Icon(Ph.minus),
-                      onPressed: running || _bpm <= _minBpm
-                          ? null
-                          : () => setState(
-                              () => _bpm = (_bpm - 5).clamp(_minBpm, _maxBpm),
-                            ),
+                      onPressed: _bpm <= _minBpm ? null : () => _changeBpm(-5),
                     ),
                     Semantics(
                       label: '$_bpm batidas por minuto',
@@ -522,11 +599,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                     IconButton(
                       tooltip: 'Aumentar andamento',
                       icon: const Icon(Ph.plus),
-                      onPressed: running || _bpm >= _maxBpm
-                          ? null
-                          : () => setState(
-                              () => _bpm = (_bpm + 5).clamp(_minBpm, _maxBpm),
-                            ),
+                      onPressed: _bpm >= _maxBpm ? null : () => _changeBpm(5),
                     ),
                     const SizedBox(width: 12),
                     Expanded(

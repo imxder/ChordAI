@@ -1,5 +1,7 @@
+import 'package:chordai/models/chord_recognition_mode.dart';
 import 'package:chordai/models/lyric_practice.dart';
 import 'package:chordai/models/lyric_sheet.dart';
+import 'package:chordai/models/score.dart';
 import 'package:chordai/screens/lyric_player_screen.dart';
 import 'package:chordai/state/app_state.dart';
 import 'package:chordai/widgets/page_parts.dart';
@@ -13,7 +15,7 @@ const acordesDoV3 = {'Am', 'Bb', 'Bdim', 'C', 'Dm', 'Em', 'F', 'G'};
 
 class Resultado {
   final String nome;
-  final List<String> passos;
+  final List<ChordStep> passos;
   final List<Tocado> tocados;
   final Map<int, int> avancouEm;
   final int? terminouEm;
@@ -22,7 +24,6 @@ class Resultado {
   final String? mensagemFinal;
   final Map<String, String> resumo;
   final ReconhecedorFalso reconhecedor;
-  final int duracaoMs;
 
   Resultado({
     required this.nome,
@@ -35,24 +36,18 @@ class Resultado {
     required this.mensagemFinal,
     required this.resumo,
     required this.reconhecedor,
-    required this.duracaoMs,
   });
 
-  int get ultimoPassoAlcancado => terminouEm != null
-      ? passos.length
-      : (avancouEm.keys.fold(0, (a, b) => b > a ? b : a));
-
-  List<int> get atrasos => [
-    for (final e in avancouEm.entries)
-      if (e.key < tocados.length) e.value - tocados[e.key].inicioMs,
-  ];
-
-  int get trocasPerdidas => passos.length - 1 - avancouEm.length;
+  bool get terminou => terminouEm != null;
 
   int indiceDoApp(int ms) {
     var idx = 0;
+    var quando = -1;
     avancouEm.forEach((passo, em) {
-      if (em <= ms && passo > idx) idx = passo;
+      if (em <= ms && em >= quando) {
+        idx = passo;
+        quando = em;
+      }
     });
     return idx;
   }
@@ -64,99 +59,63 @@ class Resultado {
     return 0;
   }
 
-  int get maiorAtrasoEmAcordes {
-    final fimDaMusica = tocados.last.fimMs;
+  int get piorDistancia {
     var pior = 0;
-    for (var ms = 0; ms <= fimDaMusica; ms += 100) {
+    for (var ms = tocados.first.inicioMs; ms <= tocados.last.fimMs; ms += 100) {
       if (terminouEm != null && ms >= terminouEm!) break;
-      final d = indiceDoTocador(ms) - indiceDoApp(ms);
+      final d = (indiceDoTocador(ms) - indiceDoApp(ms)).abs();
       if (d > pior) pior = d;
     }
     return pior;
   }
 
-  int get maiorTempoParadoMs {
-    final marcos = [
-      0,
-      ...avancouEm.values.toList()..sort(),
-      terminouEm ?? duracaoMs,
-    ];
-    var pior = 0;
-    for (var i = 1; i < marcos.length; i++) {
-      final d = marcos[i] - marcos[i - 1];
-      if (d > pior) pior = d;
-    }
-    return pior;
-  }
-
-  List<int> atrasoAte(List<Leitura> leituras) {
-    final saida = <int>[];
-    for (var i = 1; i < passos.length && i < tocados.length; i++) {
-      final acorde = tocados[i].acorde;
-      if (acorde == null || acorde == tocados[i - 1].acorde) continue;
-      for (final l in leituras) {
-        if (l.ms >= tocados[i].inicioMs && l.previsao.chord == acorde) {
-          if (l.ms < tocados[i].fimMs + 3000) {
-            saida.add(l.ms - tocados[i].inicioMs);
-          }
-          break;
-        }
-      }
-    }
-    return saida;
-  }
-
-  String relatorio() {
-    final a = atrasos..sort();
-    String ms(int v) => '${(v / 1000).toStringAsFixed(1)}s';
-    final mediana = a.isEmpty ? null : a[a.length ~/ 2];
-    return [
-      '[$nome]',
-      '  passos: ${passos.length}, chegou até o passo $ultimoPassoAlcancado${terminouEm == null ? ' (NÃO terminou)' : ' (terminou em ${ms(terminouEm!)})'}',
-      '  trocas que o app percebeu: ${avancouEm.length} de ${passos.length - 1}',
-      if (a.isNotEmpty)
-        '  atraso entre eu trocar e a cifra andar: mediana ${ms(mediana!)}, mín ${ms(a.first)}, máx ${ms(a.last)}',
-      if (atrasoAte(reconhecedor.cruas).isNotEmpty)
-        '  só a janela (eu troco -> 1ª leitura crua com o acorde novo): mediana ${ms((atrasoAte(reconhecedor.cruas)..sort())[atrasoAte(reconhecedor.cruas).length ~/ 2])}',
-      if (atrasoAte(reconhecedor.repassadas).isNotEmpty)
-        '  janela + filtro (eu troco -> 1ª leitura repassada pra tela): mediana ${ms((atrasoAte(reconhecedor.repassadas)..sort())[atrasoAte(reconhecedor.repassadas).length ~/ 2])}',
-      '  pior distância (eu à frente da cifra): $maiorAtrasoEmAcordes acordes; maior tempo sem andar: ${ms(maiorTempoParadoMs)}',
-      '  placar do app: $acertos certos, $erros errados; mensagem: ${mensagemFinal ?? '-'}',
-      if (resumo.isNotEmpty)
-        '  resumo: ${resumo.entries.map((e) => '${e.key} ${e.value}').join(', ')}',
-      '  leituras cruas: ${reconhecedor.cruas.length}, repassadas pra tela: ${reconhecedor.repassadas.where((l) => l.previsao.chord != null).length} com acorde',
-    ].join('\n');
-  }
+  String relatorio() => [
+    '[$nome]',
+    '  ${passos.length} acordes, ${terminou ? 'terminou em ${(terminouEm! / 1000).toStringAsFixed(1)}s' : 'NÃO terminou'}',
+    '  pior distância entre o que eu toco e a cifra: $piorDistancia acorde(s)',
+    '  placar: $acertos certos, $erros errados; ${mensagemFinal ?? '-'}',
+    if (resumo.isNotEmpty)
+      '  resumo: ${resumo.entries.map((e) => '${e.key} ${e.value}').join(', ')}',
+  ].join('\n');
 }
 
-LyricSheet cifraDeTeste(String linha, {int tempo = 100}) => LyricSheet(
-  title: 'Teste',
-  tempo: tempo,
-  sections: [
-    LyricSection(
-      lines: [LyricLine(chordLine: linha, lyricText: 'letra')],
-    ),
-  ],
-);
+LyricSheet cifraDeTeste(String linha, {int tempo = 100, int? tempos}) =>
+    LyricSheet(
+      title: 'Teste',
+      tempo: tempo,
+      beatsPerChord: tempos,
+      sections: [
+        LyricSection(
+          lines: [LyricLine(chordLine: linha, lyricText: 'letra')],
+        ),
+      ],
+    );
 
-Future<Resultado> simularTelaDeHoje(
+Future<Resultado> simularTela(
   WidgetTester tester, {
   required String nome,
   required LyricSheet cifra,
-  required List<Tocado> Function(List<String> passos) tocar,
+  required List<Tocado> Function(List<ChordStep> passos, int bpm) tocar,
   required ModeloFalso modelo,
   bool servidor = false,
-  int sobraMs = 6000,
+  bool esperarPorMim = false,
+  int sobraMs = 12000,
 }) async {
   mockPlatform();
   await tester.runAsync(() => appState.loadProgress());
+  await tester.runAsync(() => appState.setPlayAlongWaitsForMe(esperarPorMim));
+  await tester.runAsync(
+    () => appState.setChordRecognitionMode(
+      servidor ? ChordRecognitionMode.server : ChordRecognitionMode.onDevice,
+    ),
+  );
   setScreen(tester, const Size(500, 1200));
 
-  final passos = buildLyricPracticeMap(cifra).score.steps
-      .map((s) => s.chord)
-      .toList();
-  final tocados = tocar(passos);
+  final passos = buildLyricPracticeMap(cifra).score.steps;
+  final bpm = cifra.tempo ?? 80;
+  final tocados = tocar(passos, bpm);
   DateTime agora() => tester.binding.clock.now();
+  final t0 = agora();
   final reconhecedor = ReconhecedorFalso(
     modelo: modelo,
     tocados: tocados,
@@ -170,14 +129,13 @@ Future<Resultado> simularTelaDeHoje(
         sheet: cifra,
         serverUrl: 'http://teste',
         recognizer: reconhecedor,
+        elapsed: () => agora().difference(t0),
       ),
     ),
   );
-  await tester.pump();
 
-  final avancouEm = <int, int>{};
+  final avancouEm = <int, int>{0: 0};
   int? terminouEm;
-  late DateTime t0;
   var ultimoIndice = 0;
   void ouvir() {
     final ms = agora().difference(t0).inMilliseconds;
@@ -193,7 +151,6 @@ Future<Resultado> simularTelaDeHoje(
     }
   }
 
-  t0 = agora();
   await tester.tap(find.text('Começar'));
   appState.addListener(ouvir);
   final duracaoMs = tocados.last.fimMs + sobraMs;
@@ -219,7 +176,7 @@ Future<Resultado> simularTelaDeHoje(
           find.descendant(of: dialogo, matching: find.byType(Text)),
         )
         .map((t) => t.data ?? '')
-        .where((t) => RegExp(r'^\d+/\d+$').hasMatch(t))
+        .where((t) => RegExp(r'^\d+ de \d+$').hasMatch(t))
         .toList();
     for (var i = 0; i < nomes.length && i < fracoes.length; i++) {
       resumo[nomes[i]] = fracoes[i];
@@ -236,10 +193,9 @@ Future<Resultado> simularTelaDeHoje(
     erros: appState.sessionMisses,
     mensagemFinal: mensagem.evaluate().isEmpty
         ? null
-        : (tester.widget<Text>(mensagem.first).data),
+        : tester.widget<Text>(mensagem.first).data,
     resumo: resumo,
     reconhecedor: reconhecedor,
-    duracaoMs: duracaoMs,
   );
 
   if (appState.sessionStatus != SessionStatus.idle) {

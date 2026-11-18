@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:chordai/models/privacy_policy.dart';
+import 'package:chordai/screens/onboarding_screen.dart';
 import 'package:chordai/screens/privacy_screen.dart';
 import 'package:chordai/screens/profile_screen.dart';
 import 'package:chordai/state/app_state.dart';
@@ -80,4 +81,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(PrivacyScreen), findsOneWidget);
   });
+
+  testWidgets(
+    'o onboarding avisa do microfone antes de pedir e abre a política',
+    (tester) async {
+      mockPlatform();
+      await appState.loadProgress();
+      setScreen(tester, const Size(400, 900));
+      await tester.pumpWidget(appUnderTest(const OnboardingScreen()));
+      await tester.pump();
+      expect(find.textContaining('não é gravado nem enviado'), findsOneWidget);
+      await tester.tap(find.text('Política de privacidade'));
+      await tester.pumpAndSettle();
+      expect(find.byType(PrivacyScreen), findsOneWidget);
+    },
+  );
 }

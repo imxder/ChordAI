@@ -62,7 +62,7 @@ A LGPD (art. 18) garante que você pode confirmar se existe tratamento dos seus 
 
 ## Contato
 
-E-mail: imxderr@gmail.com
+E-mail: alexandresalg4ado@gmail.com
 
 ## Mudanças nesta política
 

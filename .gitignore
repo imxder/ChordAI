@@ -24,3 +24,5 @@ Thumbs.db
 
 # FVM Version Cache
 .fvm/
+# Cobertura dos testes (gerada no CI pro SonarCloud)
+coverage/

@@ -1,6 +1,6 @@
 # ChordAI
 
-[![CI](https://github.com/imxder/ChordAI/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/imxder/ChordAI/actions/workflows/ci.yml)
+[![CI](https://github.com/imxder/ChordAI/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/imxder/ChordAI/actions/workflows/ci.yml) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=imxder_ChordAI&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=imxder_ChordAI)
 
 Esse é o app do meu TCC de Engenharia de Software. A ideia é ajudar quem tá começando no violão: você toca o acorde e o app escuta e diz se saiu certo. Também tem afinador, cifras pra tocar junto com a música e um guia pra iniciante.
 

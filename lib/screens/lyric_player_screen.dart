@@ -6,9 +6,9 @@ import '../models/chord_names.dart';
 import '../models/chord_prediction.dart';
 import '../models/lyric_practice.dart';
 import '../models/lyric_sheet.dart';
-import '../models/score.dart';
 import '../services/chord_recognizer.dart';
 import '../services/chord_recognizer_factory.dart';
+import '../services/play_along_engine.dart';
 import '../services/tocar_junto_log.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -50,15 +50,12 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
 
   late final LyricPracticeMap _practiceMap;
   late int _bpm;
-  int _beatsInStep = 0;
   int _strumBeatIndex = 0;
   String? _finishedMessage;
+  PlayAlongEngine? _engine;
 
-  String? _lastRecognizedChord;
-  bool? _lastMatched;
-
-  final Map<String, int> _chordAttempts = {};
-  final Map<String, int> _chordCorrect = {};
+  String? get _lastRecognizedChord => _engine?.lastHeard;
+  bool? get _lastMatched => _engine?.lastMatched;
 
   @override
   void initState() {
@@ -114,13 +111,12 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     TocarJuntoLog.evento(
       'comecou ${widget.sheet.title} bpm=$_bpm passos=${_practiceMap.score.steps.length} modo=${appState.chordRecognitionMode.name} modelo=${appState.onDeviceModel.name}',
     );
-    _beatsInStep = 0;
     _strumBeatIndex = 0;
-    _lastRecognizedChord = null;
-    _lastMatched = null;
     _finishedMessage = null;
-    _chordAttempts.clear();
-    _chordCorrect.clear();
+    _engine = PlayAlongEngine(
+      steps: _practiceMap.score.steps,
+      onAdvance: _advanceStep,
+    );
 
     _service.start(
       serverUrl: widget.serverUrl,
@@ -137,13 +133,6 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     appState.stopSession();
   }
 
-  /// Verdadeiro quando o próximo acorde é diferente do atual, ou seja,
-  /// quando dá pra saber que o usuário avançou só de ouvir a troca.
-  bool _hasDetectableTransition(ChordStep step) {
-    final next = _nextChord;
-    return next != null && next.toLowerCase() != step.chord.toLowerCase();
-  }
-
   void _onBeat() {
     if (appState.sessionStatus != SessionStatus.running) return;
     TocarJuntoLog.evento('batida');
@@ -153,22 +142,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
       setState(() => _strumBeatIndex = (_strumBeatIndex + 1) % pattern.length);
     }
 
-    final step = appState.currentStep;
-    if (step == null) return;
-
-    // Quando dá pra ouvir a troca de acorde, é ela que decide quando avançar
-    // (ver _onPrediction) — o metrônomo só força a passagem quando não tem
-    // como detectar a troca (último acorde da música, ou dois acordes iguais
-    // em sequência).
-    if (_hasDetectableTransition(step)) {
-      _beatsInStep = 0;
-      return;
-    }
-
-    _beatsInStep++;
-    if (_beatsInStep < step.beats) return;
-    _beatsInStep = 0;
-    _advanceStep(matched: true);
+    _engine?.beat();
   }
 
   void _onPrediction(ChordPrediction prediction) {
@@ -177,26 +151,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     );
     appState.updatePrediction(prediction);
     if (appState.sessionStatus != SessionStatus.running) return;
-
-    final step = appState.currentStep;
-    final recognized = prediction.chord;
-    if (step == null || recognized == null) return;
-
-    final isCurrent = recognized.toLowerCase() == step.chord.toLowerCase();
-    final isNext =
-        _hasDetectableTransition(step) &&
-        recognized.toLowerCase() == _nextChord!.toLowerCase();
-
-    setState(() {
-      _lastRecognizedChord = recognized;
-      _lastMatched = isCurrent || isNext;
-    });
-
-    if (isNext) {
-      _advanceStep(matched: true);
-    } else if (!isCurrent) {
-      _chordAttempts[step.chord] = (_chordAttempts[step.chord] ?? 0) + 1;
-    }
+    setState(() => _engine?.reading(prediction.chord));
   }
 
   void _advanceStep({required bool matched}) {
@@ -204,13 +159,6 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     TocarJuntoLog.evento(
       'avancou de ${appState.currentStepIndex} ${step?.chord ?? '-'} para ${appState.currentStepIndex + 1}',
     );
-    if (step != null) {
-      _chordAttempts[step.chord] = (_chordAttempts[step.chord] ?? 0) + 1;
-      if (matched) {
-        _chordCorrect[step.chord] = (_chordCorrect[step.chord] ?? 0) + 1;
-      }
-    }
-
     appState.advanceStep(matched: matched);
 
     if (appState.sessionStatus == SessionStatus.idle) {
@@ -222,17 +170,16 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
       );
       _showSummaryDialog();
     } else {
-      setState(() {
-        _lastRecognizedChord = null;
-        _lastMatched = null;
-      });
+      setState(() {});
     }
   }
 
   void _showSummaryDialog() {
-    double rate(String chord) =>
-        (_chordCorrect[chord] ?? 0) / _chordAttempts[chord]!;
-    final chords = _chordAttempts.keys.toList()
+    final engine = _engine!;
+    final attempts = engine.attempts;
+    final correct = engine.correct;
+    double rate(String chord) => (correct[chord] ?? 0) / attempts[chord]!;
+    final chords = attempts.keys.toList()
       ..sort((a, b) => rate(a).compareTo(rate(b)));
     final weakest = chords.isNotEmpty && rate(chords.first) < 1
         ? chords.first
@@ -271,7 +218,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            '${_chordCorrect[chord] ?? 0}/${_chordAttempts[chord]}',
+                            '${correct[chord] ?? 0}/${attempts[chord]}',
                             style: const TextStyle(fontFamily: fontChord),
                           ),
                         ],
@@ -297,10 +244,10 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   }
 
   String? get _nextChord {
-    final score = _practiceMap.score;
+    final steps = _practiceMap.score.steps;
     final nextIndex = appState.currentStepIndex + 1;
-    if (nextIndex >= score.steps.length) return null;
-    return score.steps[nextIndex].chord;
+    if (nextIndex >= steps.length) return null;
+    return steps[nextIndex].chord;
   }
 
   void _showSnackBar(String message) {

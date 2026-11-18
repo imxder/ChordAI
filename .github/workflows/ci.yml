@@ -9,11 +9,15 @@ jobs:
   testes:
     runs-on: ubuntu-24.04
     steps:
+      # fetch-depth 0 traz o histórico todo, que o SonarCloud usa pra saber o que é
+      # código novo e quem mexeu em cada linha.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       # Instala o Flutter na mesma versão que eu uso, lida do .fvmrc.
       # O cache guarda o SDK entre uma execução e outra.
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version-file: .fvmrc
           cache: true
@@ -30,12 +34,21 @@ jobs:
 
       # O integration_test de equivalência do modelo não roda aqui: ele precisa
       # da biblioteca nativa do TFLite de um aparelho de verdade.
+      # O --coverage gera o coverage/lcov.info, que vai pro SonarCloud.
       - name: Testes
-        run: flutter test
+        run: flutter test --coverage
 
       # Confere se os .tflite em assets/models/ são os das releases do backend.
       - name: Hash dos modelos
         run: python3 tool/conferir_modelos.py
+
+      # Manda o código e a cobertura pro SonarCloud. A configuração está no
+      # sonar-project.properties. Roda depois do flutter pub get, que a análise
+      # de Dart precisa.
+      - name: SonarCloud
+        uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   apk:
     runs-on: ubuntu-24.04
@@ -48,7 +61,7 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version-file: .fvmrc
           cache: true

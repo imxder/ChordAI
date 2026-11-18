@@ -674,40 +674,25 @@ class _StrumBar extends StatelessWidget {
 
   const _StrumBar({required this.strokes, required this.activeEighth});
 
-  static const _labels = ['1', '&', '2', '&', '3', '&', '4', '&'];
+  int? get _activeStroke {
+    final eighth = activeEighth;
+    if (eighth == null || strokes.any((s) => s.eighth == null)) return null;
+    int? active;
+    for (var i = 0; i < strokes.length; i++) {
+      if (strokes[i].eighth! <= eighth) active = i;
+    }
+    return active ?? strokes.length - 1;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final timed = strokes.every((s) => s.eighth != null);
-    if (!timed) {
-      return Wrap(
-        spacing: 4,
-        children: [
-          for (final s in strokes) _StrumCell(stroke: s, active: false),
-        ],
-      );
-    }
-    final bySlot = {for (final s in strokes) s.eighth!: s};
-    return Row(
+    final active = _activeStroke;
+    return Wrap(
+      spacing: 4,
+      runSpacing: 4,
       children: [
-        for (var slot = 0; slot < 8; slot++)
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _StrumCell(stroke: bySlot[slot], active: slot == activeEighth),
-                const SizedBox(height: 2),
-                Text(
-                  _labels[slot],
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontWeight: slot == activeEighth
-                        ? FontWeight.w700
-                        : FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        for (var i = 0; i < strokes.length; i++)
+          _StrumCell(stroke: strokes[i], active: i == active),
       ],
     );
   }

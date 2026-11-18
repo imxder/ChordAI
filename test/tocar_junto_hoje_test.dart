@@ -133,15 +133,6 @@ void main() {
     ),
   };
 
-  test('hoje: linha com C/G não é lida como linha de acordes', () {
-    final cifra = parseCifra('C/G  Am7  G7\nletra da música\n', title: 'x');
-    final linha = cifra.sections.first.lines.first;
-    // ignore: avoid_print
-    print(
-      '[C/G na cifra] chordLine=${linha.chordLine} lyricText=${linha.lyricText}',
-    );
-  });
-
   const esperadoHoje = <String, (int, int, int, int, bool)>{
     'certinho (Riptide, 4 tempos por acorde)': (88, 87, 88, 0, true),
     'certinho (All Too Well, 4 tempos por acorde)': (249, 248, 249, 0, true),

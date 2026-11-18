@@ -1,7 +1,7 @@
 import '../models/lyric_sheet.dart';
 
 final RegExp _chordToken = RegExp(
-  r'^[A-G](#|b)?(m|dim|aug|sus2|sus4|maj7|m7|7|6|9|add9)?$',
+  r'^[A-G](#|b)?(maj|m|dim|aug|sus|add|M|°|ø|\+|\d|\(|\)|b|#)*(/[A-G](#|b)?)?$',
 );
 
 bool _isChordLine(String line) {

@@ -142,11 +142,34 @@ void main() {
     );
   });
 
+  const esperadoHoje = <String, (int, int, int, int, bool)>{
+    'certinho (Riptide, 4 tempos por acorde)': (88, 87, 88, 0, true),
+    'certinho (All Too Well, 4 tempos por acorde)': (249, 248, 249, 0, true),
+    '0,8 s atrasado': (88, 87, 88, 0, true),
+    'modelo errando 15% das leituras': (68, 68, 68, 0, false),
+    'modelo sem ouvir o G': (0, 0, 0, 0, false),
+    'acorde fora do modelo (D no v3)': (0, 0, 0, 0, false),
+    'acorde repetido em sequência': (4, 3, 4, 0, true),
+    'último acorde em silêncio': (2, 2, 2, 0, false),
+    'último acorde: toco só 1,5 s dele e paro': (4, 3, 4, 0, true),
+    'cifra com Am7 (o modelo ouve Am)': (0, 0, 0, 0, false),
+    'silêncio do começo ao fim': (0, 0, 0, 0, false),
+    'trocas a cada 1,2 s (Riptide, 2 tempos)': (34, 34, 34, 0, false),
+    'três errados de propósito': (68, 68, 68, 0, false),
+    'modo servidor': (88, 87, 88, 0, true),
+  };
+
   for (final c in cenarios.entries) {
     testWidgets('hoje: ${c.key}', (tester) async {
       final r = await c.value(tester);
       // ignore: avoid_print
       print(r.relatorio());
+      final (passo, trocas, certos, errados, terminou) = esperadoHoje[c.key]!;
+      expect(r.ultimoPassoAlcancado, passo);
+      expect(r.avancouEm.length, trocas);
+      expect(r.acertos, certos);
+      expect(r.erros, errados);
+      expect(r.terminouEm != null, terminou);
     }, timeout: const Timeout(Duration(minutes: 5)));
   }
 }

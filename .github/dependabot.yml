@@ -1,0 +1,31 @@
+# Dependabot: toda segunda confere se tem versão nova das dependências e abre PR.
+# Os avisos de segurança (Dependabot alerts) chegam à parte, assim que aparecem;
+# esses precisam estar ligados em Settings > Code security.
+version: 2
+updates:
+  # pacotes do Flutter (pubspec.yaml / pubspec.lock)
+  - package-ecosystem: pub
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # as atualizações pequenas vêm juntas num PR só
+      menores:
+        update-types: [minor, patch]
+    ignore:
+      # o tflite_flutter roda os modelos congelados: só troco de versão testando no
+      # iPhone e no Android, não por PR automático
+      - dependency-name: tflite_flutter
+        update-types: [version-update:semver-major, version-update:semver-minor]
+
+  # as Actions dos workflows (.github/workflows)
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]

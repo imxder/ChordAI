@@ -3,8 +3,13 @@ import 'chord_difficulty.dart';
 class LyricLine {
   final String? chordLine;
   final String lyricText;
+  final List<int?> chordBeats;
 
-  const LyricLine({this.chordLine, this.lyricText = ''});
+  const LyricLine({
+    this.chordLine,
+    this.lyricText = '',
+    this.chordBeats = const [],
+  });
 }
 
 class LyricSection {
@@ -22,6 +27,8 @@ class LyricSheet {
   final int? capo;
   final List<String>? strummingPattern;
   final List<LyricSection> sections;
+  final int? beatsPerChord;
+  final Map<String, int> beatsByChord;
 
   const LyricSheet({
     required this.title,
@@ -31,6 +38,8 @@ class LyricSheet {
     this.capo,
     this.strummingPattern,
     required this.sections,
+    this.beatsPerChord,
+    this.beatsByChord = const {},
   });
 }
 

@@ -122,7 +122,11 @@ PitchEstimate? detectPitchWithConfidence(
 int? _deepestNear(Float64List cmndf, int center, int minLag, int maxLag) {
   if (center > maxLag) return null;
   int? best;
-  for (var lag = max(minLag, center - 2); lag <= min(maxLag, center + 2); lag++) {
+  for (
+    var lag = max(minLag, center - 2);
+    lag <= min(maxLag, center + 2);
+    lag++
+  ) {
     if (best == null || cmndf[lag] < cmndf[best]) best = lag;
   }
   return best;

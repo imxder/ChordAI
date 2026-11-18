@@ -58,7 +58,10 @@ void main() {
       expect(emitted.length, (30 - windowSize) ~/ hopSize + 1);
       for (var n = 0; n < emitted.length; n++) {
         final expectedStart = n * hopSize;
-        expect(emitted[n], chunk.sublist(expectedStart, expectedStart + windowSize));
+        expect(
+          emitted[n],
+          chunk.sublist(expectedStart, expectedStart + windowSize),
+        );
       }
     });
 
@@ -67,7 +70,9 @@ void main() {
       const hopSize = 3;
       final buffer = SlidingPcmBuffer(windowSize: windowSize, hopSize: hopSize);
 
-      final emitted = buffer.addSamples(List<double>.generate(9, (i) => i.toDouble()));
+      final emitted = buffer.addSamples(
+        List<double>.generate(9, (i) => i.toDouble()),
+      );
       expect(emitted, isEmpty);
     });
   });

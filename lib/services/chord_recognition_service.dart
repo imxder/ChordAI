@@ -80,7 +80,9 @@ class ChordRecognitionService implements ChordRecognizer {
         // Não espera a resposta do servidor: a próxima janela já começa a
         // gravar enquanto esta é enviada, senão a latência de rede (pior
         // ainda num servidor remoto) se soma ao atraso de 1.5s do modelo.
-        unawaited(_predictAndReport(filePath, serverUrl, seq, onPrediction, onError));
+        unawaited(
+          _predictAndReport(filePath, serverUrl, seq, onPrediction, onError),
+        );
       } catch (e) {
         if (_running) onError(e);
         await Future.delayed(const Duration(seconds: 1));
@@ -134,8 +136,9 @@ class ChordRecognitionService implements ChordRecognizer {
     final request = http.MultipartRequest('POST', uri)
       ..files.add(await http.MultipartFile.fromPath('audio', filePath));
 
-    final streamedResponse =
-        await request.send().timeout(const Duration(seconds: 10));
+    final streamedResponse = await request.send().timeout(
+      const Duration(seconds: 10),
+    );
     final response = await http.Response.fromStream(streamedResponse);
 
     if (response.statusCode != 200) {

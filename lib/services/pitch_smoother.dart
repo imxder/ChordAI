@@ -49,7 +49,8 @@ class PitchSmoother {
 
     if (!isValid) {
       _validStreak = 0;
-      if (_lastValidAt == null || now.difference(_lastValidAt!) > signalTimeout) {
+      if (_lastValidAt == null ||
+          now.difference(_lastValidAt!) > signalTimeout) {
         _reset();
         return null;
       }

@@ -22,11 +22,18 @@ class LyricPracticeMap {
 
 final RegExp _chordTokenPattern = RegExp(r'\S+');
 
-LyricPracticeMap buildLyricPracticeMap(LyricSheet sheet, {int beatsPerChord = 4}) {
+LyricPracticeMap buildLyricPracticeMap(
+  LyricSheet sheet, {
+  int beatsPerChord = 4,
+}) {
   final steps = <ChordStep>[];
   final locations = <LyricChordLocation>[];
 
-  for (var sectionIndex = 0; sectionIndex < sheet.sections.length; sectionIndex++) {
+  for (
+    var sectionIndex = 0;
+    sectionIndex < sheet.sections.length;
+    sectionIndex++
+  ) {
     final section = sheet.sections[sectionIndex];
     for (var lineIndex = 0; lineIndex < section.lines.length; lineIndex++) {
       final chordLine = section.lines[lineIndex].chordLine;
@@ -34,12 +41,16 @@ LyricPracticeMap buildLyricPracticeMap(LyricSheet sheet, {int beatsPerChord = 4}
 
       final tokens = _chordTokenPattern.allMatches(chordLine).toList();
       for (var tokenIndex = 0; tokenIndex < tokens.length; tokenIndex++) {
-        steps.add(ChordStep(chord: tokens[tokenIndex].group(0)!, beats: beatsPerChord));
-        locations.add(LyricChordLocation(
-          sectionIndex: sectionIndex,
-          lineIndex: lineIndex,
-          tokenIndex: tokenIndex,
-        ));
+        steps.add(
+          ChordStep(chord: tokens[tokenIndex].group(0)!, beats: beatsPerChord),
+        );
+        locations.add(
+          LyricChordLocation(
+            sectionIndex: sectionIndex,
+            lineIndex: lineIndex,
+            tokenIndex: tokenIndex,
+          ),
+        );
       }
     }
   }

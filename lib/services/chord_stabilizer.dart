@@ -55,7 +55,8 @@ class ChordStabilizer {
     if (winnerKey == null || winnerCount < minAgreement) return null;
 
     final now = _now();
-    if (_lastEmittedAt != null && now.difference(_lastEmittedAt!) < minEmitInterval) {
+    if (_lastEmittedAt != null &&
+        now.difference(_lastEmittedAt!) < minEmitInterval) {
       return null;
     }
 

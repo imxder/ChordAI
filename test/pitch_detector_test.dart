@@ -18,7 +18,8 @@ List<double> _harmonics(double fundamental, List<double> amplitudes) {
   return List.generate(windowSize, (i) {
     var value = 0.0;
     for (var h = 0; h < amplitudes.length; h++) {
-      value += amplitudes[h] * sin(2 * pi * fundamental * (h + 1) * i / sampleRate);
+      value +=
+          amplitudes[h] * sin(2 * pi * fundamental * (h + 1) * i / sampleRate);
     }
     return value;
   });
@@ -53,7 +54,10 @@ void main() {
     for (final string in guitarStrings) {
       final detected = detectPitch(_sineWave(string.frequency), sampleRate);
       expect(detected, isNotNull, reason: 'não detectou ${string.name}');
-      expect((detected! - string.frequency).abs(), lessThan(string.frequency * 0.01));
+      expect(
+        (detected! - string.frequency).abs(),
+        lessThan(string.frequency * 0.01),
+      );
     }
   });
 
@@ -80,14 +84,22 @@ void main() {
       // minFreq abaixo de 41 Hz deixa 2τ dentro da faixa de busca.
       final detected = detectPitch(samples, sampleRate, minFreq: 35);
       expect(detected, isNotNull);
-      expect(_cents(detected!, 82.41).abs(), lessThan(5), reason: 'detectou $detected Hz');
+      expect(
+        _cents(detected!, 82.41).abs(),
+        lessThan(5),
+        reason: 'detectou $detected Hz',
+      );
     }
   });
 
   test('senoide pura de E4 continua E4', () {
     final detected = detectPitch(_sineWave(329.63), sampleRate);
     expect(detected, isNotNull);
-    expect(_cents(detected!, 329.63).abs(), lessThan(1), reason: 'detectou $detected Hz');
+    expect(
+      _cents(detected!, 329.63).abs(),
+      lessThan(1),
+      reason: 'detectou $detected Hz',
+    );
   });
 
   test('confiança alta para senoide', () {
@@ -139,11 +151,21 @@ void main() {
 
       final pure = detectPitch(_sineWave(frequency), sampleRate);
       expect(pure, isNotNull, reason: 'não detectou $note ($frequency Hz)');
-      expect(_cents(pure!, frequency).abs(), lessThan(1), reason: '$note: detectou $pure Hz');
+      expect(
+        _cents(pure!, frequency).abs(),
+        lessThan(1),
+        reason: '$note: detectou $pure Hz',
+      );
 
-      final withHarmonics =
-          detectPitch(_harmonics(frequency, [0.15, 0.6, 0.45]), sampleRate);
-      expect(withHarmonics, isNotNull, reason: 'não detectou $note com harmônicos');
+      final withHarmonics = detectPitch(
+        _harmonics(frequency, [0.15, 0.6, 0.45]),
+        sampleRate,
+      );
+      expect(
+        withHarmonics,
+        isNotNull,
+        reason: 'não detectou $note com harmônicos',
+      );
       expect(
         _cents(withHarmonics!, frequency).abs(),
         lessThan(5),
@@ -156,8 +178,16 @@ void main() {
     final detuned = noteFrequency('E2') * pow(2, -6 / 12);
 
     final detected = detectPitch(_sineWave(detuned), sampleRate);
-    expect(detected, isNotNull, reason: 'não detectou E2 desafinado ($detuned Hz)');
-    expect(_cents(detected!, detuned).abs(), lessThan(1), reason: 'detectou $detected Hz');
+    expect(
+      detected,
+      isNotNull,
+      reason: 'não detectou E2 desafinado ($detuned Hz)',
+    );
+    expect(
+      _cents(detected!, detuned).abs(),
+      lessThan(1),
+      reason: 'detectou $detected Hz',
+    );
 
     final reading = classifyPitch(detected, guitarStrings);
     expect(reading, isNotNull);

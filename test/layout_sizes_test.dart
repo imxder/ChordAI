@@ -28,8 +28,10 @@ final _screens = <String, Widget Function(LyricSheet sheet)>{
   'início': (_) => const AppShell(),
   'onboarding': (_) => const OnboardingScreen(),
   'afinou?': (_) => const TuningCheckScreen(),
-  'detalhe do acorde': (_) => const ChordDetailScreen(serverUrl: _url, chord: 'Bdim'),
-  'testar acorde': (_) => const ChordPracticeScreen(serverUrl: _url, chord: 'F'),
+  'detalhe do acorde': (_) =>
+      const ChordDetailScreen(serverUrl: _url, chord: 'Bdim'),
+  'testar acorde': (_) =>
+      const ChordPracticeScreen(serverUrl: _url, chord: 'F'),
   'cifra': (sheet) => LyricSheetScreen(sheet: sheet, serverUrl: _url),
   'tocar junto': (sheet) => LyricPlayerScreen(sheet: sheet, serverUrl: _url),
   'sequências': (_) => const PracticeSessionScreen(serverUrl: _url),
@@ -64,39 +66,53 @@ void main() {
   for (final setup in _setups.entries) {
     for (final screen in _screens.entries) {
       testWidgets('${screen.key} cabe na tela (${setup.key})', (tester) async {
-        sheet = (await tester.runAsync(() => LyricSheetLibrary().loadAll()))!.first;
+        sheet = (await tester.runAsync(() => LyricSheetLibrary().loadAll()))!
+            .first;
         final (size, scale) = setup.value;
         setScreen(tester, size, textScale: scale);
 
         await tester.pumpWidget(appUnderTest(screen.value(sheet)));
         await tester.pump(const Duration(milliseconds: 50));
         await tester.pump(const Duration(milliseconds: 500));
-
       });
     }
 
-    testWidgets('abas do app cabem na tela (${setup.key})', (tester) async {
-      final (size, scale) = setup.value;
-      setScreen(tester, size, textScale: scale);
-      await tester.pumpWidget(appUnderTest(const AppShell()));
-      await tester.pump(const Duration(milliseconds: 300));
-
-      for (final tab in ['Músicas', 'Acordes', 'Perfil']) {
-        await tester.tap(find.descendant(
-          of: find.byKey(appTabBarKey),
-          matching: find.text(tab),
-        ).first);
+    testWidgets(
+      'abas do app cabem na tela (${setup.key})',
+      (tester) async {
+        final (size, scale) = setup.value;
+        setScreen(tester, size, textScale: scale);
+        await tester.pumpWidget(appUnderTest(const AppShell()));
         await tester.pump(const Duration(milliseconds: 300));
-      }
-    }, variant: TargetPlatformVariant(
-      {TargetPlatform.android, TargetPlatform.iOS},
-    ));
 
-    testWidgets('tocar junto em andamento cabe na tela (${setup.key})', (tester) async {
-      sheet = (await tester.runAsync(() => LyricSheetLibrary().loadAll()))!.first;
+        for (final tab in ['Músicas', 'Acordes', 'Perfil']) {
+          await tester.tap(
+            find
+                .descendant(
+                  of: find.byKey(appTabBarKey),
+                  matching: find.text(tab),
+                )
+                .first,
+          );
+          await tester.pump(const Duration(milliseconds: 300));
+        }
+      },
+      variant: TargetPlatformVariant({
+        TargetPlatform.android,
+        TargetPlatform.iOS,
+      }),
+    );
+
+    testWidgets('tocar junto em andamento cabe na tela (${setup.key})', (
+      tester,
+    ) async {
+      sheet = (await tester.runAsync(() => LyricSheetLibrary().loadAll()))!
+          .first;
       final (size, scale) = setup.value;
       setScreen(tester, size, textScale: scale);
-      await tester.pumpWidget(appUnderTest(LyricPlayerScreen(sheet: sheet, serverUrl: _url)));
+      await tester.pumpWidget(
+        appUnderTest(LyricPlayerScreen(sheet: sheet, serverUrl: _url)),
+      );
       await tester.pump();
 
       appState.startSession(buildLyricPracticeMap(sheet).score);

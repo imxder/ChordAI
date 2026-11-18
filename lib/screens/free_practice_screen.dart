@@ -29,8 +29,9 @@ class FreePracticeScreen extends StatefulWidget {
 }
 
 class _FreePracticeScreenState extends State<FreePracticeScreen> {
-  late final ChordRecognizer _service =
-      createChordRecognizer(appState.chordRecognitionMode);
+  late final ChordRecognizer _service = createChordRecognizer(
+    appState.chordRecognitionMode,
+  );
 
   bool _listening = false;
   String? _chord;

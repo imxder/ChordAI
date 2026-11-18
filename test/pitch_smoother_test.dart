@@ -43,7 +43,9 @@ void main() {
       final smoother = _smootherAt(() => now);
       _feed(smoother, 110.0, 6, tick: (_) {});
       now = now.add(const Duration(milliseconds: 46));
-      final withLowConfidence = smoother.update(const PitchEstimate(220.0, 0.2));
+      final withLowConfidence = smoother.update(
+        const PitchEstimate(220.0, 0.2),
+      );
       expect(withLowConfidence, closeTo(110.0, 1.0));
     });
 
@@ -57,7 +59,9 @@ void main() {
 
       // Um salto isolado de mais de 100 cents não deve ser aceito.
       now = now.add(const Duration(milliseconds: 46));
-      final afterOutlier = smoother.update(const PitchEstimate(164.8, 0.95)); // E3, ~1 oitava e meia
+      final afterOutlier = smoother.update(
+        const PitchEstimate(164.8, 0.95),
+      ); // E3, ~1 oitava e meia
       expect(afterOutlier, closeTo(110.0, 1.0));
 
       // E volta a ler A2 normalmente depois.
@@ -121,7 +125,11 @@ void main() {
 
       now = now.add(const Duration(milliseconds: 300));
       final duringGap = smoother.update(null);
-      expect(duringGap, closeTo(110.0, 1.0), reason: 'gap curto mantém o valor');
+      expect(
+        duringGap,
+        closeTo(110.0, 1.0),
+        reason: 'gap curto mantém o valor',
+      );
 
       now = now.add(const Duration(milliseconds: 300));
       final afterTimeout = smoother.update(null);

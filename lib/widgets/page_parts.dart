@@ -411,7 +411,8 @@ Future<T?> showGlassSheet<T>(
       builder: (sheetContext) => ConstrainedBox(
         constraints: BoxConstraints(
           maxHeight:
-              MediaQuery.sizeOf(sheetContext).height * (startFull ? 0.92 : size),
+              MediaQuery.sizeOf(sheetContext).height *
+              (startFull ? 0.92 : size),
         ),
         child: builder(sheetContext),
       ),

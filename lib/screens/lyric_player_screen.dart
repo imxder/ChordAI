@@ -40,8 +40,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   static const _minBpm = 40;
   static const _maxBpm = 160;
 
-  late final ChordRecognizer _service =
-      createChordRecognizer(appState.chordRecognitionMode);
+  late final ChordRecognizer _service = createChordRecognizer(
+    appState.chordRecognitionMode,
+  );
   final _scrollController = ScrollController();
   final Map<int, GlobalKey> _lineKeys = {};
 

@@ -29,6 +29,7 @@ abstract final class Ph {
   static const userFill = IconData(0xe4c2, fontFamily: _fill);
   static const checkCircleFill = IconData(0xe184, fontFamily: _fill);
   static const microphoneFill = IconData(0xe326, fontFamily: _fill);
+  static const shieldCheckFill = IconData(0xe40c, fontFamily: _fill);
   static const playFill = IconData(0xe3d0, fontFamily: _fill);
   static const stopFill = IconData(0xe46c, fontFamily: _fill);
   static const bookOpenFill = IconData(0xe0e6, fontFamily: _fill);

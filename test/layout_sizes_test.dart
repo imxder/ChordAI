@@ -12,6 +12,7 @@ import 'package:chordai/screens/lyric_player_screen.dart';
 import 'package:chordai/screens/lyric_sheet_screen.dart';
 import 'package:chordai/screens/onboarding_screen.dart';
 import 'package:chordai/screens/practice_session_screen.dart';
+import 'package:chordai/screens/privacy_screen.dart';
 import 'package:chordai/screens/settings_screen.dart';
 import 'package:chordai/screens/tuner_screen.dart';
 import 'package:chordai/screens/tuning_check_screen.dart';
@@ -41,6 +42,7 @@ final _screens = <String, Widget Function(LyricSheet sheet)>{
   'servidor': (_) => const SettingsScreen(),
   'guia': (_) => const GuideListScreen(),
   'guia detalhe': (_) => GuideDetailScreen(topic: guideTopics[2]),
+  'privacidade': (_) => const PrivacyScreen(),
 };
 
 const _setups = <String, (Size, double)>{

@@ -7,6 +7,7 @@ import '../theme/glass_tokens.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/practice_options_sheet.dart';
 import 'chord_detail_screen.dart';
+import 'privacy_screen.dart';
 import 'settings_screen.dart';
 import 'tuning_select_sheet.dart';
 import '../theme/ph.dart';
@@ -125,6 +126,13 @@ class ProfileScreen extends StatelessWidget {
               onTap: () => Navigator.of(
                 context,
               ).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
+            ),
+            GroupedRow(
+              leading: const IconBadge(Ph.shieldCheckFill),
+              title: 'Privacidade',
+              onTap: () => Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const PrivacyScreen())),
             ),
           ],
         ),

@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../widgets/cifra_line.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
+import 'privacy_screen.dart';
 import 'tuning_check_screen.dart';
 import '../theme/ph.dart';
 
@@ -13,18 +14,23 @@ class _OnboardingPage {
   final String title;
   final String body;
   final WidgetBuilder illustration;
+  final bool privacyLink;
 
   const _OnboardingPage({
     required this.title,
     required this.body,
     required this.illustration,
+    this.privacyLink = false,
   });
 }
 
 final _pages = [
   _OnboardingPage(
     title: 'O app ouve o acorde que você toca',
-    body: 'Toque perto do microfone e veja na hora se o acorde saiu certo.',
+    body:
+        'Toque perto do microfone e veja na hora se o acorde saiu certo. O '
+        'som é analisado no próprio celular e não é gravado nem enviado.',
+    privacyLink: true,
     illustration: (context) => Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -229,6 +235,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 ),
                                 const SizedBox(height: 12),
                                 Text(page.body, style: textTheme.bodyLarge),
+                                if (page.privacyLink) ...[
+                                  const SizedBox(height: 4),
+                                  InlineLink(
+                                    'Política de privacidade',
+                                    onPressed: () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => const PrivacyScreen(),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ],

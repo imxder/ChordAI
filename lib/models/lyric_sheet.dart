@@ -1,5 +1,39 @@
 import 'chord_difficulty.dart';
 
+enum StrumKind { down, up, muted }
+
+class StrumStroke {
+  final StrumKind kind;
+  final int? eighth;
+
+  const StrumStroke(this.kind, this.eighth);
+}
+
+final RegExp _strumToken = RegExp(r'^([DUXdux])(?:([1-4])(&)?)?$');
+
+List<StrumStroke> parseStrumPattern(List<String> tokens) {
+  final strokes = <StrumStroke>[];
+  for (final token in tokens) {
+    final match = _strumToken.firstMatch(token);
+    if (match == null) continue;
+    final kind = switch (match.group(1)!.toUpperCase()) {
+      'D' => StrumKind.down,
+      'U' => StrumKind.up,
+      _ => StrumKind.muted,
+    };
+    final beat = match.group(2);
+    strokes.add(
+      StrumStroke(
+        kind,
+        beat == null
+            ? null
+            : (int.parse(beat) - 1) * 2 + (match.group(3) == null ? 0 : 1),
+      ),
+    );
+  }
+  return strokes;
+}
+
 class LyricLine {
   final String? chordLine;
   final String lyricText;

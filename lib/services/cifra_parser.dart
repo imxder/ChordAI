@@ -5,7 +5,11 @@ import '../models/lyric_sheet.dart';
 //   Tom: C               tom da música (só mostra na tela)
 //   Tempo: 100           BPM inicial do tocar junto
 //   Capo: 1              casa do capotraste (só mostra na tela)
-//   Batida: D D U U D U  padrão de batida (D = pra baixo, U = pra cima)
+//   Batida: D1 D2 U2& U3& D4 U4&
+//                        padrão de batida num compasso 4/4: D = pra baixo,
+//                        U = pra cima, X = abafado, e o número (com & pro
+//                        contratempo) diz em que tempo cai. Sem o número
+//                        (D D U U D U) a tela só mostra as setas.
 //   Tempos: 4            quantos tempos cada acorde dura no tocar junto;
 //   Tempos: Am=2 G=2 C=4 também dá pra dizer por acorde (o resto fica com 4)
 //

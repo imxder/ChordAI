@@ -20,9 +20,10 @@ import 'tocar_junto_log.dart';
 /// STFT) já está dentro do `.tflite`, então aqui só grava áudio, monta a
 /// janela de 1,5s e lê a saída — nenhuma FFT/chroma/MFCC em Dart.
 class OnDeviceChordService implements ChordRecognizer {
-  OnDeviceChordService(this._modelSource);
+  OnDeviceChordService(this._modelSource, {this.rawReadings = false});
 
   final OnDeviceModel Function() _modelSource;
+  final bool rawReadings;
   final AudioRecorder _recorder = AudioRecorder();
   final Pcm16Decoder _decoder = Pcm16Decoder();
 
@@ -142,7 +143,7 @@ class OnDeviceChordService implements ChordRecognizer {
     ChordPrediction raw,
     void Function(ChordPrediction) onPrediction,
   ) {
-    final stabilized = _stabilizer?.process(raw);
+    final stabilized = rawReadings ? raw : _stabilizer?.process(raw);
     if (raw.status == 'silence' || raw.status == 'too_short') {
       TocarJuntoLog.evento('crua ${raw.status}');
     }

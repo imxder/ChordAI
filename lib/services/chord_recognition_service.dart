@@ -45,7 +45,43 @@ class ChordRecognitionService implements ChordRecognizer {
     _running = true;
     _issuedSeq = 0;
     _lastAppliedSeq = 0;
+    // Se o app foi fechado no meio de um envio, a janela daquela vez ficou na
+    // pasta temporária. Apaga antes de gravar a próxima.
+    await deleteLeftoverWindows(Directory.systemTemp);
     _loop(serverUrl, onPrediction, onError);
+  }
+
+  /// Nome do WAV de 1,5 s que esse modo grava na pasta temporária.
+  static String windowFileName(DateTime time) =>
+      'chordai_janela_${time.millisecondsSinceEpoch}.wav';
+
+  static final windowFilePattern = RegExp(r'^chordai_janela_\d+\.wav$');
+
+  /// Até a versão 0.1.0 o nome era chord_<hora>.wav.
+  static final _oldWindowFilePattern = RegExp(r'^chord_\d+\.wav$');
+
+  /// Apaga as janelas que sobraram em [dir] e devolve quantas apagou.
+  static Future<int> deleteLeftoverWindows(Directory dir) async {
+    var deleted = 0;
+    try {
+      await for (final entity in dir.list(followLinks: false)) {
+        if (entity is! File) continue;
+        final name = entity.uri.pathSegments.last;
+        if (!windowFilePattern.hasMatch(name) &&
+            !_oldWindowFilePattern.hasMatch(name)) {
+          continue;
+        }
+        try {
+          await entity.delete();
+          deleted++;
+        } on FileSystemException {
+          // outro envio já apagou esse arquivo
+        }
+      }
+    } on FileSystemException {
+      // a pasta temporária não existe (ainda): não tem o que apagar
+    }
+    return deleted;
   }
 
   @override
@@ -116,7 +152,7 @@ class ChordRecognitionService implements ChordRecognizer {
 
   Future<String> _recordWindow() async {
     final path =
-        '${Directory.systemTemp.path}/chord_${DateTime.now().millisecondsSinceEpoch}.wav';
+        '${Directory.systemTemp.path}/${windowFileName(DateTime.now())}';
     await _recorder.start(
       RecordConfig(
         encoder: AudioEncoder.wav,

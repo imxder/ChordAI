@@ -45,7 +45,11 @@ jobs:
       # Manda o código e a cobertura pro SonarCloud. A configuração está no
       # sonar-project.properties. Roda depois do flutter pub get, que a análise
       # de Dart precisa.
+      # Em PR do Dependabot o GitHub não passa os secrets do repositório, então o
+      # SONAR_TOKEN chega vazio e o SonarCloud recusa. Os testes rodam igual; a
+      # análise sai quando a mudança entra na branch principal.
       - name: SonarCloud
+        if: github.actor != 'dependabot[bot]'
         uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

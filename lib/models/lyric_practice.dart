@@ -41,8 +41,17 @@ LyricPracticeMap buildLyricPracticeMap(
 
       final tokens = _chordTokenPattern.allMatches(chordLine).toList();
       for (var tokenIndex = 0; tokenIndex < tokens.length; tokenIndex++) {
+        final chord = tokens[tokenIndex].group(0)!;
+        final beats = section.lines[lineIndex].chordBeats;
         steps.add(
-          ChordStep(chord: tokens[tokenIndex].group(0)!, beats: beatsPerChord),
+          ChordStep(
+            chord: chord,
+            beats:
+                (tokenIndex < beats.length ? beats[tokenIndex] : null) ??
+                sheet.beatsByChord[chord] ??
+                sheet.beatsPerChord ??
+                beatsPerChord,
+          ),
         );
         locations.add(
           LyricChordLocation(

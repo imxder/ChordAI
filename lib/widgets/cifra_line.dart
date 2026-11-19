@@ -10,6 +10,7 @@ class CifraLine extends StatelessWidget {
   final int? activeToken;
   final bool highlighted;
   final ValueChanged<String>? onChordTap;
+  final Map<int, bool> tokenResults;
 
   const CifraLine({
     super.key,
@@ -18,6 +19,7 @@ class CifraLine extends StatelessWidget {
     this.activeToken,
     this.highlighted = false,
     this.onChordTap,
+    this.tokenResults = const {},
   });
 
   static const _baseSize = 14.0;
@@ -80,6 +82,18 @@ class CifraLine extends StatelessWidget {
             style: TextStyle(
               color: colorScheme.onPrimary,
               background: Paint()..color = colorScheme.primary,
+            ),
+          ),
+        );
+      } else if (tokenResults.containsKey(tokenIndex)) {
+        final hit = tokenResults[tokenIndex]!;
+        spans.add(
+          TextSpan(
+            text: token,
+            style: TextStyle(
+              color: hit ? context.tokens.correct : colorScheme.error,
+              decoration: hit ? null : TextDecoration.lineThrough,
+              decorationColor: colorScheme.error,
             ),
           ),
         );

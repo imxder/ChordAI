@@ -27,6 +27,8 @@ class LyricSheetLibrary {
           capo: parsed.capo,
           strummingPattern: parsed.strummingPattern,
           sections: parsed.sections,
+          beatsPerChord: parsed.beatsPerChord,
+          beatsByChord: parsed.beatsByChord,
         ),
       );
     }

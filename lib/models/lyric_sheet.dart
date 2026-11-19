@@ -1,10 +1,49 @@
 import 'chord_difficulty.dart';
 
+enum StrumKind { down, up, muted }
+
+class StrumStroke {
+  final StrumKind kind;
+  final int? eighth;
+
+  const StrumStroke(this.kind, this.eighth);
+}
+
+final RegExp _strumToken = RegExp(r'^([DUXdux])(?:([1-4])(&)?)?$');
+
+List<StrumStroke> parseStrumPattern(List<String> tokens) {
+  final strokes = <StrumStroke>[];
+  for (final token in tokens) {
+    final match = _strumToken.firstMatch(token);
+    if (match == null) continue;
+    final kind = switch (match.group(1)!.toUpperCase()) {
+      'D' => StrumKind.down,
+      'U' => StrumKind.up,
+      _ => StrumKind.muted,
+    };
+    final beat = match.group(2);
+    strokes.add(
+      StrumStroke(
+        kind,
+        beat == null
+            ? null
+            : (int.parse(beat) - 1) * 2 + (match.group(3) == null ? 0 : 1),
+      ),
+    );
+  }
+  return strokes;
+}
+
 class LyricLine {
   final String? chordLine;
   final String lyricText;
+  final List<int?> chordBeats;
 
-  const LyricLine({this.chordLine, this.lyricText = ''});
+  const LyricLine({
+    this.chordLine,
+    this.lyricText = '',
+    this.chordBeats = const [],
+  });
 }
 
 class LyricSection {
@@ -22,6 +61,8 @@ class LyricSheet {
   final int? capo;
   final List<String>? strummingPattern;
   final List<LyricSection> sections;
+  final int? beatsPerChord;
+  final Map<String, int> beatsByChord;
 
   const LyricSheet({
     required this.title,
@@ -31,6 +72,8 @@ class LyricSheet {
     this.capo,
     this.strummingPattern,
     required this.sections,
+    this.beatsPerChord,
+    this.beatsByChord = const {},
   });
 }
 

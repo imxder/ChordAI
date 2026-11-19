@@ -33,6 +33,7 @@ class AppState extends ChangeNotifier {
   static const _chordRecognitionModeKey = 'app_chord_recognition_mode';
   static const _onDeviceDefaultMigratedKey = 'app_on_device_default_migrated';
   static const _onDeviceModelKey = 'app_on_device_model';
+  static const _playAlongWaitsKey = 'app_play_along_waits_for_me';
 
   // Quem instalou uma versão antiga ainda tem esses dados salvos no aparelho.
   static const _removedKeys = [
@@ -146,6 +147,7 @@ class AppState extends ChangeNotifier {
   double lyricFontScale = 1.0;
   bool showGuitarNeckInPlayer = true;
   bool autoScrollInPlayer = true;
+  bool playAlongWaitsForMe = false;
 
   Future<void> setLyricFontScale(double value) async {
     lyricFontScale = value;
@@ -275,6 +277,7 @@ class AppState extends ChangeNotifier {
     lyricFontScale = prefs.getDouble(_lyricFontScaleKey) ?? 1.0;
     showGuitarNeckInPlayer = prefs.getBool(_showGuitarNeckKey) ?? true;
     autoScrollInPlayer = prefs.getBool(_autoScrollKey) ?? true;
+    playAlongWaitsForMe = prefs.getBool(_playAlongWaitsKey) ?? false;
     final savedAppearance = prefs.getString(_appearanceKey);
     appearance = AppAppearance.values.firstWhere(
       (a) => a.name == savedAppearance,
@@ -326,6 +329,30 @@ class AppState extends ChangeNotifier {
     sessionStatus = SessionStatus.idle;
     currentScore = null;
     currentStepIndex = 0;
+    notifyListeners();
+  }
+
+  Future<void> setPlayAlongWaitsForMe(bool value) async {
+    playAlongWaitsForMe = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_playAlongWaitsKey, value);
+  }
+
+  void setSessionStep(int index) {
+    if (index == currentStepIndex) return;
+    currentStepIndex = index;
+    notifyListeners();
+  }
+
+  void recordChordResult({required bool hit}) {
+    if (hit) {
+      sessionHits++;
+      totalCorrectChords++;
+    } else {
+      sessionMisses++;
+    }
+    _saveProgress();
     notifyListeners();
   }
 

@@ -1,19 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:record/record.dart';
 
 import '../models/chord_names.dart';
 import '../models/chord_prediction.dart';
+import '../models/chord_recognition_mode.dart';
 import '../models/lyric_practice.dart';
 import '../models/lyric_sheet.dart';
-import '../models/score.dart';
 import '../services/chord_recognizer.dart';
 import '../services/chord_recognizer_factory.dart';
+import '../services/play_along_engine.dart';
+import '../services/tocar_junto_log.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/cifra_line.dart';
 import '../widgets/guitar_neck.dart';
-import '../widgets/metronome.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/practice_options_sheet.dart';
 import '../widgets/recognition_mode_badge.dart';
@@ -24,12 +28,16 @@ class LyricPlayerScreen extends StatefulWidget {
   final String serverUrl;
   final InputDevice? inputDevice;
   final LyricSheet sheet;
+  final ChordRecognizer? recognizer;
+  final Duration Function()? elapsed;
 
   const LyricPlayerScreen({
     super.key,
     required this.serverUrl,
     required this.sheet,
     this.inputDevice,
+    this.recognizer,
+    this.elapsed,
   });
 
   @override
@@ -39,24 +47,24 @@ class LyricPlayerScreen extends StatefulWidget {
 class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   static const _minBpm = 40;
   static const _maxBpm = 160;
+  static const _tick = Duration(milliseconds: 30);
 
-  late final ChordRecognizer _service = createChordRecognizer(
-    appState.chordRecognitionMode,
-  );
+  late final ChordRecognizer _service =
+      widget.recognizer ??
+      createChordRecognizer(appState.chordRecognitionMode, rawReadings: true);
   final _scrollController = ScrollController();
   final Map<int, GlobalKey> _lineKeys = {};
+  final _stopwatch = Stopwatch();
 
   late final LyricPracticeMap _practiceMap;
   late int _bpm;
-  int _beatsInStep = 0;
-  int _strumBeatIndex = 0;
+  int _lastEighth = -1;
   String? _finishedMessage;
-
-  String? _lastRecognizedChord;
-  bool? _lastMatched;
-
-  final Map<String, int> _chordAttempts = {};
-  final Map<String, int> _chordCorrect = {};
+  PlayAlongEngine? _engine;
+  Timer? _ticker;
+  Timer? _bpmRepeat;
+  final Set<int> _reported = {};
+  String? _hearing;
 
   @override
   void initState() {
@@ -109,13 +117,30 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     }
 
     appState.startSession(_practiceMap.score);
-    _beatsInStep = 0;
-    _strumBeatIndex = 0;
-    _lastRecognizedChord = null;
-    _lastMatched = null;
+    TocarJuntoLog.evento(
+      'comecou ${widget.sheet.title} bpm=$_bpm passos=${_practiceMap.score.steps.length} modo=${appState.chordRecognitionMode.name} modelo=${appState.onDeviceModel.name} esperar=${appState.playAlongWaitsForMe}',
+    );
+    _lastEighth = -1;
     _finishedMessage = null;
-    _chordAttempts.clear();
-    _chordCorrect.clear();
+    _reported.clear();
+    _hearing = null;
+    _stopwatch
+      ..reset()
+      ..start();
+    final engine = PlayAlongEngine(
+      steps: _practiceMap.score.steps,
+      knownChords: appState.chordsInModel.toSet(),
+      bpm: _bpm,
+      elapsed: widget.elapsed ?? () => _stopwatch.elapsed,
+      mode: appState.playAlongWaitsForMe
+          ? PlayAlongMode.waitForMe
+          : PlayAlongMode.followTempo,
+      readingsToHitLongChord:
+          appState.chordRecognitionMode == ChordRecognitionMode.server ? 1 : 2,
+    )..start();
+    _engine = engine;
+    _ticker?.cancel();
+    _ticker = Timer.periodic(_tick, (_) => _onTick());
 
     _service.start(
       serverUrl: widget.serverUrl,
@@ -127,103 +152,107 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   }
 
   Future<void> _stop() async {
+    TocarJuntoLog.evento('parou no passo ${appState.currentStepIndex}');
+    _ticker?.cancel();
+    _ticker = null;
+    _stopwatch.stop();
     await _service.stop();
     appState.stopSession();
+    if (mounted) setState(() {});
   }
 
-  /// Verdadeiro quando o próximo acorde é diferente do atual, ou seja,
-  /// quando dá pra saber que o usuário avançou só de ouvir a troca.
-  bool _hasDetectableTransition(ChordStep step) {
-    final next = _nextChord;
-    return next != null && next.toLowerCase() != step.chord.toLowerCase();
-  }
-
-  void _onBeat() {
-    if (appState.sessionStatus != SessionStatus.running) return;
-
-    final pattern = widget.sheet.strummingPattern;
-    if (pattern != null && pattern.isNotEmpty) {
-      setState(() => _strumBeatIndex = (_strumBeatIndex + 1) % pattern.length);
-    }
-
-    final step = appState.currentStep;
-    if (step == null) return;
-
-    // Quando dá pra ouvir a troca de acorde, é ela que decide quando avançar
-    // (ver _onPrediction) — o metrônomo só força a passagem quando não tem
-    // como detectar a troca (último acorde da música, ou dois acordes iguais
-    // em sequência).
-    if (_hasDetectableTransition(step)) {
-      _beatsInStep = 0;
+  void _onTick() {
+    final engine = _engine;
+    if (engine == null || appState.sessionStatus != SessionStatus.running) {
       return;
     }
-
-    _beatsInStep++;
-    if (_beatsInStep < step.beats) return;
-    _beatsInStep = 0;
-    _advanceStep(matched: true);
+    final beat = engine.update();
+    if (beat) {
+      TocarJuntoLog.evento('batida');
+      SystemSound.play(SystemSoundType.click);
+    }
+    for (var i = 0; i < engine.results.length; i++) {
+      final result = engine.results[i];
+      if (_reported.contains(i)) continue;
+      if (result == StepResult.hit || result == StepResult.miss) {
+        _reported.add(i);
+        appState.recordChordResult(hit: result == StepResult.hit);
+      } else if (result == StepResult.notCounted && i < engine.index) {
+        _reported.add(i);
+      }
+    }
+    if (engine.index != appState.currentStepIndex) {
+      TocarJuntoLog.evento('cifra no passo ${engine.index}');
+      appState.setSessionStep(engine.index);
+    }
+    final eighth = engine.eighthInBar;
+    if (engine.finished) {
+      _finish();
+    } else if (beat || eighth != _lastEighth) {
+      _lastEighth = eighth;
+      setState(() {});
+    }
   }
 
   void _onPrediction(ChordPrediction prediction) {
+    TocarJuntoLog.evento(
+      'tela_recebeu ${prediction.status} ${prediction.chord ?? '-'}',
+    );
     appState.updatePrediction(prediction);
     if (appState.sessionStatus != SessionStatus.running) return;
-
-    final step = appState.currentStep;
-    final recognized = prediction.chord;
-    if (step == null || recognized == null) return;
-
-    final isCurrent = recognized.toLowerCase() == step.chord.toLowerCase();
-    final isNext =
-        _hasDetectableTransition(step) &&
-        recognized.toLowerCase() == _nextChord!.toLowerCase();
-
-    setState(() {
-      _lastRecognizedChord = recognized;
-      _lastMatched = isCurrent || isNext;
-    });
-
-    if (isNext) {
-      _advanceStep(matched: true);
-    } else if (!isCurrent) {
-      _chordAttempts[step.chord] = (_chordAttempts[step.chord] ?? 0) + 1;
-    }
+    final heard = prediction.status == 'ok' ? prediction.chord : null;
+    _engine?.reading(heard);
+    if (heard != _hearing && mounted) setState(() => _hearing = heard);
   }
 
-  void _advanceStep({required bool matched}) {
-    final step = appState.currentStep;
-    if (step != null) {
-      _chordAttempts[step.chord] = (_chordAttempts[step.chord] ?? 0) + 1;
-      if (matched) {
-        _chordCorrect[step.chord] = (_chordCorrect[step.chord] ?? 0) + 1;
-      }
-    }
+  void _finish() {
+    _ticker?.cancel();
+    _ticker = null;
+    _stopwatch.stop();
+    _service.stop();
+    final engine = _engine!;
+    final total = engine.hits + engine.misses;
+    appState.stopSession();
+    setState(
+      () => _finishedMessage =
+          'Música concluída: ${engine.hits} de $total acordes certos',
+    );
+    _showSummaryDialog();
+  }
 
-    appState.advanceStep(matched: matched);
+  void _changeBpm(int delta) {
+    setState(() => _bpm = (_bpm + delta).clamp(_minBpm, _maxBpm));
+    _engine?.setBpm(_bpm);
+  }
 
-    if (appState.sessionStatus == SessionStatus.idle) {
-      _service.stop();
-      final total = appState.sessionHits + appState.sessionMisses;
-      setState(
-        () => _finishedMessage =
-            'Música concluída: ${appState.sessionHits} de $total acordes certos',
-      );
-      _showSummaryDialog();
-    } else {
-      setState(() {
-        _lastRecognizedChord = null;
-        _lastMatched = null;
-      });
-    }
+  void _startBpmRepeat(int delta) {
+    _bpmRepeat?.cancel();
+    _changeBpm(delta);
+    _bpmRepeat = Timer.periodic(
+      const Duration(milliseconds: 90),
+      (_) => _changeBpm(delta),
+    );
+  }
+
+  void _stopBpmRepeat() {
+    _bpmRepeat?.cancel();
+    _bpmRepeat = null;
   }
 
   void _showSummaryDialog() {
-    double rate(String chord) =>
-        (_chordCorrect[chord] ?? 0) / _chordAttempts[chord]!;
-    final chords = _chordAttempts.keys.toList()
+    final engine = _engine!;
+    final perChord = engine.perChord;
+    double rate(String chord) {
+      final (hit, total) = perChord[chord]!;
+      return total == 0 ? 0 : hit / total;
+    }
+
+    final chords = perChord.keys.toList()
       ..sort((a, b) => rate(a).compareTo(rate(b)));
     final weakest = chords.isNotEmpty && rate(chords.first) < 1
         ? chords.first
         : null;
+    final notCounted = engine.notCountedChords;
 
     showDialog(
       context: context,
@@ -258,15 +287,25 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            '${_chordCorrect[chord] ?? 0}/${_chordAttempts[chord]}',
+                            '${perChord[chord]!.$1} de ${perChord[chord]!.$2}',
                             style: const TextStyle(fontFamily: fontChord),
                           ),
                         ],
                       ),
                     ),
+                  if (notCounted.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Não contaram: ${notCounted.join(', ')} (o modelo não conhece)',
+                    ),
+                  ],
                   if (weakest != null) ...[
                     const SizedBox(height: 12),
                     Text('Vale treinar mais o $weakest.'),
+                  ],
+                  if (_finishedMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Text(_finishedMessage!),
                   ],
                 ],
               ),
@@ -283,11 +322,32 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     );
   }
 
-  String? get _nextChord {
-    final score = _practiceMap.score;
+  Map<int, Map<int, bool>> _tokenResults() {
+    final engine = _engine;
+    final out = <int, Map<int, bool>>{};
+    if (engine == null) return out;
+    for (var i = 0; i < engine.results.length; i++) {
+      final result = engine.results[i];
+      if (result != StepResult.hit && result != StepResult.miss) continue;
+      final loc = _practiceMap.locations[i];
+      (out[_lineKeyId(loc.sectionIndex, loc.lineIndex)] ??=
+              {})[loc.tokenIndex] =
+          result == StepResult.hit;
+    }
+    return out;
+  }
+
+  int get _nextBeats {
+    final steps = _practiceMap.score.steps;
     final nextIndex = appState.currentStepIndex + 1;
-    if (nextIndex >= score.steps.length) return null;
-    return score.steps[nextIndex].chord;
+    return nextIndex < steps.length ? steps[nextIndex].beats : 0;
+  }
+
+  String? get _nextChord {
+    final steps = _practiceMap.score.steps;
+    final nextIndex = appState.currentStepIndex + 1;
+    if (nextIndex >= steps.length) return null;
+    return steps[nextIndex].chord;
   }
 
   void _showSnackBar(String message) {
@@ -297,6 +357,8 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
 
   @override
   void dispose() {
+    _ticker?.cancel();
+    _bpmRepeat?.cancel();
     appState.removeListener(_onAppStateChanged);
     // Sem isso a sessão continuava "rodando" depois de sair da tela.
     if (appState.sessionStatus != SessionStatus.idle) {
@@ -320,7 +382,10 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
             activeIndex < _practiceMap.locations.length)
         ? _practiceMap.locations[activeIndex]
         : null;
-    final pattern = widget.sheet.strummingPattern;
+    final strokes = parseStrumPattern(
+      widget.sheet.strummingPattern ?? const [],
+    );
+    final results = _tokenResults();
     final meta = sheetMeta(widget.sheet);
     final padding = pagePadding(context);
 
@@ -346,10 +411,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
       ),
       body: Column(
         children: [
-          Offstage(
-            child: Metronome(running: running, bpm: _bpm, onBeat: _onBeat),
-          ),
-          if (pattern != null && pattern.isNotEmpty)
+          if (strokes.isNotEmpty)
             Container(
               width: double.infinity,
               padding: EdgeInsets.fromLTRB(padding.left, 4, padding.right, 10),
@@ -363,18 +425,15 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                   Expanded(
                     child: Semantics(
                       label:
-                          'Batida: ${pattern.map((s) => s.toUpperCase() == 'D' ? 'baixo' : 'cima').join(', ')}',
+                          'Batida: ${strokes.map((s) => switch (s.kind) {
+                            StrumKind.down => 'baixo',
+                            StrumKind.up => 'cima',
+                            StrumKind.muted => 'abafado',
+                          }).join(', ')}',
                       excludeSemantics: true,
-                      child: Wrap(
-                        spacing: 4,
-                        runSpacing: 4,
-                        children: [
-                          for (var i = 0; i < pattern.length; i++)
-                            _StrumSymbol(
-                              down: pattern[i].toUpperCase() == 'D',
-                              active: running && i == _strumBeatIndex,
-                            ),
-                        ],
+                      child: _StrumBar(
+                        strokes: strokes,
+                        activeEighth: running ? _engine?.eighthInBar : null,
                       ),
                     ),
                   ),
@@ -417,6 +476,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                                 activeLoc.lineIndex == li)
                             ? activeLoc.tokenIndex
                             : null,
+                        tokenResults: results[_lineKeyId(si, li)] ?? const {},
                       ),
                     ),
                 ],
@@ -439,6 +499,8 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
         (steps.isNotEmpty ? steps.first.chord : null);
     final padding = pagePadding(context);
 
+    final engine = _engine;
+    final judged = running ? engine?.lastJudged : null;
     final StatusLine status;
     if (!running) {
       status = StatusLine(
@@ -446,18 +508,34 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
             _finishedMessage ??
             (steps.isEmpty ? 'Esta cifra não tem acordes' : 'Primeiro acorde'),
       );
-    } else if (_lastMatched == null) {
+    } else if (engine != null && engine.countingIn) {
+      status = StatusLine(text: 'Prepare-se… ${engine.countInLeft}');
+    } else if (engine == null || judged == null) {
       status = const StatusLine(text: 'Toque este acorde');
-    } else if (_lastMatched!) {
-      status = StatusLine(icon: Ph.check, text: 'Certo', color: tokens.correct);
     } else {
-      status = StatusLine(
-        icon: Ph.x,
-        text: _lastRecognizedChord == null
-            ? 'Não ouvi nada'
-            : 'Você tocou $_lastRecognizedChord',
-        color: colorScheme.error,
-      );
+      final judgedChord = steps[judged].chord;
+      switch (engine.results[judged]) {
+        case StepResult.hit:
+          status = StatusLine(
+            icon: Ph.check,
+            text: 'Acertou o $judgedChord',
+            color: tokens.correct,
+          );
+        case StepResult.miss:
+          final wrong = engine.wrongChordHeard(judged);
+          status = StatusLine(
+            icon: Ph.x,
+            text: wrong == null
+                ? 'Não ouvi o $judgedChord'
+                : 'No lugar do $judgedChord, ouvi $wrong',
+            color: colorScheme.error,
+          );
+        case StepResult.notCounted:
+        case StepResult.pending:
+          status = StatusLine(
+            text: '$judgedChord não conta: o modelo não conhece',
+          );
+      }
     }
 
     return Padding(
@@ -479,11 +557,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                         width: 64,
                         child: GuitarNeck(
                           chord: chord,
-                          matchState: _lastMatched == null || !running
-                              ? ChordMatchState.neutral
-                              : (_lastMatched!
-                                    ? ChordMatchState.correct
-                                    : ChordMatchState.incorrect),
+                          matchState: ChordMatchState.neutral,
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -510,10 +584,30 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                                 ),
                             ],
                           ),
+                          if (running && engine != null && !engine.countingIn)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: _BeatDots(
+                                beats: engine.currentStep?.beats ?? 0,
+                                lit: engine.beatInStep.floor() + 1,
+                              ),
+                            ),
                           if (running && _nextChord != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                'Depois: $_nextChord ($_nextBeats tempos)',
+                                style: textTheme.bodySmall,
+                              ),
+                            ),
+                          if (running && engine != null && !engine.countingIn)
                             Text(
-                              'Depois: $_nextChord',
-                              style: textTheme.bodySmall,
+                              _hearing == null
+                                  ? 'Ouvindo: nada ainda'
+                                  : 'Ouvindo: $_hearing',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                             ),
                         ],
                       ),
@@ -530,14 +624,18 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    IconButton(
-                      tooltip: 'Diminuir andamento',
-                      icon: const Icon(Ph.minus),
-                      onPressed: running || _bpm <= _minBpm
-                          ? null
-                          : () => setState(
-                              () => _bpm = (_bpm - 5).clamp(_minBpm, _maxBpm),
-                            ),
+                    GestureDetector(
+                      onLongPressStart: (_) => _startBpmRepeat(-1),
+                      onLongPressEnd: (_) => _stopBpmRepeat(),
+                      child: IconButton(
+                        icon: Icon(
+                          Ph.minus,
+                          semanticLabel: 'Diminuir andamento',
+                        ),
+                        onPressed: _bpm <= _minBpm
+                            ? null
+                            : () => _changeBpm(-1),
+                      ),
                     ),
                     Semantics(
                       label: '$_bpm batidas por minuto',
@@ -559,14 +657,16 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
                         ),
                       ),
                     ),
-                    IconButton(
-                      tooltip: 'Aumentar andamento',
-                      icon: const Icon(Ph.plus),
-                      onPressed: running || _bpm >= _maxBpm
-                          ? null
-                          : () => setState(
-                              () => _bpm = (_bpm + 5).clamp(_minBpm, _maxBpm),
-                            ),
+                    GestureDetector(
+                      onLongPressStart: (_) => _startBpmRepeat(1),
+                      onLongPressEnd: (_) => _stopBpmRepeat(),
+                      child: IconButton(
+                        icon: Icon(
+                          Ph.plus,
+                          semanticLabel: 'Aumentar andamento',
+                        ),
+                        onPressed: _bpm >= _maxBpm ? null : () => _changeBpm(1),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -598,29 +698,100 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
   }
 }
 
-class _StrumSymbol extends StatelessWidget {
-  final bool down;
+class _StrumBar extends StatelessWidget {
+  final List<StrumStroke> strokes;
+  final int? activeEighth;
+
+  const _StrumBar({required this.strokes, required this.activeEighth});
+
+  int? get _activeStroke {
+    final eighth = activeEighth;
+    if (eighth == null || strokes.any((s) => s.eighth == null)) return null;
+    int? active;
+    for (var i = 0; i < strokes.length; i++) {
+      if (strokes[i].eighth! <= eighth) active = i;
+    }
+    return active ?? strokes.length - 1;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final active = _activeStroke;
+    return Wrap(
+      spacing: 4,
+      runSpacing: 4,
+      children: [
+        for (var i = 0; i < strokes.length; i++)
+          _StrumCell(stroke: strokes[i], active: i == active),
+      ],
+    );
+  }
+}
+
+class _StrumCell extends StatelessWidget {
+  final StrumStroke? stroke;
   final bool active;
 
-  const _StrumSymbol({required this.down, required this.active});
+  const _StrumCell({required this.stroke, required this.active});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final kind = stroke?.kind;
     return Container(
       width: 28,
       height: 28,
       decoration: BoxDecoration(
-        color: active ? colorScheme.primary : null,
+        color: active
+            ? (kind == null ? colorScheme.outlineVariant : colorScheme.primary)
+            : null,
         border: Border.all(
           color: active ? colorScheme.primary : context.tokens.rule,
         ),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Icon(
-        down ? Ph.arrowDown : Ph.arrowUp,
-        size: 16,
-        color: active ? colorScheme.onPrimary : colorScheme.onSurface,
+      child: kind == null
+          ? null
+          : Icon(
+              switch (kind) {
+                StrumKind.down => Ph.arrowDown,
+                StrumKind.up => Ph.arrowUp,
+                StrumKind.muted => Ph.x,
+              },
+              size: 16,
+              color: active ? colorScheme.onPrimary : colorScheme.onSurface,
+            ),
+    );
+  }
+}
+
+class _BeatDots extends StatelessWidget {
+  final int beats;
+  final int lit;
+
+  const _BeatDots({required this.beats, required this.lit});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label: 'Tempo ${lit.clamp(1, beats)} de $beats',
+      excludeSemantics: true,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < beats; i++)
+            Container(
+              width: 12,
+              height: 12,
+              margin: const EdgeInsets.only(right: 6),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: i < lit ? colorScheme.primary : null,
+                border: Border.all(color: colorScheme.primary),
+              ),
+            ),
+        ],
       ),
     );
   }

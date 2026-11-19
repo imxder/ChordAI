@@ -53,6 +53,21 @@ class _PracticeOptionsSheet extends StatelessWidget {
                 ],
               ),
               GroupedSection(
+                header: 'Tocar junto',
+                children: [
+                  CheckRow(
+                    title: 'Acompanhar o andamento',
+                    selected: !appState.playAlongWaitsForMe,
+                    onTap: () => appState.setPlayAlongWaitsForMe(false),
+                  ),
+                  CheckRow(
+                    title: 'Esperar por mim',
+                    selected: appState.playAlongWaitsForMe,
+                    onTap: () => appState.setPlayAlongWaitsForMe(true),
+                  ),
+                ],
+              ),
+              GroupedSection(
                 header: 'Ao tocar junto',
                 children: [
                   SwitchRow(

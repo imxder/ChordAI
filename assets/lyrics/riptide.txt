@@ -1,6 +1,7 @@
 Tom: C
 Tempo: 100
-Batida: D D U U D U
+Batida: D1 D2 U2& U3& D4 U4&
+Tempos: Am=2 G=2
 
 [Intro] Am  G  C
         Am  G  C
@@ -81,18 +82,18 @@ You're gonna sing the words wrong
 
 [Terceira Parte]
 
-Am                           G
+Am:4                         G:4
 I just wanna, I just wanna know
 C                                  F
 If you're gonna, if you're gonna stay
-Am                           G
+Am:4                         G:4
 I just gotta, I just gotta know
 C                                F
 I can't have it, I can't have it any other way
 
-Am             G                  C
+Am:4           G:4                C
 I swear she's destined for the screen
-  Am              G
+  Am:4            G:4
 Closest thing to Michelle Pfeiffer
   C
 That you've ever seen, oh

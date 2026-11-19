@@ -1,6 +1,6 @@
 Tom:  C
 Tempo: 98
-Batida: D D U U D U
+Batida: D1 D2 U2& U3& D4 U4&
 
 [Intro] C  G  Am  F
         C  G  Am  F

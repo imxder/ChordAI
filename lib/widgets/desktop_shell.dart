@@ -295,3 +295,56 @@ class _PaneItem extends StatelessWidget {
     return item;
   }
 }
+
+/// Uma coluna de tela no computador. As telas medem a largura pela
+/// MediaQuery (ver pagePadding); aqui ela vira a largura da coluna, então
+/// uma tela inteira (lista, detalhe do acorde) cabe certinho dentro dela.
+class DesktopPane extends StatelessWidget {
+  final Widget child;
+
+  const DesktopPane({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(size: constraints.biggest),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Duas colunas lado a lado, com uma linha fina entre elas. A da esquerda
+/// tem largura fixa; a da direita fica com o resto.
+class DesktopSplit extends StatelessWidget {
+  final double leftWidth;
+  final Widget left;
+  final Widget right;
+
+  const DesktopSplit({
+    super.key,
+    required this.leftWidth,
+    required this.left,
+    required this.right,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          width: leftWidth,
+          child: DesktopPane(child: left),
+        ),
+        VerticalDivider(
+          width: 1,
+          thickness: 1,
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+        ),
+        Expanded(child: DesktopPane(child: right)),
+      ],
+    );
+  }
+}

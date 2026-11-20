@@ -6,6 +6,7 @@ import '../services/tuner_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../theme/glass_tokens.dart';
+import '../widgets/mic_lifecycle.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/tuning_gauge.dart';
 import '../models/guide_content.dart';
@@ -15,14 +16,17 @@ import 'tuning_select_sheet.dart';
 import '../theme/ph.dart';
 
 class TunerScreen extends StatefulWidget {
-  const TunerScreen({super.key});
+  /// Só pros testes: um afinador falso no lugar do microfone.
+  final TunerService? service;
+
+  const TunerScreen({super.key, this.service});
 
   @override
   State<TunerScreen> createState() => _TunerScreenState();
 }
 
-class _TunerScreenState extends State<TunerScreen> {
-  final _service = TunerService();
+class _TunerScreenState extends State<TunerScreen> with MicLifecycle {
+  late final TunerService _service = widget.service ?? TunerService();
   bool _listening = false;
   bool _denied = false;
   TunerReading? _reading;
@@ -52,7 +56,10 @@ class _TunerScreenState extends State<TunerScreen> {
       return;
     }
 
-    setState(() => _listening = true);
+    setState(() {
+      _listening = true;
+      _denied = false;
+    });
 
     await _service.start((frequency) {
       if (!mounted) return;
@@ -61,6 +68,25 @@ class _TunerScreenState extends State<TunerScreen> {
         _inTune = _service.smoother?.updateInTune(_reading?.cents) ?? false;
       });
     });
+  }
+
+  // Escondendo o app, o afinador desliga o microfone. Ele não tem botão de
+  // começar, então liga sozinho de novo quando o app volta (e confere a
+  // permissão de novo, caso tenha sido liberada nas Configurações).
+  @override
+  void onAppHidden() {
+    if (!_listening) return;
+    _service.stop();
+    setState(() {
+      _listening = false;
+      _reading = null;
+      _inTune = false;
+    });
+  }
+
+  @override
+  void onAppShown() {
+    if (!_listening) _start();
   }
 
   TunerReading? _classify(double? frequency) {

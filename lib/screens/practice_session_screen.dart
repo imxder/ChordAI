@@ -9,6 +9,7 @@ import '../services/score_library.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../theme/glass_tokens.dart';
+import '../widgets/mic_lifecycle.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/metronome.dart';
 import '../widgets/page_parts.dart';
@@ -19,20 +20,24 @@ class PracticeSessionScreen extends StatefulWidget {
   final String serverUrl;
   final InputDevice? inputDevice;
 
+  /// Só pros testes: um reconhecedor falso no lugar do microfone.
+  final ChordRecognizer? recognizer;
+
   const PracticeSessionScreen({
     super.key,
     required this.serverUrl,
     this.inputDevice,
+    this.recognizer,
   });
 
   @override
   State<PracticeSessionScreen> createState() => _PracticeSessionScreenState();
 }
 
-class _PracticeSessionScreenState extends State<PracticeSessionScreen> {
-  late final ChordRecognizer _service = createChordRecognizer(
-    appState.chordRecognitionMode,
-  );
+class _PracticeSessionScreenState extends State<PracticeSessionScreen>
+    with MicLifecycle {
+  late final ChordRecognizer _service =
+      widget.recognizer ?? createChordRecognizer(appState.chordRecognitionMode);
   final _scoreLibrary = ScoreLibrary();
 
   List<Score> _scores = [];
@@ -88,6 +93,12 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen> {
     );
 
     setState(() => _statusMessage = 'Ouvindo');
+  }
+
+  // Escondendo o app, o treino para como se a pessoa tivesse apertado Parar.
+  @override
+  void onAppHidden() {
+    if (appState.sessionStatus == SessionStatus.running) _stop();
   }
 
   Future<void> _stop() async {

@@ -8,6 +8,7 @@ import '../services/chord_recognizer_factory.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../theme/glass_tokens.dart';
+import '../widgets/mic_lifecycle.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/recognition_mode_badge.dart';
@@ -16,6 +17,9 @@ import '../theme/ph.dart';
 class ChordPracticeScreen extends StatefulWidget {
   final String serverUrl;
   final InputDevice? inputDevice;
+
+  /// Só pros testes: um reconhecedor falso no lugar do microfone.
+  final ChordRecognizer? recognizer;
   final String chord;
 
   const ChordPracticeScreen({
@@ -23,16 +27,17 @@ class ChordPracticeScreen extends StatefulWidget {
     required this.serverUrl,
     required this.chord,
     this.inputDevice,
+    this.recognizer,
   });
 
   @override
   State<ChordPracticeScreen> createState() => _ChordPracticeScreenState();
 }
 
-class _ChordPracticeScreenState extends State<ChordPracticeScreen> {
-  late final ChordRecognizer _service = createChordRecognizer(
-    appState.chordRecognitionMode,
-  );
+class _ChordPracticeScreenState extends State<ChordPracticeScreen>
+    with MicLifecycle {
+  late final ChordRecognizer _service =
+      widget.recognizer ?? createChordRecognizer(appState.chordRecognitionMode);
 
   bool _listening = false;
   int _hits = 0;
@@ -68,6 +73,12 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen> {
         chordRecognitionErrorMessage(appState.chordRecognitionMode),
       ),
     );
+  }
+
+  // Escondendo o app, para de ouvir como se a pessoa tivesse apertado Parar.
+  @override
+  void onAppHidden() {
+    if (_listening) _stop();
   }
 
   Future<void> _stop() async {

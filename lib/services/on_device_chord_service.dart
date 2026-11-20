@@ -37,6 +37,7 @@ class OnDeviceChordService implements ChordRecognizer {
   ChordModelInfo? _modelInfo;
   OnDeviceModel? _loadedModel;
   InputDevice? _selectedDevice;
+  MicrophoneWatch? _microphoneWatch;
   bool _running = false;
   bool _inferring = false;
 
@@ -90,6 +91,13 @@ class OnDeviceChordService implements ChordRecognizer {
     _decoder.reset();
     _buffer = LatestSamplesBuffer(_modelInfo!.inputSamples);
     _stabilizer = ChordStabilizer();
+
+    // No computador, o microfone bloqueado ou a entrada desconectada só
+    // aparecem depois que a gravação começa (ver audio_input.dart).
+    _microphoneWatch = watchMicrophone(_recorder, (problem) {
+      stop();
+      onError(problem);
+    });
 
     final stream = await _recorder.startStream(
       RecordConfig(
@@ -198,6 +206,8 @@ class OnDeviceChordService implements ChordRecognizer {
   @override
   Future<void> stop() async {
     _running = false;
+    await _microphoneWatch?.cancel();
+    _microphoneWatch = null;
     _inferenceTimer?.cancel();
     _inferenceTimer = null;
     await _subscription?.cancel();

@@ -20,6 +20,7 @@ class TunerService {
   SlidingPcmBuffer? _buffer;
   PitchSmoother? _smoother;
   final Pcm16Decoder _decoder = Pcm16Decoder();
+  MicrophoneWatch? _microphoneWatch;
 
   /// Suaviza as leituras de frequência e expõe a histerese do estado
   /// "afinado" (ver PitchSmoother.updateInTune) pra tela do afinador.
@@ -27,7 +28,16 @@ class TunerService {
 
   Future<bool> hasPermission() => _recorder.hasPermission();
 
-  Future<void> start(void Function(double? frequency) onPitch) async {
+  /// [onProblem] só é chamado no computador, se o microfone estiver
+  /// bloqueado ou a entrada for desconectada (ver audio_input.dart).
+  Future<void> start(
+    void Function(double? frequency) onPitch, {
+    void Function(MicrophoneProblem problem)? onProblem,
+  }) async {
+    _microphoneWatch = watchMicrophone(_recorder, (problem) {
+      stop();
+      onProblem?.call(problem);
+    });
     final stream = await _recorder.startStream(
       RecordConfig(
         encoder: AudioEncoder.pcm16bits,
@@ -73,6 +83,8 @@ class TunerService {
   }
 
   Future<void> stop() async {
+    await _microphoneWatch?.cancel();
+    _microphoneWatch = null;
     await _subscription?.cancel();
     _subscription = null;
     _buffer = null;

@@ -163,53 +163,79 @@ void main() {
     (AppAppearance.paper, ''),
     (AppAppearance.dark, '_escuro'),
   ]) {
-    testWidgets('início$sufixo', (tester) async {
-      await _janela(tester, const AppShell(), aparencia: aparencia);
-      await _salvar(tester, 'inicio$sufixo');
-    }, variant: _windows, skip: !_gerar);
+    testWidgets(
+      'início$sufixo',
+      (tester) async {
+        await _janela(tester, const AppShell(), aparencia: aparencia);
+        await _salvar(tester, 'inicio$sufixo');
+      },
+      variant: _windows,
+      skip: !_gerar,
+    );
 
-    testWidgets('acordes$sufixo', (tester) async {
-      await _janela(tester, const AppShell(), aparencia: aparencia);
-      await tester.tap(find.byKey(const ValueKey('aba Acordes')));
-      await _salvar(tester, 'acordes$sufixo');
-    }, variant: _windows, skip: !_gerar);
+    testWidgets(
+      'acordes$sufixo',
+      (tester) async {
+        await _janela(tester, const AppShell(), aparencia: aparencia);
+        await tester.tap(find.byKey(const ValueKey('aba Acordes')));
+        await _salvar(tester, 'acordes$sufixo');
+      },
+      variant: _windows,
+      skip: !_gerar,
+    );
 
-    testWidgets('reconhecer$sufixo', (tester) async {
-      await _janela(
-        tester,
-        _naCasca(
-          0,
-          (_) => FreePracticeScreen(serverUrl: '', recognizer: _OuveDo()),
-        ),
-        aparencia: aparencia,
-      );
-      await tester.tap(find.text('Ouvir'));
-      await _salvar(tester, 'reconhecer$sufixo');
-    }, variant: _windows, skip: !_gerar);
-
-    testWidgets('afinador$sufixo', (tester) async {
-      await _janela(tester, const AppShell(), aparencia: aparencia);
-      await tester.tap(find.text('Afinador'));
-      await _salvar(tester, 'afinador$sufixo');
-    }, variant: _windows, skip: !_gerar);
-
-    testWidgets('tocar junto$sufixo', (tester) async {
-      final musica = (await tester.runAsync(
-        () => LyricSheetLibrary().loadAll(),
-      ))!.first;
-      await _janela(
-        tester,
-        _naCasca(
-          1,
-          (_) => LyricPlayerScreen(
-            sheet: musica,
-            serverUrl: '',
-            recognizer: _OuveDo(),
+    testWidgets(
+      'reconhecer$sufixo',
+      (tester) async {
+        await _janela(
+          tester,
+          _naCasca(
+            0,
+            (_) => FreePracticeScreen(serverUrl: '', recognizer: _OuveDo()),
           ),
-        ),
-        aparencia: aparencia,
-      );
-      await _salvar(tester, 'tocar_junto$sufixo');
-    }, variant: _windows, skip: !_gerar, timeout: const Timeout(Duration(seconds: 60)));
+          aparencia: aparencia,
+        );
+        await tester.tap(find.text('Ouvir'));
+        await _salvar(tester, 'reconhecer$sufixo');
+      },
+      variant: _windows,
+      skip: !_gerar,
+    );
+
+    testWidgets(
+      'afinador$sufixo',
+      (tester) async {
+        await _janela(tester, const AppShell(), aparencia: aparencia);
+        await tester.tap(find.text('Afinador'));
+        await _salvar(tester, 'afinador$sufixo');
+      },
+      variant: _windows,
+      skip: !_gerar,
+    );
+
+    testWidgets(
+      'tocar junto$sufixo',
+      (tester) async {
+        final musica = (await tester.runAsync(
+          () => LyricSheetLibrary().loadAll(),
+        ))!.first;
+        await _janela(
+          tester,
+          _naCasca(
+            1,
+            (_) => LyricPlayerScreen(
+              sheet: musica,
+              serverUrl: '',
+              recognizer: _OuveDo(),
+            ),
+          ),
+          aparencia: aparencia,
+        );
+        await _salvar(tester, 'tocar_junto$sufixo');
+      },
+      variant: _windows,
+      skip: !_gerar,
+      timeout: const Timeout(Duration(seconds: 60)),
+    );
   }
 }

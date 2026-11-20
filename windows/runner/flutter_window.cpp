@@ -1,8 +1,27 @@
 #include "flutter_window.h"
 
+#include <dwmapi.h>
+#include <flutter/standard_method_codec.h>
+
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
+
+namespace {
+
+// Atributos do Windows 11 (build 22000) pra cor da barra de título e do texto
+// dela. Definidos aqui caso o SDK do Windows seja mais antigo. No Windows 10 o
+// DwmSetWindowAttribute só devolve erro e a barra fica como está.
+constexpr DWORD kCaptionColor = 35;  // DWMWA_CAPTION_COLOR
+constexpr DWORD kTextColor = 36;     // DWMWA_TEXT_COLOR
+
+// O Flutter manda a cor como 0xAARRGGBB; o Windows quer 0x00BBGGRR.
+COLORREF ToColorRef(int64_t argb) {
+  const auto value = static_cast<uint32_t>(argb);
+  return RGB((value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF);
+}
+
+}  // namespace
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -25,6 +44,38 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+
+  window_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), "chordai/window",
+          &flutter::StandardMethodCodec::GetInstance());
+  window_channel_->SetMethodCallHandler(
+      [this](const auto& call, auto result) {
+        if (call.method_name() != "setTitleBarColors") {
+          result->NotImplemented();
+          return;
+        }
+        const auto* args =
+            std::get_if<flutter::EncodableMap>(call.arguments());
+        if (args == nullptr) {
+          result->Error("args", "Esperava background e text.");
+          return;
+        }
+        auto color = [args](const char* key) -> std::optional<COLORREF> {
+          auto it = args->find(flutter::EncodableValue(key));
+          if (it == args->end()) return std::nullopt;
+          return ToColorRef(it->second.LongValue());
+        };
+        HWND hwnd = GetHandle();
+        if (auto background = color("background")) {
+          DwmSetWindowAttribute(hwnd, kCaptionColor, &*background,
+                                sizeof(COLORREF));
+        }
+        if (auto text = color("text")) {
+          DwmSetWindowAttribute(hwnd, kTextColor, &*text, sizeof(COLORREF));
+        }
+        result->Success();
+      });
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {

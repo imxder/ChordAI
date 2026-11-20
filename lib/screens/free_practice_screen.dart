@@ -15,6 +15,8 @@ import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/recognition_mode_badge.dart';
 import '../theme/ph.dart';
+import '../theme/platform_style.dart';
+import '../widgets/desktop_input.dart';
 
 class FreePracticeScreen extends StatefulWidget {
   final String serverUrl;
@@ -141,107 +143,113 @@ class _FreePracticeScreenState extends State<FreePracticeScreen>
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
     final chord = _chord;
+    // No computador é a tela que eu mostro na apresentação: braço e nome do
+    // acorde bem maiores, pra ver de longe.
+    final big = isDesktop;
+    final chordStyle = textTheme.displayLarge?.copyWith(
+      fontSize: big ? 120 : null,
+      color: chord == null ? colorScheme.outlineVariant : null,
+    );
 
-    return IosPage(
-      title: 'Reconhecer acorde',
-      trailing: const RecognitionModeBadge(),
-      bottomBar: BottomActionBar(
-        child: FilledButton.icon(
-          onPressed: _toggle,
-          icon: Icon(_listening ? Ph.stopFill : Ph.microphoneFill, size: 20),
-          label: Text(_listening ? 'Parar' : 'Ouvir'),
-          style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(50),
-            backgroundColor: _listening ? colorScheme.onSurface : null,
-            foregroundColor: _listening ? colorScheme.surface : null,
+    return SpaceToToggle(
+      onToggle: _toggle,
+      child: IosPage(
+        title: 'Reconhecer acorde',
+        trailing: const RecognitionModeBadge(),
+        bottomBar: BottomActionBar(
+          child: FilledButton.icon(
+            onPressed: _toggle,
+            icon: Icon(_listening ? Ph.stopFill : Ph.microphoneFill, size: 20),
+            label: Text(_listening ? 'Parar' : 'Ouvir'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+              backgroundColor: _listening ? colorScheme.onSurface : null,
+              foregroundColor: _listening ? colorScheme.surface : null,
+            ),
           ),
         ),
-      ),
-      children: [
-        Material(
-          color: context.tokens.cell,
-          borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(width: 110, child: GuitarNeck(chord: chord)),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Semantics(
-                    liveRegion: true,
-                    label: chord == null
-                        ? 'Nenhum acorde reconhecido'
-                        : 'Acorde $chord, ${chordFullName(chord)}',
-                    excludeSemantics: true,
-                    child: GlassEnter(
-                      key: ValueKey(chord),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              chord ?? '–',
-                              style: textTheme.displayLarge?.copyWith(
-                                color: chord == null
-                                    ? colorScheme.outlineVariant
-                                    : null,
-                              ),
+        children: [
+          Material(
+            color: context.tokens.cell,
+            borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
+            child: Padding(
+              padding: EdgeInsets.all(big ? 40 : 20),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: big ? 220 : 110,
+                    child: GuitarNeck(chord: chord),
+                  ),
+                  SizedBox(width: big ? 40 : 20),
+                  Expanded(
+                    child: Semantics(
+                      liveRegion: true,
+                      label: chord == null
+                          ? 'Nenhum acorde reconhecido'
+                          : 'Acorde $chord, ${chordFullName(chord)}',
+                      excludeSemantics: true,
+                      child: GlassEnter(
+                        key: ValueKey(chord),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(chord ?? '–', style: chordStyle),
                             ),
-                          ),
-                          Text(
-                            chord != null
-                                ? chordFullName(chord)
-                                : 'Nenhum acorde ainda',
-                            style: textTheme.bodyLarge,
-                          ),
-                          if (_confidence > 0) ...[
-                            const SizedBox(height: 4),
                             Text(
-                              '${(_confidence * 100).toStringAsFixed(0)}% de confiança',
-                              style: textTheme.bodySmall?.copyWith(
-                                fontFamily: fontChord,
-                              ),
+                              chord != null
+                                  ? chordFullName(chord)
+                                  : 'Nenhum acorde ainda',
+                              style: textTheme.bodyLarge,
                             ),
+                            if (_confidence > 0) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                '${(_confidence * 100).toStringAsFixed(0)}% de confiança',
+                                style: textTheme.bodySmall?.copyWith(
+                                  fontFamily: fontChord,
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: StatusLine(
-            icon: _listening ? Ph.waveform : null,
-            text: _statusMessage,
-            color: _listening ? colorScheme.primary : null,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
-          child: Text(
-            'O app mostra o último acorde que reconheceu.',
-            style: textTheme.bodySmall,
-          ),
-        ),
-        if (_service case final OnDeviceChordService service)
-          if (service.lastInferenceMicros != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
-              child: Text(
-                'Inferência: ${(service.lastInferenceMicros! / 1000).toStringAsFixed(1)} ms',
-                style: textTheme.bodySmall,
+                ],
               ),
             ),
-      ],
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: StatusLine(
+              icon: _listening ? Ph.waveform : null,
+              text: _statusMessage,
+              color: _listening ? colorScheme.primary : null,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+            child: Text(
+              'O app mostra o último acorde que reconheceu.',
+              style: textTheme.bodySmall,
+            ),
+          ),
+          if (_service case final OnDeviceChordService service)
+            if (service.lastInferenceMicros != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
+                child: Text(
+                  'Inferência: ${(service.lastInferenceMicros! / 1000).toStringAsFixed(1)} ms',
+                  style: textTheme.bodySmall,
+                ),
+              ),
+        ],
+      ),
     );
   }
 }

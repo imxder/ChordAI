@@ -11,6 +11,7 @@ import '../models/on_device_model.dart';
 import '../models/score.dart';
 import '../models/tuner_note.dart';
 import '../models/tuning_preset.dart';
+import '../theme/platform_style.dart';
 
 enum SessionStatus { idle, running, paused }
 
@@ -271,6 +272,9 @@ class AppState extends ChangeNotifier {
       (m) => m.name == savedMode,
       orElse: () => ChordRecognitionMode.onDevice,
     );
+    // No computador só tem o modelo no aparelho (a tela nem mostra o modo
+    // servidor). O que estava salvo fica salvo, só não vale aqui.
+    if (isDesktop) chordRecognitionMode = ChordRecognitionMode.onDevice;
     final savedModel = prefs.getString(_onDeviceModelKey);
     onDeviceModel = OnDeviceModel.values.firstWhere(
       (m) => m.name == savedModel,

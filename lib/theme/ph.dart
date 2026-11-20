@@ -21,6 +21,8 @@ abstract final class Ph {
   static const textAa = IconData(0xe6ee, fontFamily: _regular);
   static const waveform = IconData(0xe802, fontFamily: _regular);
   static const gauge = IconData(0xe628, fontFamily: _regular);
+  static const caretLeft = IconData(0xe138, fontFamily: _regular);
+  static const list = IconData(0xe2f0, fontFamily: _regular);
 
   static const houseFill = IconData(0xe2c2, fontFamily: _fill);
   static const musicNotesFill = IconData(0xe340, fontFamily: _fill);

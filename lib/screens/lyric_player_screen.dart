@@ -24,6 +24,9 @@ import '../widgets/practice_options_sheet.dart';
 import '../widgets/recognition_mode_badge.dart';
 import 'lyric_sheet_screen.dart';
 import '../theme/ph.dart';
+import '../widgets/desktop_shell.dart';
+import '../theme/platform_style.dart';
+import '../widgets/desktop_input.dart';
 
 class LyricPlayerScreen extends StatefulWidget {
   final String serverUrl;
@@ -423,6 +426,128 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     final meta = sheetMeta(widget.sheet);
     final padding = pagePadding(context);
 
+    final trailing = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const RecognitionModeBadge(),
+        const SizedBox(width: 8),
+        CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () => showPracticeOptionsSheet(context),
+          child: const Icon(Ph.textAa, semanticLabel: 'Leitura das cifras'),
+        ),
+      ],
+    );
+    final sheet = <Widget>[
+      if (strokes.isNotEmpty)
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.fromLTRB(padding.left, 4, padding.right, 10),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: context.tokens.rule)),
+          ),
+          child: Row(
+            children: [
+              Text('Batida', style: textTheme.titleSmall),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Semantics(
+                  label:
+                      'Batida: ${strokes.map((s) => switch (s.kind) {
+                        StrumKind.down => 'baixo',
+                        StrumKind.up => 'cima',
+                        StrumKind.muted => 'abafado',
+                      }).join(', ')}',
+                  excludeSemantics: true,
+                  child: _StrumBar(
+                    strokes: strokes,
+                    activeEighth: running ? _engine?.eighthInBar : null,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      Expanded(
+        child: ListView(
+          controller: _scrollController,
+          padding: EdgeInsets.fromLTRB(padding.left, 12, padding.right, 24),
+          children: [
+            if (widget.sheet.artist != null || meta.isNotEmpty)
+              Text(
+                [
+                  if (widget.sheet.artist != null) widget.sheet.artist!,
+                  if (meta.isNotEmpty) meta,
+                ].join(' · '),
+                style: textTheme.bodySmall,
+              ),
+            for (var si = 0; si < widget.sheet.sections.length; si++) ...[
+              if (widget.sheet.sections[si].title != null)
+                SheetSectionLabel(widget.sheet.sections[si].title!),
+              for (
+                var li = 0;
+                li < widget.sheet.sections[si].lines.length;
+                li++
+              )
+                KeyedSubtree(
+                  key: _keyFor(si, li),
+                  child: CifraLine(
+                    line: widget.sheet.sections[si].lines[li],
+                    fontScale: appState.lyricFontScale,
+                    highlighted:
+                        activeLoc != null &&
+                        activeLoc.sectionIndex == si &&
+                        activeLoc.lineIndex == li,
+                    activeToken:
+                        (activeLoc != null &&
+                            activeLoc.sectionIndex == si &&
+                            activeLoc.lineIndex == li)
+                        ? activeLoc.tokenIndex
+                        : null,
+                    tokenResults: results[_lineKeyId(si, li)] ?? const {},
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    ];
+
+    // No computador: a cifra à esquerda e o painel (acorde, próximo, BPM e
+    // Começar) numa coluna fixa à direita, em vez de embaixo. A lógica é a
+    // mesma; só muda onde as peças ficam.
+    if (isDesktop) {
+      final steps = _practiceMap.score.steps;
+      return SpaceToToggle(
+        onToggle: steps.isEmpty ? null : (running ? _stop : _start),
+        child: Scaffold(
+          appBar: DesktopPageHeader(
+            title: widget.sheet.title,
+            trailing: trailing,
+          ),
+          body: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: DesktopPane(child: Column(children: sheet)),
+              ),
+              SizedBox(
+                width: 400,
+                child: DesktopPane(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: SingleChildScrollView(
+                      child: _buildControls(context, running),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: CupertinoNavigationBar(
         middle: Text(widget.sheet.title),
@@ -430,96 +555,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
             .withValues(alpha: 0.86),
         border: null,
         transitionBetweenRoutes: false,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const RecognitionModeBadge(),
-            const SizedBox(width: 8),
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: () => showPracticeOptionsSheet(context),
-              child: const Icon(Ph.textAa, semanticLabel: 'Leitura das cifras'),
-            ),
-          ],
-        ),
+        trailing: trailing,
       ),
-      body: Column(
-        children: [
-          if (strokes.isNotEmpty)
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.fromLTRB(padding.left, 4, padding.right, 10),
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: context.tokens.rule)),
-              ),
-              child: Row(
-                children: [
-                  Text('Batida', style: textTheme.titleSmall),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Semantics(
-                      label:
-                          'Batida: ${strokes.map((s) => switch (s.kind) {
-                            StrumKind.down => 'baixo',
-                            StrumKind.up => 'cima',
-                            StrumKind.muted => 'abafado',
-                          }).join(', ')}',
-                      excludeSemantics: true,
-                      child: _StrumBar(
-                        strokes: strokes,
-                        activeEighth: running ? _engine?.eighthInBar : null,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          Expanded(
-            child: ListView(
-              controller: _scrollController,
-              padding: EdgeInsets.fromLTRB(padding.left, 12, padding.right, 24),
-              children: [
-                if (widget.sheet.artist != null || meta.isNotEmpty)
-                  Text(
-                    [
-                      if (widget.sheet.artist != null) widget.sheet.artist!,
-                      if (meta.isNotEmpty) meta,
-                    ].join(' · '),
-                    style: textTheme.bodySmall,
-                  ),
-                for (var si = 0; si < widget.sheet.sections.length; si++) ...[
-                  if (widget.sheet.sections[si].title != null)
-                    SheetSectionLabel(widget.sheet.sections[si].title!),
-                  for (
-                    var li = 0;
-                    li < widget.sheet.sections[si].lines.length;
-                    li++
-                  )
-                    KeyedSubtree(
-                      key: _keyFor(si, li),
-                      child: CifraLine(
-                        line: widget.sheet.sections[si].lines[li],
-                        fontScale: appState.lyricFontScale,
-                        highlighted:
-                            activeLoc != null &&
-                            activeLoc.sectionIndex == si &&
-                            activeLoc.lineIndex == li,
-                        activeToken:
-                            (activeLoc != null &&
-                                activeLoc.sectionIndex == si &&
-                                activeLoc.lineIndex == li)
-                            ? activeLoc.tokenIndex
-                            : null,
-                        tokenResults: results[_lineKeyId(si, li)] ?? const {},
-                      ),
-                    ),
-                ],
-              ],
-            ),
-          ),
-          _buildControls(context, running),
-        ],
-      ),
+      body: Column(children: [...sheet, _buildControls(context, running)]),
     );
   }
 
@@ -531,7 +569,11 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     final chord =
         appState.currentStep?.chord ??
         (steps.isNotEmpty ? steps.first.chord : null);
-    final padding = pagePadding(context);
+    // Na coluna do computador a margem é fixa: a da página centraliza uma
+    // coluna de 720 e, aplicada aqui dentro, apertava o painel.
+    final padding = isDesktop
+        ? const EdgeInsets.symmetric(horizontal: 22)
+        : pagePadding(context);
 
     final engine = _engine;
     final judged = running ? engine?.lastJudged : null;
@@ -588,7 +630,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
                   children: [
                     if (appState.showGuitarNeckInPlayer) ...[
                       SizedBox(
-                        width: 64,
+                        width: isDesktop ? 96 : 64,
                         child: GuitarNeck(
                           chord: chord,
                           matchState: ChordMatchState.neutral,

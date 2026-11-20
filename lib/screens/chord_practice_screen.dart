@@ -14,6 +14,7 @@ import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/recognition_mode_badge.dart';
 import '../theme/ph.dart';
+import '../widgets/desktop_input.dart';
 
 class ChordPracticeScreen extends StatefulWidget {
   final String serverUrl;
@@ -161,95 +162,102 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
       ChordMatchState.neutral => null,
     };
 
-    return IosPage(
-      title: 'Testar ${widget.chord}',
-      trailing: const RecognitionModeBadge(),
-      bottomBar: BottomActionBar(
-        child: FilledButton.icon(
-          onPressed: _listening ? _stop : _start,
-          icon: Icon(_listening ? Ph.stopFill : Ph.microphoneFill, size: 20),
-          label: Text(_listening ? 'Parar' : 'Começar'),
-          style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(50),
-            backgroundColor: _listening ? colorScheme.onSurface : null,
-            foregroundColor: _listening ? colorScheme.surface : null,
-          ),
-        ),
-      ),
-      children: [
-        Material(
-          color: context.tokens.cell,
-          borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-            child: Column(
-              children: [
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.sizeOf(context).height * 0.32,
-                    maxWidth: 240,
-                  ),
-                  child: GuitarNeck(
-                    chord: widget.chord,
-                    matchState: _matchState,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                StatusLine(
-                  icon: statusIcon,
-                  text: _statusMessage,
-                  color: statusColor,
-                  textAlign: TextAlign.center,
-                ),
-              ],
+    return SpaceToToggle(
+      onToggle: _listening ? _stop : _start,
+      child: IosPage(
+        title: 'Testar ${widget.chord}',
+        trailing: const RecognitionModeBadge(),
+        bottomBar: BottomActionBar(
+          child: FilledButton.icon(
+            onPressed: _listening ? _stop : _start,
+            icon: Icon(_listening ? Ph.stopFill : Ph.microphoneFill, size: 20),
+            label: Text(_listening ? 'Parar' : 'Começar'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+              backgroundColor: _listening ? colorScheme.onSurface : null,
+              foregroundColor: _listening ? colorScheme.surface : null,
             ),
           ),
         ),
-        GroupedSection(
-          footer: learned
-              ? 'Você já aprendeu este acorde. Treine o quanto quiser.'
-              : 'Acerte ${AppState.chordMasteryHits} vezes seguidas para marcar como aprendido.',
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
+        children: [
+          Material(
+            color: context.tokens.cell,
+            borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Acertos seguidos: $_hits de ${AppState.chordMasteryHits}',
-                    style: textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: 12),
-                  ExcludeSemantics(
-                    child: Row(
-                      children: [
-                        for (var i = 0; i < AppState.chordMasteryHits; i++) ...[
-                          if (i > 0) const SizedBox(width: 6),
-                          Expanded(
-                            child: AnimatedContainer(
-                              duration: motion(
-                                context,
-                                const Duration(milliseconds: 160),
-                              ),
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: i < _hits
-                                    ? context.tokens.correct
-                                    : context.tokens.fill,
-                                borderRadius: BorderRadius.circular(3),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.sizeOf(context).height * 0.32,
+                      maxWidth: 240,
                     ),
+                    child: GuitarNeck(
+                      chord: widget.chord,
+                      matchState: _matchState,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  StatusLine(
+                    icon: statusIcon,
+                    text: _statusMessage,
+                    color: statusColor,
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-      ],
+          ),
+          GroupedSection(
+            footer: learned
+                ? 'Você já aprendeu este acorde. Treine o quanto quiser.'
+                : 'Acerte ${AppState.chordMasteryHits} vezes seguidas para marcar como aprendido.',
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Acertos seguidos: $_hits de ${AppState.chordMasteryHits}',
+                      style: textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 12),
+                    ExcludeSemantics(
+                      child: Row(
+                        children: [
+                          for (
+                            var i = 0;
+                            i < AppState.chordMasteryHits;
+                            i++
+                          ) ...[
+                            if (i > 0) const SizedBox(width: 6),
+                            Expanded(
+                              child: AnimatedContainer(
+                                duration: motion(
+                                  context,
+                                  const Duration(milliseconds: 160),
+                                ),
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: i < _hits
+                                      ? context.tokens.correct
+                                      : context.tokens.fill,
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

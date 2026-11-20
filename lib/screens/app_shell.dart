@@ -9,8 +9,13 @@ import 'lyric_sheet_list_screen.dart';
 import 'profile_screen.dart';
 import '../theme/ph.dart';
 import '../theme/platform_style.dart';
+import '../widgets/audio_input_section.dart';
+import '../widgets/desktop_shell.dart';
 
 const appTabBarKey = Key('app_tab_bar');
+
+/// Barra lateral do computador (Windows e Mac), no lugar da barra de abas.
+const appSideBarKey = Key('app_side_bar');
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -46,6 +51,30 @@ class _AppShellState extends State<AppShell> {
     ),
   ];
 
+  // As mesmas abas, com os ícones pra barra lateral do computador.
+  static const _desktopTabs = [
+    DesktopDestination(
+      icon: Ph.house,
+      selectedIcon: Ph.houseFill,
+      label: 'Início',
+    ),
+    DesktopDestination(
+      icon: Ph.musicNotes,
+      selectedIcon: Ph.musicNotesFill,
+      label: 'Músicas',
+    ),
+    DesktopDestination(
+      icon: Ph.squaresFour,
+      selectedIcon: Ph.squaresFourFill,
+      label: 'Acordes',
+    ),
+    DesktopDestination(
+      icon: Ph.userCircle,
+      selectedIcon: Ph.userCircleFill,
+      label: 'Perfil',
+    ),
+  ];
+
   int _index = 0;
 
   void _select(int index) => setState(() => _index = index);
@@ -55,8 +84,39 @@ class _AppShellState extends State<AppShell> {
     _select(index);
   }
 
+  List<Widget> _pages() => [
+    HomeScreen(
+      onOpenChords: () => _select(_chordsTab),
+      onOpenSongs: () => _select(_songsTab),
+    ),
+    LyricSheetListScreen(serverUrl: appState.serverUrl),
+    ChordListScreen(serverUrl: appState.serverUrl),
+    const ProfileScreen(),
+  ];
+
   @override
   Widget build(BuildContext context) {
+    if (isDesktop) {
+      return DesktopShell(
+        key: appSideBarKey,
+        destinations: _desktopTabs,
+        // No computador é comum trocar de microfone (interface, webcam,
+        // pedaleira), então a entrada fica sempre à mão no menu.
+        actions: const [
+          DesktopPaneAction(
+            icon: Ph.microphoneFill,
+            label: 'Entrada de áudio',
+            onTap: showAudioInputDialog,
+          ),
+        ],
+        pages: [
+          for (var i = 0; i < _desktopTabs.length; i++) (_) => _pages()[i],
+        ],
+        rebuildOn: appState,
+        selectedIndex: _index,
+        onSelected: _select,
+      );
+    }
     final colorScheme = Theme.of(context).colorScheme;
     return PopScope(
       canPop: _index == 0,
@@ -67,18 +127,8 @@ class _AppShellState extends State<AppShell> {
         extendBody: useLiquidGlass,
         body: ListenableBuilder(
           listenable: appState,
-          builder: (context, _) => IndexedStack(
-            index: _index,
-            children: [
-              HomeScreen(
-                onOpenChords: () => _select(_chordsTab),
-                onOpenSongs: () => _select(_songsTab),
-              ),
-              LyricSheetListScreen(serverUrl: appState.serverUrl),
-              ChordListScreen(serverUrl: appState.serverUrl),
-              const ProfileScreen(),
-            ],
-          ),
+          builder: (context, _) =>
+              IndexedStack(index: _index, children: _pages()),
         ),
         bottomNavigationBar: useLiquidGlass
             ? GlassTabBar.bottom(

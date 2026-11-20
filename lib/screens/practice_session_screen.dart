@@ -16,6 +16,7 @@ import '../widgets/metronome.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/recognition_mode_badge.dart';
 import '../theme/ph.dart';
+import '../widgets/desktop_input.dart';
 
 class PracticeSessionScreen extends StatefulWidget {
   final String serverUrl;
@@ -204,123 +205,131 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen>
               : ChordMatchState.incorrect);
     final shownChord = step?.chord ?? _selectedScore?.steps.firstOrNull?.chord;
 
-    return IosPage(
-      title: 'Sequências',
-      trailing: const RecognitionModeBadge(),
-      bottomBar: BottomActionBar(
-        child: FilledButton.icon(
-          onPressed: _selectedScore == null ? null : (running ? _stop : _start),
-          icon: Icon(running ? Ph.stopFill : Ph.playFill, size: 20),
-          label: Text(running ? 'Parar' : 'Começar'),
-          style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(50),
-            backgroundColor: running ? colorScheme.onSurface : null,
-            foregroundColor: running ? colorScheme.surface : null,
+    return SpaceToToggle(
+      onToggle: _selectedScore == null ? null : (running ? _stop : _start),
+      child: IosPage(
+        title: 'Sequências',
+        trailing: const RecognitionModeBadge(),
+        bottomBar: BottomActionBar(
+          child: FilledButton.icon(
+            onPressed: _selectedScore == null
+                ? null
+                : (running ? _stop : _start),
+            icon: Icon(running ? Ph.stopFill : Ph.playFill, size: 20),
+            label: Text(running ? 'Parar' : 'Começar'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+              backgroundColor: running ? colorScheme.onSurface : null,
+              foregroundColor: running ? colorScheme.surface : null,
+            ),
           ),
         ),
-      ),
-      children: [
-        GroupedSection(
-          top: 8,
-          children: [
-            GroupedRow(
-              title: 'Sequência',
-              value: _selectedScore?.title ?? 'Carregando',
-              onTap: running || _scores.isEmpty ? null : _pickScore,
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 8, 4),
-              child: Row(
-                children: [
-                  Text('Andamento', style: textTheme.bodyLarge),
-                  const Spacer(),
-                  Text(
-                    '$_bpm BPM',
-                    style: textTheme.bodyLarge?.copyWith(
-                      fontFamily: fontChord,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
+        children: [
+          GroupedSection(
+            top: 8,
+            children: [
+              GroupedRow(
+                title: 'Sequência',
+                value: _selectedScore?.title ?? 'Carregando',
+                onTap: running || _scores.isEmpty ? null : _pickScore,
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              child: SizedBox(
-                width: double.infinity,
-                child: CupertinoSlider(
-                  min: 40,
-                  max: 160,
-                  divisions: 24,
-                  value: _bpm.toDouble(),
-                  activeColor: colorScheme.primary,
-                  onChanged: running
-                      ? null
-                      : (v) => setState(() => _bpm = v.round()),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 8, 4),
+                child: Row(
+                  children: [
+                    Text('Andamento', style: textTheme.bodyLarge),
+                    const Spacer(),
+                    Text(
+                      '$_bpm BPM',
+                      style: textTheme.bodyLarge?.copyWith(
+                        fontFamily: fontChord,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                 ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: CupertinoSlider(
+                    min: 40,
+                    max: 160,
+                    divisions: 24,
+                    value: _bpm.toDouble(),
+                    activeColor: colorScheme.primary,
+                    onChanged: running
+                        ? null
+                        : (v) => setState(() => _bpm = v.round()),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_selectedScore != null) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _selectedScore!.steps.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 6),
+                itemBuilder: (context, index) {
+                  final s = _selectedScore!.steps[index];
+                  final active = running && index == appState.currentStepIndex;
+                  return Container(
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: active ? colorScheme.primary : context.tokens.cell,
+                      borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
+                    ),
+                    child: ChordName(
+                      s.chord,
+                      size: 16,
+                      color: active ? colorScheme.onPrimary : null,
+                    ),
+                  );
+                },
               ),
             ),
           ],
-        ),
-        if (_selectedScore != null) ...[
           const SizedBox(height: 16),
-          SizedBox(
-            height: 44,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: _selectedScore!.steps.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 6),
-              itemBuilder: (context, index) {
-                final s = _selectedScore!.steps[index];
-                final active = running && index == appState.currentStepIndex;
-                return Container(
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: active ? colorScheme.primary : context.tokens.cell,
-                    borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
+          Material(
+            color: context.tokens.cell,
+            borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 120,
+                    child: GuitarNeck(
+                      chord: shownChord,
+                      matchState: matchState,
+                    ),
                   ),
-                  child: ChordName(
-                    s.chord,
-                    size: 16,
-                    color: active ? colorScheme.onPrimary : null,
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ChordName(shownChord ?? '–', size: 44),
+                        const SizedBox(height: 8),
+                        StatusLine(text: _statusMessage),
+                      ],
+                    ),
                   ),
-                );
-              },
+                  Metronome(running: running, bpm: _bpm, onBeat: _onBeat),
+                ],
+              ),
             ),
           ),
         ],
-        const SizedBox(height: 16),
-        Material(
-          color: context.tokens.cell,
-          borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 120,
-                  child: GuitarNeck(chord: shownChord, matchState: matchState),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ChordName(shownChord ?? '–', size: 44),
-                      const SizedBox(height: 8),
-                      StatusLine(text: _statusMessage),
-                    ],
-                  ),
-                ),
-                Metronome(running: running, bpm: _bpm, onBeat: _onBeat),
-              ],
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

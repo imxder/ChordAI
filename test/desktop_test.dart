@@ -1,0 +1,373 @@
+import 'package:chordai/models/app_theme.dart';
+import 'package:chordai/models/chord_recognition_mode.dart';
+import 'package:chordai/screens/app_shell.dart';
+import 'package:chordai/screens/chord_detail_screen.dart';
+import 'package:chordai/screens/free_practice_screen.dart';
+import 'package:chordai/screens/settings_screen.dart';
+import 'package:chordai/state/app_state.dart';
+import 'package:chordai/theme/app_theme.dart';
+import 'package:chordai/theme/glass_tokens.dart';
+import 'package:chordai/theme/platform_style.dart';
+import 'package:chordai/theme/windows_style.dart';
+import 'package:chordai/widgets/desktop_input.dart';
+import 'package:chordai/widgets/page_parts.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'test_helpers.dart';
+
+/// Abre o app como no computador (Windows), numa janela de [size].
+Future<void> _abrir(
+  WidgetTester tester, {
+  Size size = const Size(1200, 800),
+  Widget home = const AppShell(),
+  AppAppearance appearance = AppAppearance.paper,
+}) async {
+  setScreen(tester, size);
+  await tester.pumpWidget(appUnderTest(home, appearance: appearance));
+  await settle(tester);
+}
+
+/// Os testes do computador rodam como Windows.
+final _windows = TargetPlatformVariant.only(TargetPlatform.windows);
+
+Finder _aba(String nome) => find.byKey(ValueKey('aba $nome'));
+
+void main() {
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    await loadAppFonts();
+  });
+
+  setUp(() async {
+    mockPlatform();
+    await appState.loadProgress();
+  });
+
+  group('casca', () {
+    testWidgets('no Windows tem barra lateral, sem a barra de abas', (
+      tester,
+    ) async {
+      await _abrir(tester);
+      expect(find.byKey(appSideBarKey), findsOneWidget);
+      expect(find.byKey(appTabBarKey), findsNothing);
+      for (final aba in ['Início', 'Músicas', 'Acordes', 'Perfil']) {
+        expect(_aba(aba), findsOneWidget);
+      }
+    }, variant: _windows);
+
+    testWidgets('no celular continua a barra de abas, sem a lateral', (
+      tester,
+    ) async {
+      setScreen(tester, const Size(390, 844));
+      await tester.pumpWidget(appUnderTest(const AppShell()));
+      await settle(tester);
+      expect(find.byKey(appTabBarKey), findsOneWidget);
+      expect(find.byKey(appSideBarKey), findsNothing);
+    }, variant: TargetPlatformVariant.mobile());
+
+    test('isDesktop só no Windows e no Mac', () {
+      for (final plataforma in TargetPlatform.values) {
+        debugDefaultTargetPlatformOverride = plataforma;
+        expect(
+          isDesktop,
+          plataforma == TargetPlatform.windows ||
+              plataforma == TargetPlatform.macOS,
+          reason: plataforma.name,
+        );
+      }
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      expect(desktopLook, DesktopLook.windows);
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+      expect(desktopLook, DesktopLook.mac);
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testWidgets('trocar de aba pela barra lateral', (tester) async {
+      await _abrir(tester);
+      await tester.tap(_aba('Acordes'));
+      await settle(tester);
+      expect(find.byType(ChordDetailScreen), findsOneWidget);
+      await tester.tap(_aba('Perfil'));
+      await settle(tester);
+      expect(find.text('Seu nome'), findsOneWidget);
+    }, variant: _windows);
+
+    testWidgets('janela estreita recolhe a barra e o menu abre de novo', (
+      tester,
+    ) async {
+      await _abrir(tester, size: const Size(800, 560));
+      // Recolhida: só ícones, o nome das abas não aparece.
+      expect(find.text('Músicas'), findsNothing);
+      await tester.tap(find.byTooltip('Abrir o menu'));
+      await settle(tester);
+      expect(find.text('Músicas'), findsOneWidget);
+      await tester.tap(find.byTooltip('Recolher o menu'));
+      await settle(tester);
+      expect(find.text('Músicas'), findsNothing);
+    }, variant: _windows);
+
+    testWidgets('a tela aberta fica do lado da barra, e Esc volta', (
+      tester,
+    ) async {
+      await _abrir(tester);
+      await tester.tap(find.text('Reconhecer acorde'));
+      await settle(tester);
+      expect(find.byType(FreePracticeScreen), findsOneWidget);
+      expect(find.byKey(appSideBarKey), findsOneWidget);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settle(tester);
+      expect(find.byType(FreePracticeScreen), findsNothing);
+
+      // Na primeira tela da aba, Esc não faz nada.
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settle(tester);
+      expect(find.text('Guia do iniciante'), findsOneWidget);
+    }, variant: _windows);
+
+    testWidgets('o botão de voltar do cabeçalho volta', (tester) async {
+      await _abrir(tester);
+      await tester.tap(find.text('Reconhecer acorde'));
+      await settle(tester);
+      await tester.tap(find.byTooltip('Voltar'));
+      await settle(tester);
+      expect(find.byType(FreePracticeScreen), findsNothing);
+    }, variant: _windows);
+
+    testWidgets('clicar de novo na aba aberta volta pra primeira tela dela', (
+      tester,
+    ) async {
+      await _abrir(tester);
+      await tester.tap(find.text('Reconhecer acorde'));
+      await settle(tester);
+      await tester.tap(_aba('Início'));
+      await settle(tester);
+      expect(find.byType(FreePracticeScreen), findsNothing);
+    }, variant: _windows);
+
+    testWidgets('as abas se refazem quando o app muda', (tester) async {
+      await _abrir(tester);
+      await tester.tap(_aba('Perfil'));
+      await settle(tester);
+      await appState.setProfile(name: 'Alexandre');
+      await settle(tester);
+      expect(find.text('Alexandre'), findsOneWidget);
+    }, variant: _windows);
+  });
+
+  group('colunas', () {
+    testWidgets('acordes: clicar na lista troca o acorde do lado', (
+      tester,
+    ) async {
+      await _abrir(tester);
+      await tester.tap(_aba('Acordes'));
+      await settle(tester);
+      final primeiro = appState.chordsInModel.first;
+      final outro = appState.chordsInModel[1];
+      expect(
+        tester.widget<ChordDetailScreen>(find.byType(ChordDetailScreen)).chord,
+        primeiro,
+      );
+      await tester.tap(find.text(outro).first);
+      await settle(tester);
+      expect(
+        tester.widget<ChordDetailScreen>(find.byType(ChordDetailScreen)).chord,
+        outro,
+      );
+    }, variant: _windows);
+
+    testWidgets('a coluna de leitura é mais larga no computador', (
+      tester,
+    ) async {
+      await _abrir(tester, home: const Placeholder());
+      final context = tester.element(find.byType(Placeholder));
+      // 1200 de janela, coluna de 720: sobram 240 de cada lado.
+      expect(pagePadding(context).left, 240);
+    }, variant: _windows);
+  });
+
+  group('mouse e teclado', () {
+    testWidgets('espaço começa e para no computador', (tester) async {
+      var vezes = 0;
+      await _abrir(
+        tester,
+        home: SpaceToToggle(
+          onToggle: () => vezes++,
+          child: const Scaffold(body: Text('tela')),
+        ),
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      expect(vezes, 2);
+    }, variant: _windows);
+
+    testWidgets('no celular o espaço não liga nada', (tester) async {
+      var vezes = 0;
+      await tester.pumpWidget(
+        appUnderTest(
+          SpaceToToggle(
+            onToggle: () => vezes++,
+            child: const Scaffold(body: Text('tela')),
+          ),
+        ),
+      );
+      expect(find.byType(CallbackShortcuts), findsNothing);
+      expect(vezes, 0);
+    });
+
+    testWidgets('cursor de mão só no computador', (tester) async {
+      await _abrir(tester, home: const ClickCursor(child: Text('clicável')));
+      final region = tester.widget<MouseRegion>(
+        find
+            .ancestor(
+              of: find.text('clicável'),
+              matching: find.byType(MouseRegion),
+            )
+            .first,
+      );
+      expect(region.cursor, SystemMouseCursors.click);
+    }, variant: _windows);
+
+    testWidgets('bandeja vira diálogo no computador', (tester) async {
+      await _abrir(
+        tester,
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showGlassSheet<void>(
+              context,
+              builder: (_) => const Text('conteúdo'),
+            ),
+            child: const Text('abrir'),
+          ),
+        ),
+      );
+      await tester.tap(find.text('abrir'));
+      await settle(tester);
+      expect(find.byType(Dialog), findsOneWidget);
+      expect(find.text('conteúdo'), findsOneWidget);
+    }, variant: _windows);
+
+    testWidgets('entrada de áudio pelo menu lateral', (tester) async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            const MethodChannel('com.llfbandit.record/messages'),
+            (call) async => call.method == 'listInputDevices'
+                ? [
+                    {'id': 'gt1', 'label': 'IN (2- GT-1)'},
+                  ]
+                : null,
+          );
+      await _abrir(tester);
+      await tester.tap(find.byKey(const ValueKey('ação Entrada de áudio')));
+      await settle(tester);
+      expect(find.byType(Dialog), findsOneWidget);
+      await tester.tap(find.text('IN (2- GT-1)'));
+      await settle(tester);
+      expect(appState.inputDeviceId, 'gt1');
+      await tester.tap(find.text('Pronto'));
+      await settle(tester);
+      expect(find.byType(Dialog), findsNothing);
+    }, variant: _windows);
+  });
+
+  group('reconhecimento no computador', () {
+    testWidgets('só tem o modelo no aparelho', (tester) async {
+      await _abrir(tester, home: const SettingsScreen());
+      expect(find.text('Reconhecimento de acordes'), findsNothing);
+      expect(find.text('Endereço do servidor'), findsNothing);
+      expect(find.text('Modelo no aparelho'), findsOneWidget);
+    }, variant: _windows);
+
+    test('modo servidor salvo não vale no computador', () async {
+      SharedPreferences.setMockInitialValues({
+        'app_on_device_default_migrated': true,
+        'app_chord_recognition_mode': 'server',
+      });
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      await appState.loadProgress();
+      expect(appState.chordRecognitionMode, ChordRecognitionMode.onDevice);
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      await appState.loadProgress();
+      expect(appState.chordRecognitionMode, ChordRecognitionMode.server);
+      debugDefaultTargetPlatformOverride = null;
+    });
+  });
+
+  group('cara do Windows 11', () {
+    test('fonte do Windows, menos nos acordes', () {
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      final theme = buildAppTheme(appThemeOptions.first);
+      expect(theme.textTheme.bodyMedium?.fontFamily, windowsFont);
+      expect(theme.textTheme.displayLarge?.fontFamily, fontChord);
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      final celular = buildAppTheme(appThemeOptions.first);
+      expect(celular.textTheme.bodyMedium?.fontFamily, isNot(windowsFont));
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    test('cantos menores no Windows', () {
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      expect(GlassTokens.radiusXl, 8);
+      expect(GlassTokens.radiusMd, 6);
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      expect(GlassTokens.radiusXl, 24);
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    test('escuro do Windows é cinza, não preto', () {
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      final windows = buildAppTheme(
+        appThemeOptions.first,
+        appearance: AppAppearance.dark,
+      );
+      expect(windows.scaffoldBackgroundColor, const Color(0xFF202020));
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      final iphone = buildAppTheme(
+        appThemeOptions.first,
+        appearance: AppAppearance.dark,
+      );
+      expect(iphone.scaffoldBackgroundColor, const Color(0xFF000000));
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testWidgets('pede pra pintar a barra de título com a cor da barra', (
+      tester,
+    ) async {
+      final pedidos = <Object?>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(const MethodChannel('chordai/window'), (
+            call,
+          ) async {
+            pedidos.add(call.arguments);
+            return null;
+          });
+      await _abrir(
+        tester,
+        home: const WindowsTitleBarColor(child: Text('app')),
+        appearance: AppAppearance.dark,
+      );
+      expect(pedidos, hasLength(1));
+      final cor = (pedidos.single! as Map)['background'] as int;
+      final theme = buildAppTheme(
+        appThemeOptions.first,
+        appearance: AppAppearance.dark,
+      );
+      expect(cor, windowsPaneColor(theme).toARGB32());
+    }, variant: _windows);
+
+    testWidgets('troca de tela do Windows é suave', (tester) async {
+      await _abrir(tester);
+      await tester.tap(find.text('Reconhecer acorde'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      // No meio da troca a tela nova está aparecendo por cima.
+      expect(find.byType(FadeTransition), findsWidgets);
+      await settle(tester);
+      expect(find.byType(FreePracticeScreen), findsOneWidget);
+    }, variant: _windows);
+  });
+}

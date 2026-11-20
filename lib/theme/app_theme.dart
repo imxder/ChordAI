@@ -6,6 +6,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../models/app_theme.dart';
+import 'platform_style.dart';
+import 'windows_style.dart';
 
 // Texto usa a fonte do sistema (SF Pro no iPhone). Só os acordes ficam em mono,
 // porque a cifra depende de cada caractere ter a mesma largura.
@@ -146,7 +148,11 @@ EdgeInsets pagePadding(
   double bottom = 24,
 }) {
   final width = MediaQuery.sizeOf(context).width;
-  final side = max(16.0, (width - 600) / 2);
+  // No computador a coluna de leitura é mais larga (720) e a margem mínima
+  // maior, porque não tem a borda do celular encostando no conteúdo.
+  final column = isDesktop ? 720.0 : 600.0;
+  final minSide = isDesktop ? 32.0 : 16.0;
+  final side = max(minSide, (width - column) / 2);
   return EdgeInsets.fromLTRB(
     side,
     top,
@@ -159,6 +165,22 @@ Duration motion(BuildContext context, Duration duration) {
   return MediaQuery.disableAnimationsOf(context) ? Duration.zero : duration;
 }
 
+// Escuro do Windows 11: cinza bem escuro no fundo e cards um tom acima, em
+// vez do preto do iPhone. Só no Windows.
+const _windowsDarkSurface = _Surface(
+  brightness: Brightness.dark,
+  background: Color(0xFF202020),
+  cell: Color(0xFF2B2B2B),
+  fill: Color(0xFF3A3A3A),
+  label: Color(0xFFFFFFFF),
+  secondaryLabel: Color(0xFFC5C5C5),
+  separator: Color(0xFF3D3D3D),
+  error: Color(0xFFFF99A4),
+  onError: Color(0xFF1C0606),
+  correct: Color(0xFF6CCB5F),
+  warning: Color(0xFFFCE100),
+);
+
 /// [appearance] aqui é papel, branco ou escuro; "igual ao celular" é resolvido no MaterialApp.
 ThemeData buildAppTheme(
   AppThemeOption option, {
@@ -166,7 +188,8 @@ ThemeData buildAppTheme(
 }) {
   final s = switch (appearance) {
     AppAppearance.white => _whiteSurface,
-    AppAppearance.dark => _darkSurface,
+    AppAppearance.dark =>
+      desktopLook == DesktopLook.windows ? _windowsDarkSurface : _darkSurface,
     _ => _paperSurface,
   };
   final dark = s.brightness == Brightness.dark;
@@ -201,7 +224,7 @@ ThemeData buildAppTheme(
     outlineVariant: s.separator,
   );
 
-  final textTheme = TextTheme(
+  final baseText = TextTheme(
     displayLarge: TextStyle(
       fontFamily: fontChord,
       fontSize: 72,
@@ -259,9 +282,21 @@ ThemeData buildAppTheme(
     ),
   );
 
-  const capsule = StadiumBorder();
-  const buttonSize = Size(64, 50);
-  const buttonPadding = EdgeInsets.symmetric(horizontal: 22, vertical: 12);
+  // No Windows o texto sai na fonte do Windows 11 (ver windows_style.dart).
+  final textTheme = desktopLook == DesktopLook.windows
+      ? withWindowsFont(baseText)
+      : baseText;
+
+  // No Windows os botões são retângulos de canto pouco arredondado e mais
+  // baixos (pra mouse), como no Windows 11. No celular, pílula de 50.
+  final windows = desktopLook == DesktopLook.windows;
+  final OutlinedBorder capsule = windows
+      ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))
+      : const StadiumBorder();
+  final buttonSize = windows ? const Size(64, 36) : const Size(64, 50);
+  final buttonPadding = windows
+      ? const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
+      : const EdgeInsets.symmetric(horizontal: 22, vertical: 12);
   final buttonText = textTheme.labelLarge!;
 
   return ThemeData(
@@ -283,13 +318,19 @@ ThemeData buildAppTheme(
     // iOS não tem ripple: o toque escurece a célula.
     splashFactory: NoSplash.splashFactory,
     highlightColor: s.label.withValues(alpha: dark ? 0.12 : 0.07),
-    hoverColor: Colors.transparent,
+    // No celular não tem mouse; no computador o realce ao passar o mouse
+    // mostra o que dá pra clicar.
+    hoverColor: isDesktop
+        ? s.label.withValues(alpha: 0.05)
+        : Colors.transparent,
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
         TargetPlatform.android: CupertinoPageTransitionsBuilder(),
         TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
         TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+        // No Windows a tela nova sobe um pouquinho e aparece, como no Windows
+        // 11 (ver windows_style.dart).
+        TargetPlatform.windows: WindowsPageTransitionsBuilder(),
         TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
       },
     ),
@@ -358,7 +399,7 @@ ThemeData buildAppTheme(
       showDragHandle: true,
       dragHandleColor: s.secondaryLabel.withValues(alpha: 0.5),
       dragHandleSize: const Size(36, 5),
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(GlassTokens.radiusXl),
         ),

@@ -49,15 +49,19 @@ O que prova que funciona é o teste de equivalência, que compara a saída do mo
 flutter test integration_test/chord_model_equivalence_test.dart -d windows
 ```
 
-No Windows ele passou nos dois modelos (v3 e v3_meu), com diferença de no máximo 0,001 em cada
-probabilidade. No Mac ainda não rodei.
+Ele passou nos dois modelos (v3 e v3_meu) no Windows e no Mac (Apple Silicon), com diferença de no
+máximo 0,001 em cada probabilidade:
+
+```
+flutter test integration_test/chord_model_equivalence_test.dart -d macos
+```
 
 ## Licença
 
 O TensorFlow e o flutter_litert são Apache-2.0, que deixa redistribuir o binário desde que vá junto
 uma cópia da licença. A cópia está em `LICENSE-TensorFlow.txt`, tirada da tag v2.21.0 do TensorFlow.
 
-## Mac (pra quando eu criar a pasta macos/)
+## Mac (como a dylib entrou na pasta macos/)
 
 1. `flutter create --platforms=macos .`
 2. Abrir `macos/Runner.xcworkspace` no Xcode.

@@ -99,6 +99,7 @@ Widget appUnderTest(
   AppAppearance appearance = AppAppearance.paper,
 }) {
   return MaterialApp(
+    debugShowCheckedModeBanner: false,
     locale: const Locale('pt', 'BR'),
     supportedLocales: const [Locale('pt', 'BR')],
     localizationsDelegates: appLocalizationsDelegates,

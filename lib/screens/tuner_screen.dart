@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../models/tuner_note.dart';
+import '../services/audio_input.dart';
 import '../services/tuner_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -31,6 +34,11 @@ class _TunerScreenState extends State<TunerScreen> with MicLifecycle {
   bool _denied = false;
   TunerReading? _reading;
   bool _inTune = false;
+
+  /// Microfone bloqueado ou entrada desconectada (só no computador). Fica na
+  /// tela até o áudio voltar a chegar.
+  MicrophoneProblem? _problem;
+  Timer? _retry;
 
   /// Corda escolhida tocando na casinha (índice na afinação ativa). `null` é
   /// o modo Auto, em que o app reconhece sozinho a corda que está soando. Não
@@ -64,9 +72,27 @@ class _TunerScreenState extends State<TunerScreen> with MicLifecycle {
     await _service.start((frequency) {
       if (!mounted) return;
       setState(() {
+        _problem = null;
         _reading = _classify(frequency);
         _inTune = _service.smoother?.updateInTune(_reading?.cents) ?? false;
       });
+    }, onProblem: _onMicrophoneProblem);
+  }
+
+  // O afinador não tem botão de começar, então tenta de novo sozinho a cada
+  // 3 s. Quando a pessoa libera o microfone ou conecta a entrada de novo, o
+  // áudio volta a chegar e a mensagem some.
+  void _onMicrophoneProblem(MicrophoneProblem problem) {
+    if (!mounted) return;
+    setState(() {
+      _problem = problem;
+      _listening = false;
+      _reading = null;
+      _inTune = false;
+    });
+    _retry?.cancel();
+    _retry = Timer(const Duration(seconds: 3), () {
+      if (mounted && !_listening) _start();
     });
   }
 
@@ -75,6 +101,7 @@ class _TunerScreenState extends State<TunerScreen> with MicLifecycle {
   // permissão de novo, caso tenha sido liberada nas Configurações).
   @override
   void onAppHidden() {
+    _retry?.cancel();
     if (!_listening) return;
     _service.stop();
     setState(() {
@@ -128,6 +155,7 @@ class _TunerScreenState extends State<TunerScreen> with MicLifecycle {
   @override
   void dispose() {
     appState.removeListener(_onAppStateChanged);
+    _retry?.cancel();
     _service.dispose();
     super.dispose();
   }
@@ -147,6 +175,8 @@ class _TunerScreenState extends State<TunerScreen> with MicLifecycle {
     final String status;
     if (_denied) {
       status = 'O afinador precisa de acesso ao microfone';
+    } else if (_problem != null) {
+      status = _problem!.message;
     } else if (reading == null) {
       status = _listening ? 'Toque uma corda solta' : 'Preparando o microfone';
     } else if (inTune) {

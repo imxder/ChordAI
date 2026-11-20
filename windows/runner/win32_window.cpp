@@ -187,6 +187,19 @@ Win32Window::MessageHandler(HWND hwnd,
       }
       return 0;
 
+    // O Windows pergunta o menor tamanho permitido toda vez que a pessoa
+    // arrasta a borda. A resposta vai em pixels físicos, então multiplica
+    // pela escala do monitor onde a janela está (125%, 150%...).
+    case WM_GETMINMAXINFO: {
+      if (minimum_size_.width == 0 && minimum_size_.height == 0) break;
+      HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+      double scale_factor = FlutterDesktopGetDpiForMonitor(monitor) / 96.0;
+      auto info = reinterpret_cast<MINMAXINFO*>(lparam);
+      info->ptMinTrackSize.x = Scale(minimum_size_.width, scale_factor);
+      info->ptMinTrackSize.y = Scale(minimum_size_.height, scale_factor);
+      return 0;
+    }
+
     case WM_DPICHANGED: {
       auto newRectSize = reinterpret_cast<RECT*>(lparam);
       LONG newWidth = newRectSize->right - newRectSize->left;
@@ -257,6 +270,10 @@ RECT Win32Window::GetClientArea() {
 
 HWND Win32Window::GetHandle() {
   return window_handle_;
+}
+
+void Win32Window::SetMinimumSize(const Size& size) {
+  minimum_size_ = size;
 }
 
 void Win32Window::SetQuitOnClose(bool quit_on_close) {

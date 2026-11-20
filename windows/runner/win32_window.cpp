@@ -1,6 +1,7 @@
 #include "win32_window.h"
 
 #include <dwmapi.h>
+#include <uxtheme.h>
 #include <flutter_windows.h>
 
 #include "resource.h"
@@ -145,6 +146,14 @@ bool Win32Window::Create(const std::wstring& title,
   }
 
   UpdateTheme(window);
+
+  // Esconde o ícone e o texto da barra de título nativa: o Windows decide a
+  // posição deles e não dá pra alinhar com a barra lateral. O "ChordAI" do
+  // topo da barra lateral faz esse papel. O nome continua na barra de
+  // tarefas e no Alt+Tab, que usam o título da janela.
+  WTA_OPTIONS caption = {WTNCA_NODRAWCAPTION | WTNCA_NODRAWICON,
+                         WTNCA_NODRAWCAPTION | WTNCA_NODRAWICON};
+  SetWindowThemeAttribute(window, WTA_NONCLIENT, &caption, sizeof(caption));
 
   return OnCreate();
 }

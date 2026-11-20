@@ -68,7 +68,8 @@ class DesktopShell extends StatefulWidget {
   /// conteúdo ganha o espaço.
   static const compactBelow = 1000.0;
   static const paneWidth = 232.0;
-  static const compactPaneWidth = 56.0;
+  // Recolhida: 4 de margem + 40 do ícone + 4.
+  static const compactPaneWidth = 48.0;
 
   @override
   State<DesktopShell> createState() => DesktopShellState();
@@ -197,7 +198,8 @@ class _Pane extends StatelessWidget {
       duration: const Duration(milliseconds: 150),
       curve: Curves.easeOut,
       width: open ? DesktopShell.paneWidth : DesktopShell.compactPaneWidth,
-      padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+      // A margem dos lados fica em cada item (a pílula), não aqui.
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -238,8 +240,11 @@ class _Pane extends StatelessWidget {
   }
 }
 
-/// Item da barra: fundo de leve ao passar o mouse, fundo mais forte e um
-/// tracinho da cor do app quando é a aba aberta (como no Windows 11).
+/// Item da barra, com as medidas do NavigationView do Windows 11: uma
+/// pílula de 36 de altura e cantos de 4, com 4 de margem dos dois lados (não
+/// encosta na borda da janela). Fundo de leve ao passar o mouse, mais forte
+/// quando é a aba aberta, e a barrinha da cor do app dentro da pílula, na
+/// ponta esquerda (3 x 16, centralizada na altura).
 class _PaneItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -260,6 +265,11 @@ class _PaneItem extends StatelessWidget {
     this.tooltip,
   });
 
+  static const margin = 4.0;
+  static const height = 36.0;
+  static const iconBox = 40.0;
+  static const radius = BorderRadius.all(Radius.circular(4));
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -267,41 +277,32 @@ class _PaneItem extends StatelessWidget {
     final onSurface = colorScheme.onSurface;
 
     Widget item = Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: margin, vertical: 2),
       child: Material(
         color: selected
-            ? onSurface.withValues(alpha: 0.08)
+            ? onSurface.withValues(alpha: 0.07)
             : Colors.transparent,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: radius,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
+          borderRadius: radius,
           hoverColor: onSurface.withValues(alpha: 0.05),
           splashFactory: NoSplash.splashFactory,
           child: SizedBox(
-            height: 40,
+            height: height,
             child: Stack(
               children: [
-                if (selected)
-                  Positioned(
-                    left: 0,
-                    top: 12,
-                    bottom: 12,
-                    child: Container(
-                      width: 3,
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
                 Row(
                   children: [
+                    // O ícone fica numa caixa de 40 no começo da pílula. O ☰
+                    // usa este mesmo item, então os ícones ficam alinhados
+                    // com ele.
                     SizedBox(
-                      width: 48,
+                      width: iconBox,
                       child: Icon(
                         icon,
-                        size: 20,
+                        size: 18,
                         color: selected ? colorScheme.primary : onSurface,
                       ),
                     ),
@@ -323,6 +324,19 @@ class _PaneItem extends StatelessWidget {
                       ),
                   ],
                 ),
+                if (selected)
+                  Positioned(
+                    left: 0,
+                    top: (height - 16) / 2,
+                    width: 3,
+                    height: 16,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary,
+                        borderRadius: BorderRadius.circular(1.5),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

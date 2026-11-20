@@ -106,3 +106,12 @@ install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
 install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
+
+# Biblioteca nativa do TensorFlow Lite que o tflite_flutter usa no Windows.
+# No celular ela vem junto com o pacote; no Windows ele procura em
+# blobs/libtensorflowlite_c-win.dll, do lado do .exe. De onde veio o arquivo
+# está em blobs/LEIAME.md.
+install(
+  FILES "${CMAKE_CURRENT_SOURCE_DIR}/../blobs/libtensorflowlite_c-win.dll"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}/blobs"
+  COMPONENT Runtime)

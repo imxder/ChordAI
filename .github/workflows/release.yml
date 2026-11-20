@@ -1,5 +1,5 @@
-# Quando eu crio uma tag v* (ex.: v0.1.0), gera o APK assinado e publica numa
-# GitHub Release.
+# Quando eu crio uma tag v* (ex.: v0.1.0), gera o APK assinado e o .zip do
+# Windows e publica os dois numa GitHub Release.
 name: Release
 
 on:
@@ -7,13 +7,17 @@ on:
     tags:
       - "v*"
 
-# Precisa de escrita no repositório pra criar a release e subir o APK.
+# Por padrão os jobs só leem o repositório. Quem precisa escrever (criar a
+# release e subir os arquivos) pede a permissão no próprio job.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   apk:
     runs-on: ubuntu-24.04
+    # Escrita pra criar a release e subir o APK.
+    permissions:
+      contents: write
     steps:
       # fetch-depth 0 traz o histórico todo e as tags, pra montar as notas com os
       # commits desde a tag anterior.
@@ -129,3 +133,65 @@ jobs:
             --title "ChordAI $GITHUB_REF_NAME" \
             --notes-file notas.md \
             $extra
+
+  # O app de Windows num .zip, na mesma release do APK. Espera o job do APK
+  # porque é ele que cria a release. Roda no Windows do GitHub porque o build
+  # de Windows do Flutter só sai no Windows.
+  windows:
+    needs: apk
+    runs-on: windows-latest
+    # Escrita pra subir o .zip na release que o job do APK criou.
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version-file: .fvmrc
+          cache: true
+
+      - name: Dependências
+        run: flutter pub get
+
+      # Não publica se os modelos não forem os das releases do backend.
+      - name: Hash dos modelos
+        run: python tool/conferir_modelos.py
+
+      # Mesma versão do APK: v0.3.0 -> 0.3.0, e o número da execução como build.
+      - name: Build
+        run: |
+          $versao = $env:GITHUB_REF_NAME.Substring(1).Split('-')[0]
+          flutter build windows --release --build-name=$versao --build-number=${{ github.run_number }}
+
+      # Sem a DLL do modelo o app não reconhece acorde, e sem o runtime do
+      # Visual C++ ele nem abre num PC que não tem. Os dois vêm das regras do
+      # windows/CMakeLists.txt; se algum faltar, para aqui.
+      - name: Confere a pasta
+        run: |
+          $pasta = 'build/windows/x64/runner/Release'
+          foreach ($arquivo in 'chordai.exe', 'blobs/libtensorflowlite_c-win.dll', 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll') {
+            if (-not (Test-Path "$pasta/$arquivo")) {
+              Write-Output "::error::Faltou $arquivo na pasta Release."
+              exit 1
+            }
+          }
+          Get-ChildItem $pasta | Format-Table Name, Length
+
+      # A pasta inteira vira ChordAI/ dentro do .zip. Nome fixo, ChordAI-windows.zip:
+      # assim o link .../releases/latest/download/ChordAI-windows.zip sempre
+      # aponta pro da última release normal.
+      - name: Zip
+        run: |
+          New-Item -ItemType Directory ChordAI | Out-Null
+          Copy-Item build/windows/x64/runner/Release/* ChordAI -Recurse
+          Compress-Archive -Path ChordAI -DestinationPath ChordAI-windows.zip
+          Get-Item ChordAI-windows.zip | Format-Table Name, Length
+
+      - name: Publica
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload $env:GITHUB_REF_NAME ChordAI-windows.zip

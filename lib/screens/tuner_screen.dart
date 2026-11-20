@@ -13,14 +13,17 @@ import 'tuning_select_sheet.dart';
 import '../theme/ph.dart';
 
 class TunerScreen extends StatefulWidget {
-  const TunerScreen({super.key});
+  /// Só pros testes: um afinador falso no lugar do microfone.
+  final TunerService? service;
+
+  const TunerScreen({super.key, this.service});
 
   @override
   State<TunerScreen> createState() => _TunerScreenState();
 }
 
 class _TunerScreenState extends State<TunerScreen> with MicLifecycle {
-  final _service = TunerService();
+  late final TunerService _service = widget.service ?? TunerService();
   bool _listening = false;
   bool _denied = false;
   TunerReading? _reading;

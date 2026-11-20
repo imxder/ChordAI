@@ -17,6 +17,9 @@ import '../theme/ph.dart';
 class ChordPracticeScreen extends StatefulWidget {
   final String serverUrl;
   final InputDevice? inputDevice;
+
+  /// Só pros testes: um reconhecedor falso no lugar do microfone.
+  final ChordRecognizer? recognizer;
   final String chord;
 
   const ChordPracticeScreen({
@@ -24,6 +27,7 @@ class ChordPracticeScreen extends StatefulWidget {
     required this.serverUrl,
     required this.chord,
     this.inputDevice,
+    this.recognizer,
   });
 
   @override
@@ -32,9 +36,8 @@ class ChordPracticeScreen extends StatefulWidget {
 
 class _ChordPracticeScreenState extends State<ChordPracticeScreen>
     with MicLifecycle {
-  late final ChordRecognizer _service = createChordRecognizer(
-    appState.chordRecognitionMode,
-  );
+  late final ChordRecognizer _service =
+      widget.recognizer ?? createChordRecognizer(appState.chordRecognitionMode);
 
   bool _listening = false;
   int _hits = 0;

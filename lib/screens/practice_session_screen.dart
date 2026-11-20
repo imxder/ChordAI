@@ -20,10 +20,14 @@ class PracticeSessionScreen extends StatefulWidget {
   final String serverUrl;
   final InputDevice? inputDevice;
 
+  /// Só pros testes: um reconhecedor falso no lugar do microfone.
+  final ChordRecognizer? recognizer;
+
   const PracticeSessionScreen({
     super.key,
     required this.serverUrl,
     this.inputDevice,
+    this.recognizer,
   });
 
   @override
@@ -32,9 +36,8 @@ class PracticeSessionScreen extends StatefulWidget {
 
 class _PracticeSessionScreenState extends State<PracticeSessionScreen>
     with MicLifecycle {
-  late final ChordRecognizer _service = createChordRecognizer(
-    appState.chordRecognitionMode,
-  );
+  late final ChordRecognizer _service =
+      widget.recognizer ?? createChordRecognizer(appState.chordRecognitionMode);
   final _scoreLibrary = ScoreLibrary();
 
   List<Score> _scores = [];

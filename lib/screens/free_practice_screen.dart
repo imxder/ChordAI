@@ -19,10 +19,14 @@ class FreePracticeScreen extends StatefulWidget {
   final String serverUrl;
   final InputDevice? inputDevice;
 
+  /// Só pros testes: um reconhecedor falso no lugar do microfone.
+  final ChordRecognizer? recognizer;
+
   const FreePracticeScreen({
     super.key,
     required this.serverUrl,
     this.inputDevice,
+    this.recognizer,
   });
 
   @override
@@ -31,9 +35,8 @@ class FreePracticeScreen extends StatefulWidget {
 
 class _FreePracticeScreenState extends State<FreePracticeScreen>
     with MicLifecycle {
-  late final ChordRecognizer _service = createChordRecognizer(
-    appState.chordRecognitionMode,
-  );
+  late final ChordRecognizer _service =
+      widget.recognizer ?? createChordRecognizer(appState.chordRecognitionMode);
 
   bool _listening = false;
   String? _chord;

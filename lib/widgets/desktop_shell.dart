@@ -18,6 +18,21 @@ class DesktopDestination {
   });
 }
 
+/// Item do pé da barra lateral que não é aba: abre alguma coisa (o
+/// diálogo da entrada de áudio, por exemplo), como "Configurações" no
+/// NavigationView do Windows 11.
+class DesktopPaneAction {
+  final IconData icon;
+  final String label;
+  final void Function(BuildContext context) onTap;
+
+  const DesktopPaneAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+}
+
 /// Casca do app no computador: barra lateral à esquerda, como o
 /// NavigationView do Windows 11, e o conteúdo da aba à direita.
 ///
@@ -27,6 +42,9 @@ class DesktopDestination {
 /// continuam chamando Navigator.push, que acha o Navigator da aba.
 class DesktopShell extends StatefulWidget {
   final List<DesktopDestination> destinations;
+
+  /// Itens no pé da barra, embaixo das abas.
+  final List<DesktopPaneAction> actions;
 
   /// A primeira tela de cada aba. É uma função, não a tela pronta, porque o
   /// Navigator da aba guarda a tela que criou: assim ela se refaz quando
@@ -39,6 +57,7 @@ class DesktopShell extends StatefulWidget {
   const DesktopShell({
     super.key,
     required this.destinations,
+    this.actions = const [],
     required this.pages,
     required this.rebuildOn,
     required this.selectedIndex,
@@ -105,6 +124,7 @@ class DesktopShellState extends State<DesktopShell> {
             children: [
               _Pane(
                 destinations: widget.destinations,
+                actions: widget.actions,
                 selectedIndex: widget.selectedIndex,
                 open: open,
                 onSelected: _select,
@@ -155,6 +175,7 @@ class DesktopShellState extends State<DesktopShell> {
 
 class _Pane extends StatelessWidget {
   final List<DesktopDestination> destinations;
+  final List<DesktopPaneAction> actions;
   final int selectedIndex;
   final bool open;
   final ValueChanged<int> onSelected;
@@ -162,6 +183,7 @@ class _Pane extends StatelessWidget {
 
   const _Pane({
     required this.destinations,
+    required this.actions,
     required this.selectedIndex,
     required this.open,
     required this.onSelected,
@@ -199,6 +221,16 @@ class _Pane extends StatelessWidget {
               open: open,
               selected: i == selectedIndex,
               onTap: () => onSelected(i),
+            ),
+          const Spacer(),
+          for (final action in actions)
+            _PaneItem(
+              key: ValueKey('ação ${action.label}'),
+              icon: action.icon,
+              label: action.label,
+              open: open,
+              selected: false,
+              onTap: () => action.onTap(context),
             ),
         ],
       ),

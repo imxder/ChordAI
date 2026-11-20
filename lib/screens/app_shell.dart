@@ -9,6 +9,7 @@ import 'lyric_sheet_list_screen.dart';
 import 'profile_screen.dart';
 import '../theme/ph.dart';
 import '../theme/platform_style.dart';
+import '../widgets/audio_input_section.dart';
 import '../widgets/desktop_shell.dart';
 
 const appTabBarKey = Key('app_tab_bar');
@@ -99,6 +100,15 @@ class _AppShellState extends State<AppShell> {
       return DesktopShell(
         key: appSideBarKey,
         destinations: _desktopTabs,
+        // No computador é comum trocar de microfone (interface, webcam,
+        // pedaleira), então a entrada fica sempre à mão no menu.
+        actions: const [
+          DesktopPaneAction(
+            icon: Ph.microphoneFill,
+            label: 'Entrada de áudio',
+            onTap: showAudioInputDialog,
+          ),
+        ],
         pages: [
           for (var i = 0; i < _desktopTabs.length; i++) (_) => _pages()[i],
         ],

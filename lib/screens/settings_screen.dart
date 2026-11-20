@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:record/record.dart';
 
 import '../models/chord_recognition_mode.dart';
 import '../models/on_device_model.dart';
@@ -8,6 +7,8 @@ import '../services/audio_input.dart';
 import '../services/server_address.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../theme/platform_style.dart';
+import '../widgets/audio_input_section.dart';
 import '../widgets/page_parts.dart';
 import '../theme/ph.dart';
 
@@ -22,33 +23,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _controller;
   String? _error;
 
-  /// Entradas de áudio conectadas. Só é preenchida no Windows e no Mac.
-  List<InputDevice> _inputDevices = const [];
-
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(
       text: appState.serverUrl.replaceFirst(RegExp(r'^https?://'), ''),
     );
-    if (canChooseAudioInput) _loadInputDevices();
-  }
-
-  Future<void> _loadInputDevices() async {
-    final recorder = AudioRecorder();
-    try {
-      final devices = await recorder.listInputDevices();
-      if (mounted) setState(() => _inputDevices = devices);
-    } catch (_) {
-      // Sem a lista, fica só a entrada padrão do sistema.
-    } finally {
-      await recorder.dispose();
-    }
-  }
-
-  Future<void> _selectInputDevice(String? id) async {
-    await appState.setInputDeviceId(id);
-    setState(() {});
   }
 
   @override
@@ -83,6 +63,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final error = _error;
     final mode = appState.chordRecognitionMode;
     final usesServer = mode == ChordRecognitionMode.server;
+    // No computador só tem o modelo no aparelho: o PC roda o modelo sem
+    // esforço, e o modo servidor só fazia sentido pra celular.
+    final chooseMode = !isDesktop;
     return IosPage(
       title: 'Reconhecimento',
       trailing: usesServer
@@ -96,21 +79,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
             )
           : null,
       children: [
-        GroupedSection(
-          top: 8,
-          header: 'Reconhecimento de acordes',
-          children: [
-            for (final option in ChordRecognitionMode.values)
-              CheckRow(
-                title: option.label,
-                subtitle: option.description,
-                selected: mode == option,
-                onTap: () => _selectMode(option),
-              ),
-          ],
-        ),
+        if (chooseMode)
+          GroupedSection(
+            top: 8,
+            header: 'Reconhecimento de acordes',
+            children: [
+              for (final option in ChordRecognitionMode.values)
+                CheckRow(
+                  title: option.label,
+                  subtitle: option.description,
+                  selected: mode == option,
+                  onTap: () => _selectMode(option),
+                ),
+            ],
+          ),
         if (!usesServer)
           GroupedSection(
+            top: chooseMode ? 28 : 8,
             header: 'Modelo no aparelho',
             footer:
                 'O v3 + meu dataset mostra menos acorde quando não tem acorde '
@@ -177,31 +162,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ],
           ),
-        if (canChooseAudioInput) _inputDeviceSection(),
-      ],
-    );
-  }
-
-  Widget _inputDeviceSection() {
-    final savedId = appState.inputDeviceId;
-    // Se a entrada salva foi desconectada, o app grava pela padrão (ver
-    // chosenInputDevice), então é ela que aparece marcada.
-    final connected = _inputDevices.any((d) => d.id == savedId);
-    return GroupedSection(
-      header: 'Entrada de áudio',
-      footer: 'Vale pro afinador e pro reconhecimento.',
-      children: [
-        CheckRow(
-          title: 'Padrão do sistema',
-          selected: !connected,
-          onTap: () => _selectInputDevice(null),
-        ),
-        for (final device in _inputDevices)
-          CheckRow(
-            title: device.label.isEmpty ? device.id : device.label,
-            selected: device.id == savedId,
-            onTap: () => _selectInputDevice(device.id),
-          ),
+        if (canChooseAudioInput) const AudioInputSection(),
       ],
     );
   }

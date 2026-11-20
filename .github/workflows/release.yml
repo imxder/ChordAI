@@ -21,10 +21,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      # O cache: gradle guarda o que o Gradle baixa (plugins, Kotlin) entre uma
+      # execução e outra. O plugins.gradle.org às vezes falha no meio do
+      # download e derrubava o build; com o cache ele só baixa quando os
+      # arquivos .gradle mudam.
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
+          cache: gradle
 
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:

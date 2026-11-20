@@ -4,6 +4,7 @@ import 'package:chordai/screens/free_practice_screen.dart';
 import 'package:chordai/screens/lyric_player_screen.dart';
 import 'package:chordai/screens/practice_session_screen.dart';
 import 'package:chordai/screens/tuner_screen.dart';
+import 'package:chordai/services/audio_input.dart';
 import 'package:chordai/services/chord_recognizer.dart';
 import 'package:chordai/services/cifra_parser.dart';
 import 'package:chordai/services/tuner_service.dart';
@@ -62,7 +63,10 @@ class _AfinadorFalso extends TunerService {
   Future<bool> hasPermission() async => true;
 
   @override
-  Future<void> start(void Function(double? frequency) onPitch) async {
+  Future<void> start(
+    void Function(double? frequency) onPitch, {
+    void Function(MicrophoneProblem problem)? onProblem,
+  }) async {
     ligou++;
     rodando = true;
   }

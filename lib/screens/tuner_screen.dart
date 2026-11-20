@@ -8,7 +8,9 @@ import '../theme/app_theme.dart';
 import '../theme/glass_tokens.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/tuning_gauge.dart';
+import '../models/guide_content.dart';
 import 'custom_tuning_screen.dart';
+import 'guide_detail_screen.dart';
 import 'tuning_select_sheet.dart';
 import '../theme/ph.dart';
 
@@ -218,6 +220,7 @@ class _TunerScreenState extends State<TunerScreen> {
               Expanded(
                 child: _StringCell(
                   label: _stripOctave(note.name),
+                  number: '${appState.activeTuning.length - i}ª',
                   semanticsLabel: 'Afinar a ${note.label}',
                   active: auto
                       ? reading?.nearestString.name == note.name
@@ -250,6 +253,18 @@ class _TunerScreenState extends State<TunerScreen> {
                 MaterialPageRoute(builder: (_) => const CustomTuningScreen()),
               ),
             ),
+            GroupedRow(
+              title: 'Primeira vez?',
+              subtitle: 'Veja qual corda é qual',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => GuideDetailScreen(
+                    topic: guideTopics.firstWhere((t) => t.id == 'afinar'),
+                    showTunerButton: false,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ],
@@ -259,12 +274,14 @@ class _TunerScreenState extends State<TunerScreen> {
 
 class _StringCell extends StatelessWidget {
   final String label;
+  final String number;
   final String semanticsLabel;
   final bool active;
   final VoidCallback onTap;
 
   const _StringCell({
     required this.label,
+    required this.number,
     required this.semanticsLabel,
     required this.active,
     required this.onTap,
@@ -281,23 +298,29 @@ class _StringCell extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: motion(context, const Duration(milliseconds: 150)),
-          height: 50,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: active ? colorScheme.primary : context.tokens.cell,
-            borderRadius: BorderRadius.circular(GlassTokens.radiusMd),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: fontChord,
-              fontWeight: FontWeight.w600,
-              fontSize: 18,
-              color: active ? colorScheme.onPrimary : colorScheme.onSurface,
+        child: Column(
+          children: [
+            AnimatedContainer(
+              duration: motion(context, const Duration(milliseconds: 150)),
+              height: 50,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: active ? colorScheme.primary : context.tokens.cell,
+                borderRadius: BorderRadius.circular(GlassTokens.radiusMd),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: fontChord,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                  color: active ? colorScheme.onPrimary : colorScheme.onSurface,
+                ),
+              ),
             ),
-          ),
+            const SizedBox(height: 4),
+            Text(number, style: Theme.of(context).textTheme.bodySmall),
+          ],
         ),
       ),
     );

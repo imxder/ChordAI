@@ -15,6 +15,7 @@ import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/recognition_mode_badge.dart';
 import '../theme/ph.dart';
+import '../theme/platform_style.dart';
 
 class FreePracticeScreen extends StatefulWidget {
   final String serverUrl;
@@ -141,6 +142,13 @@ class _FreePracticeScreenState extends State<FreePracticeScreen>
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
     final chord = _chord;
+    // No computador é a tela que eu mostro na apresentação: braço e nome do
+    // acorde bem maiores, pra ver de longe.
+    final big = isDesktop;
+    final chordStyle = textTheme.displayLarge?.copyWith(
+      fontSize: big ? 120 : null,
+      color: chord == null ? colorScheme.outlineVariant : null,
+    );
 
     return IosPage(
       title: 'Reconhecer acorde',
@@ -162,12 +170,15 @@ class _FreePracticeScreenState extends State<FreePracticeScreen>
           color: context.tokens.cell,
           borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(big ? 40 : 20),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(width: 110, child: GuitarNeck(chord: chord)),
-                const SizedBox(width: 20),
+                SizedBox(
+                  width: big ? 220 : 110,
+                  child: GuitarNeck(chord: chord),
+                ),
+                SizedBox(width: big ? 40 : 20),
                 Expanded(
                   child: Semantics(
                     liveRegion: true,
@@ -183,14 +194,7 @@ class _FreePracticeScreenState extends State<FreePracticeScreen>
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
-                            child: Text(
-                              chord ?? '–',
-                              style: textTheme.displayLarge?.copyWith(
-                                color: chord == null
-                                    ? colorScheme.outlineVariant
-                                    : null,
-                              ),
-                            ),
+                            child: Text(chord ?? '–', style: chordStyle),
                           ),
                           Text(
                             chord != null

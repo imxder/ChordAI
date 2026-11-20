@@ -48,7 +48,14 @@ PitchEstimate? detectPitchWithConfidence(
   final n = samples.length;
   if (n < 4) return null;
 
-  final x = samples is Float64List ? samples : Float64List.fromList(samples);
+  // Copia sempre pra um Float64List criado aqui. Assim o compilador sabe o
+  // tipo exato do array e o x[i] do laço de baixo vira leitura direta da
+  // memória. Recebendo a lista de fora, no Android cada x[i] virava uma
+  // chamada de função, e o afinador não dava conta do tempo real.
+  final x = Float64List(n);
+  for (var i = 0; i < n; i++) {
+    x[i] = samples[i];
+  }
 
   var sumSquares = 0.0;
   for (var i = 0; i < n; i++) {

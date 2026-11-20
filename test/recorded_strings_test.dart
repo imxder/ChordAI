@@ -1,62 +1,16 @@
 import 'dart:io';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:chordai/services/pitch_detector.dart';
 import 'package:chordai/services/pitch_smoother.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'wav_fixture.dart';
+
 const _fixturesDir = 'test/fixtures/strings';
 const _windowSize = 4096;
 const _hopSize = 1024;
 const _minHitRate = 0.9;
-
-class _Wav {
-  final double sampleRate;
-  final List<double> samples;
-
-  const _Wav(this.sampleRate, this.samples);
-}
-
-_Wav _readWav(File file) {
-  final bytes = file.readAsBytesSync();
-  final data = ByteData.sublistView(bytes);
-  String tag(int offset) =>
-      String.fromCharCodes(bytes.sublist(offset, offset + 4));
-  if (tag(0) != 'RIFF' || tag(8) != 'WAVE') {
-    throw FormatException('${file.path} não é WAV');
-  }
-
-  int? channels;
-  int? sampleRate;
-  int? bitsPerSample;
-  var offset = 12;
-  while (offset + 8 <= bytes.length) {
-    final id = tag(offset);
-    final size = data.getUint32(offset + 4, Endian.little);
-    final body = offset + 8;
-    if (id == 'fmt ') {
-      channels = data.getUint16(body + 2, Endian.little);
-      sampleRate = data.getUint32(body + 4, Endian.little);
-      bitsPerSample = data.getUint16(body + 14, Endian.little);
-    } else if (id == 'data') {
-      if (channels == null || sampleRate == null) break;
-      if (bitsPerSample != 16) {
-        throw FormatException('${file.path}: só PCM de 16 bits');
-      }
-      final frameBytes = 2 * channels;
-      final end = min(body + size, bytes.length);
-      final samples = <double>[];
-      for (var i = body; i + frameBytes <= end; i += frameBytes) {
-        samples.add(data.getInt16(i, Endian.little) / 32768.0);
-      }
-      return _Wav(sampleRate.toDouble(), samples);
-    }
-    // Chunks de tamanho ímpar têm um byte de preenchimento.
-    offset = body + size + (size.isOdd ? 1 : 0);
-  }
-  throw FormatException('${file.path}: sem chunk fmt/data');
-}
 
 double _noteFrequency(String name) {
   final match = RegExp(r'^([A-G])(#?)(-?\d)$').firstMatch(name);
@@ -104,7 +58,7 @@ void main() {
     );
     test('gravação $note', () {
       final expected = _noteFrequency(note);
-      final wav = _readWav(file);
+      final wav = readWav(file);
 
       // Saída bruta do detector (janelas de 4096 amostras, sem sobreposição):
       // só reportada, não é mais a exigência do teste (ver saída suavizada).

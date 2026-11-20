@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:record/record.dart';
@@ -53,9 +54,20 @@ class TunerService {
           window,
           sampleRate.toDouble(),
         );
-        onPitch(_smoother!.update(estimate));
+        onPitch(_smoother!.update(estimate, level: newSamplesLevel(window)));
       }
     });
+  }
+
+  /// RMS só das [_hopSizeSamples] amostras que chegaram agora (o fim da
+  /// janela). Comparando um salto com o anterior, o PitchSmoother percebe
+  /// quando uma corda foi beliscada.
+  static double newSamplesLevel(List<double> window) {
+    var sum = 0.0;
+    for (var i = window.length - _hopSizeSamples; i < window.length; i++) {
+      sum += window[i] * window[i];
+    }
+    return sqrt(sum / _hopSizeSamples);
   }
 
   Future<void> stop() async {

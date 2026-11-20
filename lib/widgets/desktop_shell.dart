@@ -293,36 +293,40 @@ class _PaneItem extends StatelessWidget {
             height: height,
             child: Stack(
               children: [
-                Row(
-                  children: [
-                    // O ícone fica numa caixa de 40 no começo da pílula. O ☰
-                    // usa este mesmo item, então os ícones ficam alinhados
-                    // com ele.
-                    SizedBox(
-                      width: iconBox,
-                      child: Icon(
-                        icon,
-                        size: 18,
-                        color: selected ? colorScheme.primary : onSurface,
-                      ),
-                    ),
-                    if (open)
-                      Expanded(
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.clip,
-                          softWrap: false,
-                          style:
-                              labelStyle ??
-                              textTheme.bodyMedium?.copyWith(
-                                fontWeight: selected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                              ),
+                // Ocupa a pílula toda e centraliza na altura. Sem isso o Stack
+                // põe a linha no topo e sobra espaço só embaixo.
+                Positioned.fill(
+                  child: Row(
+                    children: [
+                      // O ícone fica numa caixa de 40 no começo da pílula. O ☰
+                      // usa este mesmo item, então os ícones ficam alinhados
+                      // com ele.
+                      SizedBox(
+                        width: iconBox,
+                        child: Icon(
+                          icon,
+                          size: 18,
+                          color: selected ? colorScheme.primary : onSurface,
                         ),
                       ),
-                  ],
+                      if (open)
+                        Expanded(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.clip,
+                            softWrap: false,
+                            style:
+                                labelStyle ??
+                                textTheme.bodyMedium?.copyWith(
+                                  fontWeight: selected
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
                 if (selected)
                   Positioned(

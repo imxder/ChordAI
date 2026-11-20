@@ -16,6 +16,7 @@ import '../services/play_along_engine.dart';
 import '../services/tocar_junto_log.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/mic_lifecycle.dart';
 import '../widgets/cifra_line.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
@@ -44,7 +45,8 @@ class LyricPlayerScreen extends StatefulWidget {
   State<LyricPlayerScreen> createState() => _LyricPlayerScreenState();
 }
 
-class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
+class _LyricPlayerScreenState extends State<LyricPlayerScreen>
+    with MicLifecycle {
   static const _minBpm = 40;
   static const _maxBpm = 160;
   static const _tick = Duration(milliseconds: 30);
@@ -142,6 +144,10 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
     _ticker?.cancel();
     _ticker = Timer.periodic(_tick, (_) => _onTick());
 
+    _startListening();
+  }
+
+  void _startListening() {
     _service.start(
       serverUrl: widget.serverUrl,
       onPrediction: _onPrediction,
@@ -149,6 +155,34 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen> {
         chordRecognitionErrorMessage(appState.chordRecognitionMode),
       ),
     );
+  }
+
+  /// Se o app foi escondido no meio da música (segundo plano ou celular
+  /// bloqueado). O microfone, a batida e o relógio da música param, e voltam
+  /// de onde estavam quando o app aparece de novo. A PlayAlongEngine mede o
+  /// tempo pelo _stopwatch, então com ele parado a música fica parada.
+  bool _pausedInBackground = false;
+
+  @override
+  void onAppHidden() {
+    if (appState.sessionStatus != SessionStatus.running) return;
+    TocarJuntoLog.evento('pausou: app escondido');
+    _pausedInBackground = true;
+    _ticker?.cancel();
+    _ticker = null;
+    _stopwatch.stop();
+    _service.stop();
+  }
+
+  @override
+  void onAppShown() {
+    if (!_pausedInBackground) return;
+    _pausedInBackground = false;
+    if (appState.sessionStatus != SessionStatus.running) return;
+    TocarJuntoLog.evento('continuou: app voltou');
+    _stopwatch.start();
+    _ticker = Timer.periodic(_tick, (_) => _onTick());
+    _startListening();
   }
 
   Future<void> _stop() async {

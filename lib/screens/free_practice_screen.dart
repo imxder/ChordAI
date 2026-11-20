@@ -9,6 +9,7 @@ import '../services/on_device_chord_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../theme/glass_tokens.dart';
+import '../widgets/mic_lifecycle.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/recognition_mode_badge.dart';
@@ -28,7 +29,8 @@ class FreePracticeScreen extends StatefulWidget {
   State<FreePracticeScreen> createState() => _FreePracticeScreenState();
 }
 
-class _FreePracticeScreenState extends State<FreePracticeScreen> {
+class _FreePracticeScreenState extends State<FreePracticeScreen>
+    with MicLifecycle {
   late final ChordRecognizer _service = createChordRecognizer(
     appState.chordRecognitionMode,
   );
@@ -44,6 +46,12 @@ class _FreePracticeScreenState extends State<FreePracticeScreen> {
     if (widget.inputDevice != null) {
       _service.selectDevice(widget.inputDevice);
     }
+  }
+
+  // Escondendo o app, para de ouvir como se a pessoa tivesse apertado Parar.
+  @override
+  void onAppHidden() {
+    if (_listening) _toggle();
   }
 
   Future<void> _toggle() async {

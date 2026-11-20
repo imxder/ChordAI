@@ -3,6 +3,7 @@ import 'package:record/record.dart';
 
 import '../models/chord_names.dart';
 import '../models/chord_prediction.dart';
+import '../services/audio_input.dart';
 import '../services/chord_recognizer.dart';
 import '../services/chord_recognizer_factory.dart';
 import '../services/on_device_chord_service.dart';
@@ -83,9 +84,23 @@ class _FreePracticeScreenState extends State<FreePracticeScreen>
     _service.start(
       serverUrl: widget.serverUrl,
       onPrediction: _handlePrediction,
-      onError: (_) => _showSnackBar(
-        chordRecognitionErrorMessage(appState.chordRecognitionMode),
-      ),
+      onError: (error) {
+        // Microfone bloqueado ou entrada desconectada (só no computador): o
+        // serviço já parou de ouvir, então a tela volta pro Ouvir.
+        if (error is MicrophoneProblem) {
+          if (mounted) {
+            setState(() {
+              _listening = false;
+              _statusMessage = 'Parado';
+            });
+          }
+          _showSnackBar(error.message);
+          return;
+        }
+        _showSnackBar(
+          chordRecognitionErrorMessage(appState.chordRecognitionMode),
+        );
+      },
     );
   }
 

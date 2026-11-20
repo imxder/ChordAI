@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
 import '../models/score.dart';
+import '../services/audio_input.dart';
 import '../services/chord_recognizer.dart';
 import '../services/chord_recognizer_factory.dart';
 import '../services/score_library.dart';
@@ -87,9 +88,17 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen>
     _service.start(
       serverUrl: widget.serverUrl,
       onPrediction: (p) => appState.updatePrediction(p),
-      onError: (_) => _showSnackBar(
-        chordRecognitionErrorMessage(appState.chordRecognitionMode),
-      ),
+      onError: (error) {
+        // Microfone bloqueado ou entrada desconectada (só no computador).
+        if (error is MicrophoneProblem) {
+          _stop();
+          _showSnackBar(error.message);
+          return;
+        }
+        _showSnackBar(
+          chordRecognitionErrorMessage(appState.chordRecognitionMode),
+        );
+      },
     );
 
     setState(() => _statusMessage = 'Ouvindo');

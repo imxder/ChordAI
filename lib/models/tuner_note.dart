@@ -85,3 +85,20 @@ TunerReading? classifyPitch(double? frequency, List<TunerNote> strings) {
   final cents = 1200 * (log(frequency / nearest.frequency) / ln2);
   return TunerReading(nearestString: nearest, cents: cents);
 }
+
+/// Modo "escolher corda": mede sempre contra [target], sem procurar a corda
+/// mais próxima. Se a leitura estiver mais de meia oitava longe, ela é trazida
+/// pra oitava da corda escolhida: o YIN às vezes lê a oitava de cima ou de
+/// baixo da mesma nota, e isso não quer dizer que a corda está desafinada uma
+/// oitava inteira.
+TunerReading? classifyPitchFor(double? frequency, TunerNote target) {
+  if (frequency == null || frequency <= 0) return null;
+  var cents = 1200 * (log(frequency / target.frequency) / ln2);
+  while (cents > 600) {
+    cents -= 1200;
+  }
+  while (cents < -600) {
+    cents += 1200;
+  }
+  return TunerReading(nearestString: target, cents: cents);
+}

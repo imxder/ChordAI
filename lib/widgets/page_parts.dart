@@ -37,8 +37,9 @@ class IosPage extends StatelessWidget {
     );
 
     if (isDesktop) {
+      // No computador a barra do botão tem fundo próprio (ver
+      // BottomActionBar), então o conteúdo não passa por trás dela.
       return Scaffold(
-        extendBody: bottomBar != null,
         appBar: DesktopPageHeader(title: title, trailing: trailing),
         body: CustomScrollView(controller: controller, slivers: [list]),
         bottomNavigationBar: bottomBar,
@@ -528,6 +529,26 @@ class BottomActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final padding = pagePadding(context, bottom: 0);
+    // No computador não tem polegar: em vez da pílula flutuante na largura
+    // toda, o botão fica à direita, com altura de botão de mouse (40), como
+    // a barra de comandos dos apps do Windows 11.
+    if (isDesktop) {
+      return ColoredBox(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(padding.left, 12, padding.right, 20),
+          child: Align(
+            alignment: Alignment.centerRight,
+            // Sem isso o Align ocupa toda a altura que o Scaffold oferece.
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 360),
+              child: SizedBox(height: 40, child: child),
+            ),
+          ),
+        ),
+      );
+    }
     return SafeArea(
       top: false,
       minimum: const EdgeInsets.only(bottom: 8),

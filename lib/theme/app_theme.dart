@@ -270,9 +270,16 @@ ThemeData buildAppTheme(
       ? withWindowsFont(baseText)
       : baseText;
 
-  const capsule = StadiumBorder();
-  const buttonSize = Size(64, 50);
-  const buttonPadding = EdgeInsets.symmetric(horizontal: 22, vertical: 12);
+  // No Windows os botões são retângulos de canto pouco arredondado e mais
+  // baixos (pra mouse), como no Windows 11. No celular, pílula de 50.
+  final windows = desktopLook == DesktopLook.windows;
+  final OutlinedBorder capsule = windows
+      ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))
+      : const StadiumBorder();
+  final buttonSize = windows ? const Size(64, 36) : const Size(64, 50);
+  final buttonPadding = windows
+      ? const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
+      : const EdgeInsets.symmetric(horizontal: 22, vertical: 12);
   final buttonText = textTheme.labelLarge!;
 
   return ThemeData(
@@ -304,8 +311,9 @@ ThemeData buildAppTheme(
         TargetPlatform.android: CupertinoPageTransitionsBuilder(),
         TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
         TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-        // No Windows a tela nova sobe um pouco e aparece, como no Windows 11.
-        TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+        // No Windows a tela nova sobe um pouquinho e aparece, como no Windows
+        // 11 (ver windows_style.dart).
+        TargetPlatform.windows: WindowsPageTransitionsBuilder(),
         TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
       },
     ),

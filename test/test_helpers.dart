@@ -31,9 +31,13 @@ Future<void> loadAppFonts() async {
       family,
     )..addFont(rootBundle.load('assets/fonts/$file'))).load();
   }
-  // No iPhone o texto sai em SF Pro; no teste a Roboto faz esse papel.
+  // No iPhone o texto sai em SF Pro e no Windows em Segoe UI; no teste a
+  // Roboto faz esse papel (o CI roda no Linux, que não tem nenhuma das duas).
   for (final family in [
     'Roboto',
+    'Segoe UI',
+    'Segoe UI Variable Text',
+    'Segoe UI Variable Display',
     'CupertinoSystemText',
     'CupertinoSystemDisplay',
     '.SF Pro Text',

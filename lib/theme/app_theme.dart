@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../models/app_theme.dart';
+import 'platform_style.dart';
 
 // Texto usa a fonte do sistema (SF Pro no iPhone). Só os acordes ficam em mono,
 // porque a cifra depende de cada caractere ter a mesma largura.
@@ -146,7 +147,11 @@ EdgeInsets pagePadding(
   double bottom = 24,
 }) {
   final width = MediaQuery.sizeOf(context).width;
-  final side = max(16.0, (width - 600) / 2);
+  // No computador a coluna de leitura é mais larga (720) e a margem mínima
+  // maior, porque não tem a borda do celular encostando no conteúdo.
+  final column = isDesktop ? 720.0 : 600.0;
+  final minSide = isDesktop ? 32.0 : 16.0;
+  final side = max(minSide, (width - column) / 2);
   return EdgeInsets.fromLTRB(
     side,
     top,

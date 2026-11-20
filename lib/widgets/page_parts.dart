@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
@@ -34,6 +36,15 @@ class IosPage extends StatelessWidget {
       sliver: SliverList.list(children: children),
     );
 
+    if (isDesktop) {
+      return Scaffold(
+        extendBody: bottomBar != null,
+        appBar: DesktopPageHeader(title: title, trailing: trailing),
+        body: CustomScrollView(controller: controller, slivers: [list]),
+        bottomNavigationBar: bottomBar,
+      );
+    }
+
     if (largeTitle) {
       return Scaffold(
         extendBody: bottomBar != null,
@@ -67,6 +78,68 @@ class IosPage extends StatelessWidget {
       ),
       body: CustomScrollView(controller: controller, slivers: [list]),
       bottomNavigationBar: bottomBar,
+    );
+  }
+}
+
+/// Cabeçalho das páginas no computador: título grande à esquerda, alinhado
+/// com a coluna de conteúdo, e o botão de voltar quando tem tela anterior
+/// (como nas páginas do Windows 11). No celular fica a barra do Cupertino.
+class DesktopPageHeader extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  final Widget? trailing;
+
+  const DesktopPageHeader({super.key, required this.title, this.trailing});
+
+  static const height = 72.0;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(height);
+
+  @override
+  Widget build(BuildContext context) {
+    final padding = pagePadding(context);
+    final canPop = Navigator.of(context).canPop();
+    final style = Theme.of(context).textTheme.headlineSmall
+        ?.copyWith(fontWeight: FontWeight.w600);
+    return SafeArea(
+      bottom: false,
+      child: SizedBox(
+        height: height,
+        child: Padding(
+          // O botão de voltar fica na margem, pra o título alinhar com o
+          // conteúdo de baixo.
+          padding: EdgeInsets.only(
+            left: canPop ? max(8.0, padding.left - 48) : padding.left,
+            right: padding.right,
+            top: 12,
+          ),
+          child: Row(
+            children: [
+              if (canPop) ...[
+                IconButton(
+                  icon: const Icon(Ph.caretLeft, size: 20),
+                  tooltip: 'Voltar',
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+                const SizedBox(width: 4),
+              ],
+              Expanded(
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    title,
+                    style: style,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+              ?trailing,
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

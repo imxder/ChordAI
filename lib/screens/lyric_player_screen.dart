@@ -532,7 +532,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
                 child: DesktopPane(child: Column(children: sheet)),
               ),
               SizedBox(
-                width: 360,
+                width: 400,
                 child: DesktopPane(
                   child: Align(
                     alignment: Alignment.topCenter,

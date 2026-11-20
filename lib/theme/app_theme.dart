@@ -165,6 +165,22 @@ Duration motion(BuildContext context, Duration duration) {
   return MediaQuery.disableAnimationsOf(context) ? Duration.zero : duration;
 }
 
+// Escuro do Windows 11: cinza bem escuro no fundo e cards um tom acima, em
+// vez do preto do iPhone. Só no Windows.
+const _windowsDarkSurface = _Surface(
+  brightness: Brightness.dark,
+  background: Color(0xFF202020),
+  cell: Color(0xFF2B2B2B),
+  fill: Color(0xFF3A3A3A),
+  label: Color(0xFFFFFFFF),
+  secondaryLabel: Color(0xFFC5C5C5),
+  separator: Color(0xFF3D3D3D),
+  error: Color(0xFFFF99A4),
+  onError: Color(0xFF1C0606),
+  correct: Color(0xFF6CCB5F),
+  warning: Color(0xFFFCE100),
+);
+
 /// [appearance] aqui é papel, branco ou escuro; "igual ao celular" é resolvido no MaterialApp.
 ThemeData buildAppTheme(
   AppThemeOption option, {
@@ -172,7 +188,8 @@ ThemeData buildAppTheme(
 }) {
   final s = switch (appearance) {
     AppAppearance.white => _whiteSurface,
-    AppAppearance.dark => _darkSurface,
+    AppAppearance.dark =>
+      desktopLook == DesktopLook.windows ? _windowsDarkSurface : _darkSurface,
     _ => _paperSurface,
   };
   final dark = s.brightness == Brightness.dark;
@@ -382,7 +399,7 @@ ThemeData buildAppTheme(
       showDragHandle: true,
       dragHandleColor: s.secondaryLabel.withValues(alpha: 0.5),
       dragHandleSize: const Size(36, 5),
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(GlassTokens.radiusXl),
         ),

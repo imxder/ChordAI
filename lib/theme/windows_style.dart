@@ -39,12 +39,18 @@ TextTheme withWindowsFont(TextTheme theme) {
   );
 }
 
-/// Cor da barra lateral: um tom acima do fundo, como o painel do
-/// NavigationView do Windows 11, que fica atrás da "folha" de conteúdo.
-Color windowsPaneColor(ThemeData theme) => Color.alphaBlend(
-  theme.colorScheme.onSurface.withValues(alpha: 0.035),
-  theme.scaffoldBackgroundColor,
-);
+/// Cor da barra lateral, um pouco mais escura que o fundo da folha de
+/// conteúdo, como o painel do NavigationView do Windows 11. No claro escurece
+/// de leve; no escuro, um pouco mais, pra a folha ficar um tom acima.
+Color windowsPaneColor(ThemeData theme) {
+  final dark = theme.brightness == Brightness.dark;
+  return Color.alphaBlend(
+    dark
+        ? const Color(0xFF000000).withValues(alpha: 0.28)
+        : theme.colorScheme.onSurface.withValues(alpha: 0.035),
+    theme.scaffoldBackgroundColor,
+  );
+}
 
 const _window = MethodChannel('chordai/window');
 

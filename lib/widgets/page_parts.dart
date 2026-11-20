@@ -185,7 +185,13 @@ class GroupedSection extends StatelessWidget {
             ),
           Material(
             color: tokens.cell,
-            borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
+            // No Windows 11 os cards têm um contorno fino; no celular não.
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
+              side: desktopLook == DesktopLook.windows
+                  ? BorderSide(color: tokens.rule)
+                  : BorderSide.none,
+            ),
             clipBehavior: Clip.antiAlias,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -583,6 +589,19 @@ class FloatingPanel extends StatelessWidget {
         shape: LiquidRoundedSuperellipse(borderRadius: radius),
         padding: padding,
         child: child,
+      );
+    }
+    // No Windows 11 painel é card como os outros: canto de 8 e contorno
+    // fino, sem a sombra de painel flutuante do celular.
+    if (desktopLook == DesktopLook.windows) {
+      return Material(
+        color: context.tokens.cell,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GlassTokens.radiusLg),
+          side: BorderSide(color: context.tokens.rule),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(padding: padding, child: child),
       );
     }
     return Material(

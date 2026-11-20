@@ -9,6 +9,7 @@ import 'screens/onboarding_screen.dart';
 import 'state/app_state.dart';
 import 'theme/app_theme.dart';
 import 'theme/platform_style.dart';
+import 'theme/windows_style.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,7 +73,8 @@ class ChordAIApp extends StatelessWidget {
               value: dark
                   ? SystemUiOverlayStyle.light
                   : SystemUiOverlayStyle.dark,
-              child: child!,
+              // No Windows, pinta a barra de título com a cor do app.
+              child: WindowsTitleBarColor(child: child!),
             );
           },
           home: appState.hasCompletedOnboarding

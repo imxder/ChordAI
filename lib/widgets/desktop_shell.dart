@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/ph.dart';
+import '../theme/platform_style.dart';
+import '../theme/windows_style.dart';
 
 /// Uma aba da barra lateral: as mesmas do AppShell no celular.
 class DesktopDestination {
@@ -84,6 +86,11 @@ class DesktopShellState extends State<DesktopShell> {
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= DesktopShell.compactBelow;
     final open = _openByUser ?? wide;
+    // Windows 11: a barra lateral fica num tom acima do fundo, e o conteúdo
+    // numa "folha" com o canto de cima arredondado e uma borda fina, como no
+    // NavigationView. Os outros computadores usam a casca simples.
+    final theme = Theme.of(context);
+    final windows = desktopLook == DesktopLook.windows;
 
     // Esc volta uma tela na aba aberta, como o botão de voltar.
     return CallbackShortcuts(
@@ -93,6 +100,7 @@ class DesktopShellState extends State<DesktopShell> {
       child: Focus(
         autofocus: true,
         child: Scaffold(
+          backgroundColor: windows ? windowsPaneColor(theme) : null,
           body: Row(
             children: [
               _Pane(
@@ -103,35 +111,38 @@ class DesktopShellState extends State<DesktopShell> {
                 onToggle: () => setState(() => _openByUser = !open),
               ),
               Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    // As telas medem a largura pela MediaQuery (ver pagePadding).
-                    // Aqui ela passa a ser a da área de conteúdo, sem a barra.
-                    final media = MediaQuery.of(context);
-                    return MediaQuery(
-                      data: media.copyWith(size: constraints.biggest),
-                      child: IndexedStack(
-                        index: widget.selectedIndex,
-                        children: [
-                          for (var i = 0; i < widget.pages.length; i++)
-                            HeroControllerScope.none(
-                              child: Navigator(
-                                key: _navigators[i],
-                                onGenerateRoute: (settings) =>
-                                    MaterialPageRoute(
-                                      settings: settings,
-                                      builder: (context) => ListenableBuilder(
-                                        listenable: widget.rebuildOn,
-                                        builder: (context, _) =>
-                                            widget.pages[i](context),
+                child: _ContentSheet(
+                  enabled: windows,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // As telas medem a largura pela MediaQuery (ver pagePadding).
+                      // Aqui ela passa a ser a da área de conteúdo, sem a barra.
+                      final media = MediaQuery.of(context);
+                      return MediaQuery(
+                        data: media.copyWith(size: constraints.biggest),
+                        child: IndexedStack(
+                          index: widget.selectedIndex,
+                          children: [
+                            for (var i = 0; i < widget.pages.length; i++)
+                              HeroControllerScope.none(
+                                child: Navigator(
+                                  key: _navigators[i],
+                                  onGenerateRoute: (settings) =>
+                                      MaterialPageRoute(
+                                        settings: settings,
+                                        builder: (context) => ListenableBuilder(
+                                          listenable: widget.rebuildOn,
+                                          builder: (context, _) =>
+                                              widget.pages[i](context),
+                                        ),
                                       ),
-                                    ),
+                                ),
                               ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
@@ -356,6 +367,33 @@ class DesktopSplit extends StatelessWidget {
         ),
         Expanded(child: DesktopPane(child: right)),
       ],
+    );
+  }
+}
+
+/// A "folha" de conteúdo do Windows 11: fundo do app, canto de cima à
+/// esquerda arredondado e uma borda fina separando da barra lateral.
+class _ContentSheet extends StatelessWidget {
+  final bool enabled;
+  final Widget child;
+
+  const _ContentSheet({required this.enabled, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!enabled) return child;
+    final theme = Theme.of(context);
+    const radius = BorderRadius.only(topLeft: Radius.circular(8));
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: radius,
+        border: Border(
+          left: BorderSide(color: theme.colorScheme.outlineVariant),
+          top: BorderSide(color: theme.colorScheme.outlineVariant),
+        ),
+      ),
+      child: ClipRRect(borderRadius: radius, child: child),
     );
   }
 }

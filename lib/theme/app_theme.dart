@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../models/app_theme.dart';
 import 'platform_style.dart';
+import 'windows_style.dart';
 
 // Texto usa a fonte do sistema (SF Pro no iPhone). Só os acordes ficam em mono,
 // porque a cifra depende de cada caractere ter a mesma largura.
@@ -206,7 +207,7 @@ ThemeData buildAppTheme(
     outlineVariant: s.separator,
   );
 
-  final textTheme = TextTheme(
+  final baseText = TextTheme(
     displayLarge: TextStyle(
       fontFamily: fontChord,
       fontSize: 72,
@@ -263,6 +264,11 @@ ThemeData buildAppTheme(
       color: s.secondaryLabel,
     ),
   );
+
+  // No Windows o texto sai na fonte do Windows 11 (ver windows_style.dart).
+  final textTheme = desktopLook == DesktopLook.windows
+      ? withWindowsFont(baseText)
+      : baseText;
 
   const capsule = StadiumBorder();
   const buttonSize = Size(64, 50);

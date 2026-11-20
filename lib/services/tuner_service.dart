@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:record/record.dart';
 
+import 'audio_input.dart';
 import 'pcm16_decoder.dart';
 import 'pitch_detector.dart';
 import 'pitch_smoother.dart';
@@ -28,10 +29,11 @@ class TunerService {
 
   Future<void> start(void Function(double? frequency) onPitch) async {
     final stream = await _recorder.startStream(
-      const RecordConfig(
+      RecordConfig(
         encoder: AudioEncoder.pcm16bits,
         sampleRate: sampleRate,
         numChannels: 1,
+        device: await chosenInputDevice(_recorder),
       ),
     );
 

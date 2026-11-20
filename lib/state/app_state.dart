@@ -34,6 +34,7 @@ class AppState extends ChangeNotifier {
   static const _onDeviceDefaultMigratedKey = 'app_on_device_default_migrated';
   static const _onDeviceModelKey = 'app_on_device_model';
   static const _playAlongWaitsKey = 'app_play_along_waits_for_me';
+  static const _inputDeviceIdKey = 'app_input_device_id';
 
   // Quem instalou uma versão antiga ainda tem esses dados salvos no aparelho.
   static const _removedKeys = [
@@ -148,6 +149,11 @@ class AppState extends ChangeNotifier {
   bool showGuitarNeckInPlayer = true;
   bool autoScrollInPlayer = true;
   bool playAlongWaitsForMe = false;
+
+  /// Entrada de áudio escolhida no Windows ou no Mac (ver
+  /// services/audio_input.dart). `null` é a entrada padrão do sistema, e no
+  /// celular fica sempre assim.
+  String? inputDeviceId;
 
   Future<void> setLyricFontScale(double value) async {
     lyricFontScale = value;
@@ -278,6 +284,7 @@ class AppState extends ChangeNotifier {
     showGuitarNeckInPlayer = prefs.getBool(_showGuitarNeckKey) ?? true;
     autoScrollInPlayer = prefs.getBool(_autoScrollKey) ?? true;
     playAlongWaitsForMe = prefs.getBool(_playAlongWaitsKey) ?? false;
+    inputDeviceId = prefs.getString(_inputDeviceIdKey);
     final savedAppearance = prefs.getString(_appearanceKey);
     appearance = AppAppearance.values.firstWhere(
       (a) => a.name == savedAppearance,
@@ -337,6 +344,18 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_playAlongWaitsKey, value);
+  }
+
+  /// `null` volta pra entrada padrão do sistema.
+  Future<void> setInputDeviceId(String? id) async {
+    inputDeviceId = id;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    if (id == null) {
+      await prefs.remove(_inputDeviceIdKey);
+    } else {
+      await prefs.setString(_inputDeviceIdKey, id);
+    }
   }
 
   void setSessionStep(int index) {

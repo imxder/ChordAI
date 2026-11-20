@@ -9,6 +9,7 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 import '../models/chord_model_info.dart';
 import '../models/chord_prediction.dart';
 import '../models/on_device_model.dart';
+import 'audio_input.dart';
 import 'chord_recognizer.dart';
 import 'chord_stabilizer.dart';
 import 'latest_samples_buffer.dart';
@@ -95,7 +96,7 @@ class OnDeviceChordService implements ChordRecognizer {
         encoder: AudioEncoder.pcm16bits,
         sampleRate: _modelInfo!.sampleRate,
         numChannels: 1,
-        device: _selectedDevice,
+        device: _selectedDevice ?? await chosenInputDevice(_recorder),
       ),
     );
 

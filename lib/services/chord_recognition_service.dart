@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:record/record.dart';
 
 import '../models/chord_prediction.dart';
+import 'audio_input.dart';
 import 'chord_recognizer.dart';
 import 'tocar_junto_log.dart';
 
@@ -163,7 +164,7 @@ class ChordRecognitionService implements ChordRecognizer {
         encoder: AudioEncoder.wav,
         sampleRate: 22050,
         numChannels: 1,
-        device: _selectedDevice,
+        device: _selectedDevice ?? await chosenInputDevice(_recorder),
       ),
       path: path,
     );

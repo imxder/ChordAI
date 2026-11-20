@@ -83,3 +83,30 @@ jobs:
 
       - name: Tamanho do APK
         run: ls -lh build/app/outputs/flutter-apk/app-release.apk
+
+  # Gera o app de Mac em todo push e PR, pra pegar erro do build de macOS antes
+  # de eu criar uma tag. Confere a dylib do modelo dentro do app e que ele saiu
+  # universal. Não roda o teste de equivalência: o Mac do GitHub não tem
+  # microfone nem tela, e o teste já roda no meu Mac.
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version-file: .fvmrc
+          cache: true
+
+      - name: App de Mac
+        run: flutter build macos --release
+
+      - name: Confere o app
+        run: |
+          app=build/macos/Build/Products/Release/ChordAI.app
+          dylib="$app/Contents/Resources/libtensorflowlite_c-mac.dylib"
+          test -f "$dylib" || { echo "::error::Faltou a dylib do modelo em Contents/Resources."; exit 1; }
+          lipo -archs "$app/Contents/MacOS/ChordAI"
+          lipo -archs "$dylib"
+          du -sh "$app"
+

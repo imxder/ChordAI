@@ -1,5 +1,5 @@
-# Quando eu crio uma tag v* (ex.: v0.1.0), gera o APK assinado e o .zip do
-# Windows e publica os dois numa GitHub Release.
+# Quando eu crio uma tag v* (ex.: v0.1.0), gera o APK assinado, o .zip do
+# Windows e o .zip do Mac e publica os três numa GitHub Release.
 name: Release
 
 on:
@@ -195,3 +195,68 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload $env:GITHUB_REF_NAME ChordAI-windows.zip
+
+  # O app de Mac num .zip, na mesma release. Roda no Mac do GitHub porque o
+  # build de macOS do Flutter só sai no Mac. O app sai universal (Apple Silicon
+  # e Intel) e com assinatura ad-hoc, sem conta paga da Apple.
+  macos:
+    needs: apk
+    runs-on: macos-latest
+    # Escrita pra subir o .zip na release que o job do APK criou.
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version-file: .fvmrc
+          cache: true
+
+      - name: Dependências
+        run: flutter pub get
+
+      # Não publica se os modelos não forem os das releases do backend.
+      - name: Hash dos modelos
+        run: python3 tool/conferir_modelos.py
+
+      # Mesma versão do APK: v0.3.0 -> 0.3.0, e o número da execução como build.
+      - name: Build
+        run: |
+          versao="${GITHUB_REF_NAME#v}"
+          flutter build macos --release --build-name="${versao%%-*}" --build-number=${{ github.run_number }}
+
+      # Sem a dylib do modelo o app abre mas não reconhece acorde. Ela tem que
+      # estar em Contents/Resources (onde o tflite_flutter procura) e ter as duas
+      # arquiteturas, igual ao app.
+      - name: Confere o app
+        run: |
+          app=build/macos/Build/Products/Release/ChordAI.app
+          dylib="$app/Contents/Resources/libtensorflowlite_c-mac.dylib"
+          if [ ! -f "$dylib" ]; then
+            echo "::error::Faltou a dylib do modelo em Contents/Resources."
+            exit 1
+          fi
+          for binario in "$app/Contents/MacOS/ChordAI" "$dylib"; do
+            arquiteturas="$(lipo -archs "$binario")"
+            echo "$binario: $arquiteturas"
+            if [[ "$arquiteturas" != *arm64* || "$arquiteturas" != *x86_64* ]]; then
+              echo "::error::$binario não é universal."
+              exit 1
+            fi
+          done
+          codesign --verify --deep --strict "$app"
+
+      # O ditto guarda os atributos e a assinatura do .app dentro do .zip (o zip
+      # comum estraga). Nome fixo, ChordAI-macos.zip: assim o link
+      # .../releases/latest/download/ChordAI-macos.zip sempre aponta pro da
+      # última release normal.
+      - name: Zip
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/ChordAI.app ChordAI-macos.zip
+          ls -lh ChordAI-macos.zip
+
+      - name: Publica
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" ChordAI-macos.zip

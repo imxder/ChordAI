@@ -95,7 +95,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         if (!usesServer)
           GroupedSection(
-            top: chooseMode ? 28 : 8,
+            top: chooseMode ? 24 : 8,
             header: 'Modelo no aparelho',
             footer:
                 'O v3 + meu dataset mostra menos acorde quando não tem acorde '

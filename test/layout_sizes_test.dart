@@ -52,6 +52,15 @@ const _setups = <String, (Size, double)>{
   'tablet': (Size(1024, 768), 1.0),
 };
 
+// Janela do computador: o tamanho com que abre e o mínimo (ver
+// windows/runner/main.cpp). Rodam como Windows, com a barra lateral.
+const _desktopSetups = <String, Size>{
+  'janela inicial': Size(1200, 800),
+  'janela mínima': Size(800, 560),
+};
+
+final _windows = TargetPlatformVariant.only(TargetPlatform.windows);
+
 void main() {
   late LyricSheet sheet;
 
@@ -124,5 +133,49 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 1));
     });
+  }
+
+  for (final setup in _desktopSetups.entries) {
+    for (final screen in _screens.entries) {
+      testWidgets('${screen.key} cabe na janela (${setup.key})', (
+        tester,
+      ) async {
+        sheet = (await tester.runAsync(() => LyricSheetLibrary().loadAll()))!
+            .first;
+        setScreen(tester, setup.value);
+        await tester.pumpWidget(appUnderTest(screen.value(sheet)));
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.pump(const Duration(milliseconds: 500));
+      }, variant: _windows);
+    }
+
+    testWidgets('abas da barra lateral cabem na janela (${setup.key})', (
+      tester,
+    ) async {
+      setScreen(tester, setup.value);
+      await tester.pumpWidget(appUnderTest(const AppShell()));
+      await tester.pump(const Duration(milliseconds: 300));
+      for (final tab in ['Músicas', 'Acordes', 'Perfil', 'Início']) {
+        await tester.tap(find.byKey(ValueKey('aba $tab')));
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+    }, variant: _windows);
+
+    testWidgets('tocar junto em andamento cabe na janela (${setup.key})', (
+      tester,
+    ) async {
+      sheet = (await tester.runAsync(() => LyricSheetLibrary().loadAll()))!
+          .first;
+      setScreen(tester, setup.value);
+      await tester.pumpWidget(
+        appUnderTest(LyricPlayerScreen(sheet: sheet, serverUrl: _url)),
+      );
+      await tester.pump();
+      appState.startSession(buildLyricPracticeMap(sheet).score);
+      await tester.pump(const Duration(seconds: 3));
+      appState.stopSession();
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    }, variant: _windows);
   }
 }

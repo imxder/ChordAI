@@ -58,6 +58,9 @@ const List<GuideTopic> guideTopics = [
     paragraphs: [
       'A afinação padrão do violão, da corda mais grossa pra mais fina, é '
           'E-A-D-G-B-E (Mi, Lá, Ré, Sol, Si, Mi).',
+      'As cordas são contadas da mais fina pra mais grossa: a 1ª é a mais '
+          'fina e a 6ª é a mais grossa. Segurando o violão pra tocar, a 6ª '
+          'fica em cima, mais perto do seu rosto, e a 1ª fica embaixo.',
       'Use o afinador deste app: toque uma corda por vez e ajuste a tarraxa '
           'até o ponteiro parar no centro e aparecer "Afinada".',
     ],

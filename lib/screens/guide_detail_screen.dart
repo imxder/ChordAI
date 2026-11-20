@@ -4,13 +4,22 @@ import '../models/guide_content.dart';
 import '../theme/app_theme.dart';
 import '../theme/glass_tokens.dart';
 import '../widgets/page_parts.dart';
+import '../widgets/strings_illustration.dart';
 import 'tuner_screen.dart';
 import '../theme/ph.dart';
 
 class GuideDetailScreen extends StatelessWidget {
   final GuideTopic topic;
 
-  const GuideDetailScreen({super.key, required this.topic});
+  /// Falso quando o guia é aberto de dentro do afinador: aí o botão "Abrir o
+  /// afinador" abriria um segundo afinador por cima do primeiro.
+  final bool showTunerButton;
+
+  const GuideDetailScreen({
+    super.key,
+    required this.topic,
+    this.showTunerButton = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +28,11 @@ class GuideDetailScreen extends StatelessWidget {
     return IosPage(
       title: topic.title,
       children: [
+        if (topic.id == 'afinar') ...[
+          const SizedBox(height: 8),
+          const StringsIllustration(),
+          const SizedBox(height: 8),
+        ],
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
           child: Column(
@@ -80,7 +94,7 @@ class GuideDetailScreen extends StatelessWidget {
                 ),
             ],
           ),
-        if (topic.id == 'afinar') ...[
+        if (topic.id == 'afinar' && showTunerButton) ...[
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: () {

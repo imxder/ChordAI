@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../models/tuner_note.dart';
@@ -25,6 +26,11 @@ class _TunerScreenState extends State<TunerScreen> {
   TunerReading? _reading;
   bool _inTune = false;
 
+  /// Corda escolhida tocando na casinha (índice na afinação ativa). `null` é
+  /// o modo Auto, em que o app reconhece sozinho a corda que está soando. Não
+  /// fica salvo: o afinador sempre abre no Auto.
+  int? _targetIndex;
+
   @override
   void initState() {
     super.initState();
@@ -49,10 +55,44 @@ class _TunerScreenState extends State<TunerScreen> {
     await _service.start((frequency) {
       if (!mounted) return;
       setState(() {
-        _reading = classifyPitch(frequency, appState.activeTuning);
+        _reading = _classify(frequency);
         _inTune = _service.smoother?.updateInTune(_reading?.cents) ?? false;
       });
     });
+  }
+
+  TunerReading? _classify(double? frequency) {
+    final strings = appState.activeTuning;
+    final target = _targetIndex;
+    if (target == null || target >= strings.length) {
+      return classifyPitch(frequency, strings);
+    }
+    return classifyPitchFor(frequency, strings[target]);
+  }
+
+  /// Troca entre o Auto (`null`) e uma corda escolhida. Zera o ponteiro pra
+  /// não sobrar a leitura medida contra a corda de antes.
+  void _setTarget(int? index) {
+    _service.smoother?.reset();
+    setState(() {
+      _targetIndex = index;
+      _reading = null;
+      _inTune = _service.smoother?.updateInTune(null) ?? false;
+    });
+  }
+
+  void _setAuto(bool auto) {
+    if (auto) {
+      _setTarget(null);
+      return;
+    }
+    // Desligando o Auto, fica escolhida a corda que estava sendo reconhecida
+    // (ou a 6ª, se nenhuma estava).
+    final current = _reading?.nearestString;
+    final index = current == null
+        ? 0
+        : appState.activeTuning.indexWhere((n) => n.name == current.name);
+    _setTarget(index < 0 ? 0 : index);
   }
 
   String _stripOctave(String note) => note.replaceAll(RegExp(r'\d+$'), '');
@@ -86,6 +126,8 @@ class _TunerScreenState extends State<TunerScreen> {
     } else {
       status = flat ? 'Grave: aperte a tarraxa' : 'Aguda: afrouxe a tarraxa';
     }
+
+    final auto = _targetIndex == null;
 
     return IosPage(
       title: 'Afinador',
@@ -176,7 +218,11 @@ class _TunerScreenState extends State<TunerScreen> {
               Expanded(
                 child: _StringCell(
                   label: _stripOctave(note.name),
-                  active: reading?.nearestString.name == note.name,
+                  semanticsLabel: 'Afinar a ${note.label}',
+                  active: auto
+                      ? reading?.nearestString.name == note.name
+                      : _targetIndex == i,
+                  onTap: () => _setTarget(i),
                 ),
               ),
             ],
@@ -184,6 +230,19 @@ class _TunerScreenState extends State<TunerScreen> {
         ),
         GroupedSection(
           children: [
+            GroupedRow(
+              title: 'Reconhecer a corda sozinho',
+              subtitle: auto
+                  ? 'O app descobre qual corda está soando'
+                  : 'Toque na corda que quer afinar',
+              chevron: false,
+              onTap: () => _setAuto(!auto),
+              trailing: CupertinoSwitch(
+                value: auto,
+                activeTrackColor: colorScheme.primary,
+                onChanged: _setAuto,
+              ),
+            ),
             GroupedRow(
               title: 'Afinação personalizada',
               subtitle: 'Escolha a nota de cada corda',
@@ -200,30 +259,44 @@ class _TunerScreenState extends State<TunerScreen> {
 
 class _StringCell extends StatelessWidget {
   final String label;
+  final String semanticsLabel;
   final bool active;
+  final VoidCallback onTap;
 
-  const _StringCell({required this.label, required this.active});
+  const _StringCell({
+    required this.label,
+    required this.semanticsLabel,
+    required this.active,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Semantics(
       selected: active,
-      child: AnimatedContainer(
-        duration: motion(context, const Duration(milliseconds: 150)),
-        height: 50,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: active ? colorScheme.primary : context.tokens.cell,
-          borderRadius: BorderRadius.circular(GlassTokens.radiusMd),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: fontChord,
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-            color: active ? colorScheme.onPrimary : colorScheme.onSurface,
+      button: true,
+      label: semanticsLabel,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: motion(context, const Duration(milliseconds: 150)),
+          height: 50,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: active ? colorScheme.primary : context.tokens.cell,
+            borderRadius: BorderRadius.circular(GlassTokens.radiusMd),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: fontChord,
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              color: active ? colorScheme.onPrimary : colorScheme.onSurface,
+            ),
           ),
         ),
       ),

@@ -117,23 +117,125 @@ void main() {
       expect(sixth, closeTo(329.63, 1.0));
     });
 
-    test('depois de ~500ms sem leitura válida volta pra sem sinal', () {
-      var now = DateTime(2000);
-      final smoother = _smootherAt(() => now);
-      final locked = _feed(smoother, 110.0, 6, tick: (d) => now = now.add(d));
-      expect(locked, isNotNull);
+    test(
+      'quando a nota acaba o ponteiro fica parado, e some depois de 3 s',
+      () {
+        var now = DateTime(2000);
+        final smoother = _smootherAt(() => now);
+        final locked = _feed(smoother, 110.0, 6, tick: (d) => now = now.add(d));
+        expect(locked, isNotNull);
 
-      now = now.add(const Duration(milliseconds: 300));
-      final duringGap = smoother.update(null);
-      expect(
-        duringGap,
-        closeTo(110.0, 1.0),
-        reason: 'gap curto mantém o valor',
-      );
+        now = now.add(const Duration(milliseconds: 600));
+        expect(
+          smoother.update(null),
+          closeTo(110.0, 1.0),
+          reason: 'passou do fim da nota (500 ms), mas o ponteiro continua',
+        );
 
-      now = now.add(const Duration(milliseconds: 300));
-      final afterTimeout = smoother.update(null);
-      expect(afterTimeout, isNull);
+        now = now.add(const Duration(milliseconds: 2000));
+        expect(smoother.update(null), closeTo(110.0, 1.0));
+
+        now = now.add(const Duration(milliseconds: 500));
+        expect(smoother.update(null), isNull, reason: 'mais de 3 s sem nota');
+      },
+    );
+
+    group('trava na corda até um ataque novo', () {
+      test('harmônico no fim da nota não troca de corda', () {
+        var now = DateTime(2000);
+        final smoother = _smootherAt(() => now);
+        // Nota de A2 morrendo devagar (nível caindo, sem ataque) por ~1,4 s,
+        // passando da janela de troca aberta pelo ataque.
+        var level = 0.2;
+        double? last;
+        for (var i = 0; i < 30; i++) {
+          now = now.add(const Duration(milliseconds: 46));
+          last = smoother.update(
+            const PitchEstimate(110.0, 0.95),
+            level: level,
+          );
+          level *= 0.99;
+        }
+        expect(last!, closeTo(110.0, 1.0));
+
+        // O detector passa a ler a oitava de cima várias vezes seguidas.
+        for (var i = 0; i < 8; i++) {
+          now = now.add(const Duration(milliseconds: 46));
+          last = smoother.update(
+            const PitchEstimate(220.0, 0.95),
+            level: level,
+          );
+          level *= 0.97;
+        }
+        expect(last, closeTo(110.0, 1.0), reason: 'continua na A2');
+      });
+
+      test('corda nova tocada por cima troca depois do ataque', () {
+        var now = DateTime(2000);
+        final smoother = _smootherAt(() => now);
+        for (var i = 0; i < 6; i++) {
+          now = now.add(const Duration(milliseconds: 46));
+          smoother.update(const PitchEstimate(110.0, 0.95), level: 0.03);
+        }
+
+        // Ataque: o nível sobe 10× de um salto pro outro.
+        double? last;
+        for (var i = 0; i < 6; i++) {
+          now = now.add(const Duration(milliseconds: 46));
+          last = smoother.update(const PitchEstimate(82.41, 0.95), level: 0.3);
+        }
+        expect(last!, closeTo(82.41, 1.0));
+      });
+
+      test('a troca só vale até 1 s depois do ataque', () {
+        var now = DateTime(2000);
+        final smoother = _smootherAt(() => now);
+        for (var i = 0; i < 6; i++) {
+          now = now.add(const Duration(milliseconds: 46));
+          smoother.update(const PitchEstimate(110.0, 0.95), level: 0.03);
+        }
+        // Ataque, mas a outra nota só aparece 1,2 s depois.
+        now = now.add(const Duration(milliseconds: 46));
+        smoother.update(const PitchEstimate(110.0, 0.95), level: 0.3);
+        double? last;
+        for (var i = 0; i < 26; i++) {
+          now = now.add(const Duration(milliseconds: 46));
+          last = smoother.update(
+            PitchEstimate(i < 26 - 6 ? 110.0 : 82.41, 0.95),
+            level: 0.25,
+          );
+        }
+        expect(last, closeTo(110.0, 1.0));
+      });
+
+      test('depois que a nota acaba, a próxima pode ser outra corda', () {
+        var now = DateTime(2000);
+        final smoother = _smootherAt(() => now);
+        for (var i = 0; i < 6; i++) {
+          now = now.add(const Duration(milliseconds: 46));
+          smoother.update(const PitchEstimate(110.0, 0.95), level: 0.05);
+        }
+        // 700 ms sem leitura válida (a nota acabou), mesmo nível de fundo.
+        for (var i = 0; i < 15; i++) {
+          now = now.add(const Duration(milliseconds: 46));
+          smoother.update(null, level: 0.05);
+        }
+        double? last;
+        for (var i = 0; i < 6; i++) {
+          now = now.add(const Duration(milliseconds: 46));
+          last = smoother.update(const PitchEstimate(82.41, 0.95), level: 0.05);
+        }
+        expect(last!, closeTo(82.41, 1.0));
+      });
+
+      test('reset volta pra sem leitura', () {
+        var now = DateTime(2000);
+        final smoother = _smootherAt(() => now);
+        _feed(smoother, 110.0, 6, tick: (d) => now = now.add(d));
+        smoother.reset();
+        now = now.add(const Duration(milliseconds: 46));
+        expect(smoother.update(null), isNull);
+      });
     });
 
     group('updateInTune', () {

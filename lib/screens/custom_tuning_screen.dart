@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/tuning_preset.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../theme/platform_style.dart';
 import '../widgets/page_parts.dart';
 
 class CustomTuningScreen extends StatefulWidget {
@@ -42,51 +43,59 @@ class _CustomTuningScreenState extends State<CustomTuningScreen> {
   void _pickNote(int index) {
     final initial = availableTuningNotes.indexOf(_notes[index]);
     var selected = initial < 0 ? 0 : initial;
-    showCupertinoModalPopup<void>(
-      context: context,
-      builder: (popupContext) => Container(
-        height: 280,
-        color: context.tokens.cell,
-        child: SafeArea(
-          top: false,
-          child: Column(
-            children: [
-              SheetHeader(
-                title: _labels[index],
-                actionLabel: 'OK',
-                onAction: () {
-                  setState(
-                    () => _notes[index] = availableTuningNotes[selected],
-                  );
-                  Navigator.of(popupContext).pop();
-                },
-              ),
-              Expanded(
-                child: CupertinoPicker(
-                  itemExtent: 36,
-                  scrollController: FixedExtentScrollController(
-                    initialItem: selected,
-                  ),
-                  onSelectedItemChanged: (i) => selected = i,
-                  children: [
-                    for (final note in availableTuningNotes)
-                      Center(
-                        child: Text(
-                          note,
-                          style: TextStyle(
-                            fontFamily: fontChord,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
+    Widget picker(BuildContext popupContext) => Container(
+      height: 280,
+      color: context.tokens.cell,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            SheetHeader(
+              title: _labels[index],
+              actionLabel: 'OK',
+              onAction: () {
+                setState(() => _notes[index] = availableTuningNotes[selected]);
+                Navigator.of(popupContext).pop();
+              },
+            ),
+            Expanded(
+              child: CupertinoPicker(
+                itemExtent: 36,
+                scrollController: FixedExtentScrollController(
+                  initialItem: selected,
+                ),
+                onSelectedItemChanged: (i) => selected = i,
+                children: [
+                  for (final note in availableTuningNotes)
+                    Center(
+                      child: Text(
+                        note,
+                        style: TextStyle(
+                          fontFamily: fontChord,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
+
+    // No computador o seletor abre num diálogo no meio da janela.
+    if (isDesktop) {
+      showDialog<void>(
+        context: context,
+        builder: (popupContext) => Dialog(
+          clipBehavior: Clip.antiAlias,
+          child: SizedBox(width: 360, child: picker(popupContext)),
+        ),
+      );
+      return;
+    }
+    showCupertinoModalPopup<void>(context: context, builder: picker);
   }
 
   @override

@@ -475,6 +475,23 @@ Future<T?> showGlassSheet<T>(
   double size = 0.55,
   bool startFull = false,
 }) {
+  // No computador a bandeja que sobe de baixo vira um diálogo no meio da
+  // janela, que é o normal com mouse. O conteúdo é o mesmo.
+  if (isDesktop) {
+    return showDialog<T>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 480,
+            maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.8,
+          ),
+          child: builder(dialogContext),
+        ),
+      ),
+    );
+  }
   if (!useLiquidGlass) {
     return showModalBottomSheet<T>(
       context: context,

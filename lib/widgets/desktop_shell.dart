@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/ph.dart';
 
@@ -84,48 +85,58 @@ class DesktopShellState extends State<DesktopShell> {
     final wide = MediaQuery.sizeOf(context).width >= DesktopShell.compactBelow;
     final open = _openByUser ?? wide;
 
-    return Scaffold(
-      body: Row(
-        children: [
-          _Pane(
-            destinations: widget.destinations,
-            selectedIndex: widget.selectedIndex,
-            open: open,
-            onSelected: _select,
-            onToggle: () => setState(() => _openByUser = !open),
-          ),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // As telas medem a largura pela MediaQuery (ver pagePadding).
-                // Aqui ela passa a ser a da área de conteúdo, sem a barra.
-                final media = MediaQuery.of(context);
-                return MediaQuery(
-                  data: media.copyWith(size: constraints.biggest),
-                  child: IndexedStack(
-                    index: widget.selectedIndex,
-                    children: [
-                      for (var i = 0; i < widget.pages.length; i++)
-                        HeroControllerScope.none(
-                          child: Navigator(
-                            key: _navigators[i],
-                            onGenerateRoute: (settings) => MaterialPageRoute(
-                              settings: settings,
-                              builder: (context) => ListenableBuilder(
-                                listenable: widget.rebuildOn,
-                                builder: (context, _) =>
-                                    widget.pages[i](context),
+    // Esc volta uma tela na aba aberta, como o botão de voltar.
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): popInCurrentTab,
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          body: Row(
+            children: [
+              _Pane(
+                destinations: widget.destinations,
+                selectedIndex: widget.selectedIndex,
+                open: open,
+                onSelected: _select,
+                onToggle: () => setState(() => _openByUser = !open),
+              ),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // As telas medem a largura pela MediaQuery (ver pagePadding).
+                    // Aqui ela passa a ser a da área de conteúdo, sem a barra.
+                    final media = MediaQuery.of(context);
+                    return MediaQuery(
+                      data: media.copyWith(size: constraints.biggest),
+                      child: IndexedStack(
+                        index: widget.selectedIndex,
+                        children: [
+                          for (var i = 0; i < widget.pages.length; i++)
+                            HeroControllerScope.none(
+                              child: Navigator(
+                                key: _navigators[i],
+                                onGenerateRoute: (settings) =>
+                                    MaterialPageRoute(
+                                      settings: settings,
+                                      builder: (context) => ListenableBuilder(
+                                        listenable: widget.rebuildOn,
+                                        builder: (context, _) =>
+                                            widget.pages[i](context),
+                                      ),
+                                    ),
                               ),
                             ),
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

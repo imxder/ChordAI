@@ -17,6 +17,7 @@ import 'custom_tuning_screen.dart';
 import 'guide_detail_screen.dart';
 import 'tuning_select_sheet.dart';
 import '../theme/ph.dart';
+import '../widgets/desktop_input.dart';
 
 class TunerScreen extends StatefulWidget {
   /// Só pros testes: um afinador falso no lugar do microfone.
@@ -351,32 +352,36 @@ class _StringCell extends StatelessWidget {
       button: true,
       label: semanticsLabel,
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Column(
-          children: [
-            AnimatedContainer(
-              duration: motion(context, const Duration(milliseconds: 150)),
-              height: 50,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: active ? colorScheme.primary : context.tokens.cell,
-                borderRadius: BorderRadius.circular(GlassTokens.radiusMd),
-              ),
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontFamily: fontChord,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                  color: active ? colorScheme.onPrimary : colorScheme.onSurface,
+      child: ClickCursor(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: Column(
+            children: [
+              AnimatedContainer(
+                duration: motion(context, const Duration(milliseconds: 150)),
+                height: 50,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: active ? colorScheme.primary : context.tokens.cell,
+                  borderRadius: BorderRadius.circular(GlassTokens.radiusMd),
+                ),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: fontChord,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                    color: active
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurface,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(number, style: Theme.of(context).textTheme.bodySmall),
-          ],
+              const SizedBox(height: 4),
+              Text(number, style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
         ),
       ),
     );

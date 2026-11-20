@@ -11,6 +11,7 @@ import 'privacy_screen.dart';
 import 'settings_screen.dart';
 import 'tuning_select_sheet.dart';
 import '../theme/ph.dart';
+import '../widgets/desktop_input.dart';
 
 const List<String> experienceOptions = [
   'Estou começando',
@@ -295,32 +296,34 @@ class _ThemePicker extends StatelessWidget {
             button: true,
             label: 'Cor ${appThemeOptions[i].name}',
             excludeSemantics: true,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => appState.selectTheme(i),
-              child: SizedBox(
-                width: 40,
-                height: 44,
-                child: Center(
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: selectedIndex == i
-                            ? onSurface
-                            : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
-                    child: DecoratedBox(
+            child: ClickCursor(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => appState.selectTheme(i),
+                child: SizedBox(
+                  width: 40,
+                  height: 44,
+                  child: Center(
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: dark
-                            ? appThemeOptions[i].darkColor
-                            : appThemeOptions[i].color,
+                        border: Border.all(
+                          color: selectedIndex == i
+                              ? onSurface
+                              : Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: dark
+                              ? appThemeOptions[i].darkColor
+                              : appThemeOptions[i].color,
+                        ),
                       ),
                     ),
                   ),

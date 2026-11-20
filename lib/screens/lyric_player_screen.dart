@@ -26,6 +26,7 @@ import 'lyric_sheet_screen.dart';
 import '../theme/ph.dart';
 import '../widgets/desktop_shell.dart';
 import '../theme/platform_style.dart';
+import '../widgets/desktop_input.dart';
 
 class LyricPlayerScreen extends StatefulWidget {
   final String serverUrl;
@@ -516,29 +517,33 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     // Começar) numa coluna fixa à direita, em vez de embaixo. A lógica é a
     // mesma; só muda onde as peças ficam.
     if (isDesktop) {
-      return Scaffold(
-        appBar: DesktopPageHeader(
-          title: widget.sheet.title,
-          trailing: trailing,
-        ),
-        body: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: DesktopPane(child: Column(children: sheet)),
-            ),
-            SizedBox(
-              width: 360,
-              child: DesktopPane(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: SingleChildScrollView(
-                    child: _buildControls(context, running),
+      final steps = _practiceMap.score.steps;
+      return SpaceToToggle(
+        onToggle: steps.isEmpty ? null : (running ? _stop : _start),
+        child: Scaffold(
+          appBar: DesktopPageHeader(
+            title: widget.sheet.title,
+            trailing: trailing,
+          ),
+          body: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: DesktopPane(child: Column(children: sheet)),
+              ),
+              SizedBox(
+                width: 360,
+                child: DesktopPane(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: SingleChildScrollView(
+                      child: _buildControls(context, running),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }

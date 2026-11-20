@@ -288,13 +288,18 @@ ThemeData buildAppTheme(
     // iOS não tem ripple: o toque escurece a célula.
     splashFactory: NoSplash.splashFactory,
     highlightColor: s.label.withValues(alpha: dark ? 0.12 : 0.07),
-    hoverColor: Colors.transparent,
+    // No celular não tem mouse; no computador o realce ao passar o mouse
+    // mostra o que dá pra clicar.
+    hoverColor: isDesktop
+        ? s.label.withValues(alpha: 0.05)
+        : Colors.transparent,
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
         TargetPlatform.android: CupertinoPageTransitionsBuilder(),
         TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
         TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+        // No Windows a tela nova sobe um pouco e aparece, como no Windows 11.
+        TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
         TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
       },
     ),

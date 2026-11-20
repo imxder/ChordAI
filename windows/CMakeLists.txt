@@ -115,3 +115,13 @@ install(
   FILES "${CMAKE_CURRENT_SOURCE_DIR}/../blobs/libtensorflowlite_c-win.dll"
   DESTINATION "${CMAKE_INSTALL_PREFIX}/blobs"
   COMPONENT Runtime)
+
+# Runtime do Visual C++ (msvcp140.dll, vcruntime140.dll, vcruntime140_1.dll)
+# do lado do .exe. O chordai.exe e o plugin do microfone dependem dele, e um
+# Windows recém-instalado pode não ter. A Microsoft deixa distribuir esses
+# arquivos junto com o app, e o módulo do CMake pega da instalação do Visual
+# Studio que compilou.
+set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${INSTALL_BUNDLE_LIB_DIR}")
+set(CMAKE_INSTALL_SYSTEM_RUNTIME_COMPONENT Runtime)
+set(CMAKE_INSTALL_UCRT_LIBRARIES FALSE)
+include(InstallRequiredSystemLibraries)

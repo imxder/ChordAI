@@ -4,9 +4,13 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import '../state/app_state.dart';
 import 'chord_list_screen.dart';
+import 'free_practice_screen.dart';
+import 'guide_list_screen.dart';
 import 'home_screen.dart';
 import 'lyric_sheet_list_screen.dart';
+import 'preferences_screen.dart';
 import 'profile_screen.dart';
+import 'tuner_screen.dart';
 import '../theme/ph.dart';
 import '../theme/platform_style.dart';
 import '../widgets/audio_input_section.dart';
@@ -51,7 +55,9 @@ class _AppShellState extends State<AppShell> {
     ),
   ];
 
-  // As mesmas abas, com os ícones pra barra lateral do computador.
+  // No computador a barra lateral tem as abas do celular e também o que no
+  // celular fica nos cards do Início. Preferências e Perfil vão pro pé da
+  // barra, junto da entrada de áudio.
   static const _desktopTabs = [
     DesktopDestination(
       icon: Ph.house,
@@ -59,21 +65,48 @@ class _AppShellState extends State<AppShell> {
       label: 'Início',
     ),
     DesktopDestination(
+      icon: Ph.gauge,
+      selectedIcon: Ph.gaugeFill,
+      label: 'Afinador',
+      keepAlive: false,
+    ),
+    DesktopDestination(
+      icon: Ph.squaresFour,
+      selectedIcon: Ph.squaresFourFill,
+      label: 'Aprender acordes',
+    ),
+    DesktopDestination(
+      icon: Ph.ear,
+      selectedIcon: Ph.earFill,
+      label: 'Reconhecer acorde',
+      keepAlive: false,
+    ),
+    DesktopDestination(
+      icon: Ph.bookOpen,
+      selectedIcon: Ph.bookOpenFill,
+      label: 'Guia do iniciante',
+      keepAlive: false,
+    ),
+    DesktopDestination(
       icon: Ph.musicNotes,
       selectedIcon: Ph.musicNotesFill,
       label: 'Músicas',
     ),
     DesktopDestination(
-      icon: Ph.squaresFour,
-      selectedIcon: Ph.squaresFourFill,
-      label: 'Acordes',
+      icon: Ph.gearSix,
+      selectedIcon: Ph.gearSixFill,
+      label: 'Preferências',
+      bottom: true,
     ),
     DesktopDestination(
       icon: Ph.userCircle,
       selectedIcon: Ph.userCircleFill,
       label: 'Perfil',
+      bottom: true,
     ),
   ];
+  static const _desktopChordsTab = 2;
+  static const _desktopSongsTab = 5;
 
   int _index = 0;
 
@@ -86,8 +119,8 @@ class _AppShellState extends State<AppShell> {
 
   List<Widget> _pages() => [
     HomeScreen(
-      onOpenChords: () => _select(_chordsTab),
-      onOpenSongs: () => _select(_songsTab),
+      onOpenChords: () => _select(isDesktop ? _desktopChordsTab : _chordsTab),
+      onOpenSongs: () => _select(isDesktop ? _desktopSongsTab : _songsTab),
     ),
     LyricSheetListScreen(serverUrl: appState.serverUrl),
     ChordListScreen(serverUrl: appState.serverUrl),
@@ -110,7 +143,14 @@ class _AppShellState extends State<AppShell> {
           ),
         ],
         pages: [
-          for (var i = 0; i < _desktopTabs.length; i++) (_) => _pages()[i],
+          (_) => _pages()[0],
+          (_) => const TunerScreen(),
+          (_) => _pages()[2],
+          (_) => FreePracticeScreen(serverUrl: appState.serverUrl),
+          (_) => const GuideListScreen(),
+          (_) => _pages()[1],
+          (_) => const PreferencesScreen(),
+          (_) => _pages()[3],
         ],
         rebuildOn: appState,
         selectedIndex: _index,

@@ -38,6 +38,11 @@ abstract final class Ph {
   static const backpackFill = IconData(0xe922, fontFamily: _fill);
   static const wrenchFill = IconData(0xe5d4, fontFamily: _fill);
   static const gaugeFill = IconData(0xe628, fontFamily: _fill);
+  static const ear = IconData(0xe70c, fontFamily: _regular);
+  static const earFill = IconData(0xe70c, fontFamily: _fill);
+  static const bookOpen = IconData(0xe0e6, fontFamily: _regular);
+  static const gearSix = IconData(0xe272, fontFamily: _regular);
+  static const gearSixFill = IconData(0xe272, fontFamily: _fill);
   static const arrowsClockwiseFill = IconData(0xe094, fontFamily: _fill);
   static const bandaidsFill = IconData(0xe0b2, fontFamily: _fill);
   static const circleHalfFill = IconData(0xe18c, fontFamily: _fill);

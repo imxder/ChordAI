@@ -155,7 +155,16 @@ void main() {
       setScreen(tester, setup.value);
       await tester.pumpWidget(appUnderTest(const AppShell()));
       await tester.pump(const Duration(milliseconds: 300));
-      for (final tab in ['Músicas', 'Acordes', 'Perfil', 'Início']) {
+      for (final tab in [
+        'Afinador',
+        'Aprender acordes',
+        'Reconhecer acorde',
+        'Guia do iniciante',
+        'Músicas',
+        'Preferências',
+        'Perfil',
+        'Início',
+      ]) {
         await tester.tap(find.byKey(ValueKey('aba $tab')));
         await tester.pump(const Duration(milliseconds: 300));
       }

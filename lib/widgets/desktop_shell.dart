@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme/mac_style.dart';
 import '../theme/ph.dart';
 import '../theme/platform_style.dart';
 import '../theme/windows_style.dart';
@@ -11,10 +12,20 @@ class DesktopDestination {
   final IconData selectedIcon;
   final String label;
 
+  /// Falso pras abas que só existem enquanto estão escolhidas (o afinador
+  /// liga o microfone ao abrir, então não pode ficar montado em outra aba).
+  final bool keepAlive;
+
+  /// Verdadeiro pras abas que ficam no pé da barra, junto da entrada de
+  /// áudio (preferências e perfil).
+  final bool bottom;
+
   const DesktopDestination({
     required this.icon,
     required this.selectedIcon,
     required this.label,
+    this.keepAlive = true,
+    this.bottom = false,
   });
 }
 
@@ -120,7 +131,9 @@ class DesktopShellState extends State<DesktopShell> {
       child: Focus(
         autofocus: true,
         child: Scaffold(
-          backgroundColor: windows ? windowsPaneColor(theme) : null,
+          backgroundColor: windows
+              ? windowsPaneColor(theme)
+              : (isMacLook ? Colors.transparent : null),
           body: Row(
             children: [
               _Pane(
@@ -134,6 +147,7 @@ class DesktopShellState extends State<DesktopShell> {
               Expanded(
                 child: _ContentSheet(
                   enabled: windows,
+                  mac: isMacLook,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       // As telas medem a largura pela MediaQuery (ver pagePadding).
@@ -145,20 +159,25 @@ class DesktopShellState extends State<DesktopShell> {
                           index: widget.selectedIndex,
                           children: [
                             for (var i = 0; i < widget.pages.length; i++)
-                              HeroControllerScope.none(
-                                child: Navigator(
-                                  key: _navigators[i],
-                                  onGenerateRoute: (settings) =>
-                                      MaterialPageRoute(
-                                        settings: settings,
-                                        builder: (context) => ListenableBuilder(
-                                          listenable: widget.rebuildOn,
-                                          builder: (context, _) =>
-                                              widget.pages[i](context),
+                              if (!widget.destinations[i].keepAlive &&
+                                  i != widget.selectedIndex)
+                                const SizedBox.shrink()
+                              else
+                                HeroControllerScope.none(
+                                  child: Navigator(
+                                    key: _navigators[i],
+                                    onGenerateRoute: (settings) =>
+                                        MaterialPageRoute(
+                                          settings: settings,
+                                          builder: (context) =>
+                                              ListenableBuilder(
+                                                listenable: widget.rebuildOn,
+                                                builder: (context, _) =>
+                                                    widget.pages[i](context),
+                                              ),
                                         ),
-                                      ),
+                                  ),
                                 ),
-                              ),
                           ],
                         ),
                       );
@@ -191,6 +210,15 @@ class _Pane extends StatelessWidget {
     required this.onToggle,
   });
 
+  Widget _destination(int i, DesktopDestination destination) => _PaneItem(
+    key: ValueKey('aba ${destination.label}'),
+    icon: i == selectedIndex ? destination.selectedIcon : destination.icon,
+    label: destination.label,
+    open: open,
+    selected: i == selectedIndex,
+    onTap: () => onSelected(i),
+  );
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -199,31 +227,29 @@ class _Pane extends StatelessWidget {
       curve: Curves.easeOut,
       width: open ? DesktopShell.paneWidth : DesktopShell.compactPaneWidth,
       // A margem dos lados fica em cada item (a pílula), não aqui.
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.only(
+        top: 8 + (isMacLook ? macTitleBarHeight : 0),
+        bottom: 8,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _PaneItem(
-            icon: Ph.list,
-            label: 'ChordAI',
-            labelStyle: textTheme.titleSmall,
-            tooltip: open ? 'Recolher o menu' : 'Abrir o menu',
-            open: open,
-            selected: false,
-            onTap: onToggle,
-          ),
-          const SizedBox(height: 8),
-          for (final (i, destination) in destinations.indexed)
+          if (isMacLook)
+            _MacSectionTitle(open: open)
+          else ...[
             _PaneItem(
-              key: ValueKey('aba ${destination.label}'),
-              icon: i == selectedIndex
-                  ? destination.selectedIcon
-                  : destination.icon,
-              label: destination.label,
+              icon: Ph.list,
+              label: 'ChordAI',
+              labelStyle: textTheme.titleSmall,
+              tooltip: open ? 'Recolher o menu' : 'Abrir o menu',
               open: open,
-              selected: i == selectedIndex,
-              onTap: () => onSelected(i),
+              selected: false,
+              onTap: onToggle,
             ),
+            const SizedBox(height: 8),
+          ],
+          for (final (i, destination) in destinations.indexed)
+            if (!destination.bottom) _destination(i, destination),
           const Spacer(),
           for (final action in actions)
             _PaneItem(
@@ -234,6 +260,8 @@ class _Pane extends StatelessWidget {
               selected: false,
               onTap: () => action.onTap(context),
             ),
+          for (final (i, destination) in destinations.indexed)
+            if (destination.bottom) _destination(i, destination),
         ],
       ),
     );
@@ -275,6 +303,8 @@ class _PaneItem extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final onSurface = colorScheme.onSurface;
+
+    if (isMacLook) return _macItem(context);
 
     Widget item = Padding(
       padding: const EdgeInsets.symmetric(horizontal: margin, vertical: 2),
@@ -368,6 +398,101 @@ class _PaneItem extends StatelessWidget {
   }
 }
 
+extension on _PaneItem {
+  Widget _macItem(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final onSurface = colorScheme.onSurface;
+    const radius = BorderRadius.all(Radius.circular(6));
+
+    Widget item = Padding(
+      padding: EdgeInsets.symmetric(horizontal: open ? 10 : 6, vertical: 1),
+      child: Material(
+        color: selected
+            ? colorScheme.primary.withValues(alpha: 0.16)
+            : Colors.transparent,
+        borderRadius: radius,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: radius,
+          hoverColor: onSurface.withValues(alpha: 0.05),
+          splashFactory: NoSplash.splashFactory,
+          child: SizedBox(
+            height: 28,
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 30,
+                  child: Icon(
+                    icon,
+                    size: 16,
+                    color: selected ? colorScheme.primary : onSurface,
+                  ),
+                ),
+                if (open)
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.clip,
+                      softWrap: false,
+                      style: textTheme.bodyMedium?.copyWith(
+                        fontSize: 13,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    item = Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: item,
+    );
+    if (!open) {
+      item = Tooltip(
+        message: label,
+        waitDuration: const Duration(milliseconds: 400),
+        child: item,
+      );
+    }
+    return item;
+  }
+}
+
+class _MacSectionTitle extends StatelessWidget {
+  final bool open;
+
+  const _MacSectionTitle({required this.open});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!open) return const SizedBox(height: 8);
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 12, 6),
+      child: Text(
+        'ChordAI',
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
 /// Uma coluna de tela no computador. As telas medem a largura pela
 /// MediaQuery (ver pagePadding); aqui ela vira a largura da coluna, então
 /// uma tela inteira (lista, detalhe do acorde) cabe certinho dentro dela.
@@ -425,12 +550,32 @@ class DesktopSplit extends StatelessWidget {
 /// esquerda arredondado e uma borda fina separando da barra lateral.
 class _ContentSheet extends StatelessWidget {
   final bool enabled;
+  final bool mac;
   final Widget child;
 
-  const _ContentSheet({required this.enabled, required this.child});
+  const _ContentSheet({
+    required this.enabled,
+    required this.child,
+    this.mac = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (mac) {
+      final theme = Theme.of(context);
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          border: Border(
+            left: BorderSide(color: theme.colorScheme.outlineVariant),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(top: macTitleBarHeight),
+          child: child,
+        ),
+      );
+    }
     if (!enabled) return child;
     final theme = Theme.of(context);
     const radius = BorderRadius.only(topLeft: Radius.circular(8));

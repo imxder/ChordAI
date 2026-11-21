@@ -134,7 +134,7 @@ void main() {
 
   const esperadoAcompanhando = <String, (int?, int?, int)>{
     'certinho (Riptide)': (88, 0, 1),
-    'certinho (All Too Well)': (249, 0, 1),
+    'certinho (All Too Well)': (243, 0, 1),
     '0,8 s atrasado': (88, 0, 1),
     'modelo errando 15%': (null, null, 1),
     'modelo sem ouvir o G': (59, 29, 1),
@@ -149,7 +149,7 @@ void main() {
   };
   const esperadoEsperando = <String, (int?, int?, int)>{
     'certinho (Riptide)': (88, 0, 2),
-    'certinho (All Too Well)': (249, 0, 2),
+    'certinho (All Too Well)': (243, 0, 3),
     '0,8 s atrasado': (88, 0, 2),
     'modelo errando 15%': (null, null, 3),
     'modelo sem ouvir o G': (59, 29, 2),

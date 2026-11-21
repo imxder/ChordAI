@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme/mac_style.dart';
 import '../theme/ph.dart';
 import '../theme/platform_style.dart';
 import '../theme/windows_style.dart';
@@ -134,6 +135,7 @@ class DesktopShellState extends State<DesktopShell> {
               Expanded(
                 child: _ContentSheet(
                   enabled: windows,
+                  mac: isMacLook,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       // As telas medem a largura pela MediaQuery (ver pagePadding).
@@ -199,7 +201,10 @@ class _Pane extends StatelessWidget {
       curve: Curves.easeOut,
       width: open ? DesktopShell.paneWidth : DesktopShell.compactPaneWidth,
       // A margem dos lados fica em cada item (a pílula), não aqui.
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.only(
+        top: 8 + (isMacLook ? macTitleBarHeight : 0),
+        bottom: 8,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -425,12 +430,26 @@ class DesktopSplit extends StatelessWidget {
 /// esquerda arredondado e uma borda fina separando da barra lateral.
 class _ContentSheet extends StatelessWidget {
   final bool enabled;
+  final bool mac;
   final Widget child;
 
-  const _ContentSheet({required this.enabled, required this.child});
+  const _ContentSheet({
+    required this.enabled,
+    required this.child,
+    this.mac = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (mac) {
+      return ColoredBox(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: Padding(
+          padding: const EdgeInsets.only(top: macTitleBarHeight),
+          child: child,
+        ),
+      );
+    }
     if (!enabled) return child;
     final theme = Theme.of(context);
     const radius = BorderRadius.only(topLeft: Radius.circular(8));

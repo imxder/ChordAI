@@ -35,6 +35,20 @@ class MainFlutterWindow: NSWindow {
     self.title = "ChordAI"
     self.center()
 
+    let channel = FlutterMethodChannel(
+      name: "chordai/window", binaryMessenger: flutterViewController.engine.binaryMessenger)
+    channel.setMethodCallHandler { [weak self] call, result in
+      if call.method == "setAppearance",
+        let args = call.arguments as? [String: Any],
+        let dark = args["dark"] as? Bool
+      {
+        self?.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        result(nil)
+      } else {
+        result(FlutterMethodNotImplemented)
+      }
+    }
+
     RegisterGeneratedPlugins(registry: flutterViewController)
 
     super.awakeFromNib()

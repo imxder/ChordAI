@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../models/app_theme.dart';
+import 'mac_style.dart';
 import 'platform_style.dart';
 import 'windows_style.dart';
 
@@ -181,6 +182,22 @@ const _windowsDarkSurface = _Surface(
   warning: Color(0xFFFCE100),
 );
 
+/// Escuro do Mac: o cinza das janelas do macOS no lugar do preto do iPhone.
+/// As cores de texto, erro e acerto são as do iPhone.
+const _macDarkSurface = _Surface(
+  brightness: Brightness.dark,
+  background: macDarkSurface,
+  cell: Color(0xFF2A2A2C),
+  fill: Color(0xFF3A3A3C),
+  label: Color(0xFFFFFFFF),
+  secondaryLabel: Color(0xFFA1A1A8),
+  separator: Color(0xFF3D3D3F),
+  error: Color(0xFFFF6961),
+  onError: Color(0xFF1C0606),
+  correct: Color(0xFF4CD27A),
+  warning: Color(0xFFFFB340),
+);
+
 /// [appearance] aqui é papel, branco ou escuro; "igual ao celular" é resolvido no MaterialApp.
 ThemeData buildAppTheme(
   AppThemeOption option, {
@@ -188,8 +205,11 @@ ThemeData buildAppTheme(
 }) {
   final s = switch (appearance) {
     AppAppearance.white => _whiteSurface,
-    AppAppearance.dark =>
-      desktopLook == DesktopLook.windows ? _windowsDarkSurface : _darkSurface,
+    AppAppearance.dark => switch (desktopLook) {
+      DesktopLook.windows => _windowsDarkSurface,
+      DesktopLook.mac => _macDarkSurface,
+      null => _darkSurface,
+    },
     _ => _paperSurface,
   };
   final dark = s.brightness == Brightness.dark;
@@ -289,14 +309,20 @@ ThemeData buildAppTheme(
 
   // No Windows os botões são retângulos de canto pouco arredondado e mais
   // baixos (pra mouse), como no Windows 11. No celular, pílula de 50.
+  // No Mac, botões de 32 com canto de 6, o tamanho dos botões do macOS.
   final windows = desktopLook == DesktopLook.windows;
-  final OutlinedBorder capsule = windows
+  final mac = desktopLook == DesktopLook.mac;
+  final OutlinedBorder capsule = windows || mac
       ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))
       : const StadiumBorder();
-  final buttonSize = windows ? const Size(64, 36) : const Size(64, 50);
+  final buttonSize = windows
+      ? const Size(64, 36)
+      : (mac ? const Size(64, 32) : const Size(64, 50));
   final buttonPadding = windows
       ? const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
-      : const EdgeInsets.symmetric(horizontal: 22, vertical: 12);
+      : (mac
+            ? const EdgeInsets.symmetric(horizontal: 14, vertical: 6)
+            : const EdgeInsets.symmetric(horizontal: 22, vertical: 12));
   final buttonText = textTheme.labelLarge!;
 
   return ThemeData(

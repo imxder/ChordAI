@@ -7,6 +7,7 @@ import 'package:chordai/screens/settings_screen.dart';
 import 'package:chordai/state/app_state.dart';
 import 'package:chordai/theme/app_theme.dart';
 import 'package:chordai/theme/glass_tokens.dart';
+import 'package:chordai/theme/mac_style.dart';
 import 'package:chordai/theme/platform_style.dart';
 import 'package:chordai/theme/windows_style.dart';
 import 'package:chordai/widgets/desktop_input.dart';
@@ -368,6 +369,89 @@ void main() {
       expect(find.byType(FadeTransition), findsWidgets);
       await settle(tester);
       expect(find.byType(FreePracticeScreen), findsOneWidget);
+    }, variant: _windows);
+  });
+
+  group('cara do Mac', () {
+    final mac = TargetPlatformVariant.only(TargetPlatform.macOS);
+
+    testWidgets(
+      'barra lateral do Finder: sem o ☰, com título pequeno e fundo transparente',
+      (tester) async {
+        await _abrir(tester);
+        expect(find.byTooltip('Recolher o menu'), findsNothing);
+        expect(find.text('ChordAI'), findsWidgets);
+        final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
+        expect(scaffold.backgroundColor, Colors.transparent);
+        expect(tester.getSize(_aba('Início')).height, 30);
+      },
+      variant: mac,
+    );
+
+    testWidgets('conteúdo começa abaixo dos botões da janela', (tester) async {
+      await _abrir(tester);
+      final titulo = tester.getTopLeft(find.text('ChordAI').last);
+      expect(titulo.dy, greaterThanOrEqualTo(macTitleBarHeight));
+      expect(
+        tester.getTopLeft(_aba('Início')).dy,
+        greaterThanOrEqualTo(macTitleBarHeight),
+      );
+    }, variant: mac);
+
+    testWidgets('a janela do Mac segue o claro ou escuro do app', (
+      tester,
+    ) async {
+      final pedidos = <Object?>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('chordai/window'),
+        (call) async {
+          pedidos.add(call.arguments);
+          return null;
+        },
+      );
+      await _abrir(
+        tester,
+        appearance: AppAppearance.dark,
+        home: const MacWindowAppearance(child: AppShell()),
+      );
+      expect(pedidos, [
+        {'dark': true},
+      ]);
+    }, variant: mac);
+
+    test('escuro do Mac é o cinza do macOS e os botões têm 32', () {
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+      final escuro = buildAppTheme(
+        appThemeOptions.first,
+        appearance: AppAppearance.dark,
+      );
+      expect(escuro.scaffoldBackgroundColor, macDarkSurface);
+      expect(
+        escuro.filledButtonTheme.style!.minimumSize!.resolve({})!.height,
+        32,
+      );
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      final iphone = buildAppTheme(
+        appThemeOptions.first,
+        appearance: AppAppearance.dark,
+      );
+      expect(iphone.scaffoldBackgroundColor, const Color(0xFF000000));
+      expect(
+        iphone.filledButtonTheme.style!.minimumSize!.resolve({})!.height,
+        50,
+      );
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      final windows = buildAppTheme(
+        appThemeOptions.first,
+        appearance: AppAppearance.dark,
+      );
+      expect(windows.scaffoldBackgroundColor, const Color(0xFF202020));
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testWidgets('no Windows a barra continua com o ☰', (tester) async {
+      await _abrir(tester);
+      expect(find.byTooltip('Recolher o menu'), findsOneWidget);
     }, variant: _windows);
   });
 }

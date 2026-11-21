@@ -662,6 +662,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     final padding = isDesktop
         ? const EdgeInsets.symmetric(horizontal: 22)
         : pagePadding(context);
+    final inner = isDesktop ? padding.left : 16.0;
 
     final engine = _engine;
     final judged = running ? engine?.lastJudged : null;
@@ -711,7 +712,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(padding.left, 12, padding.right, 14),
+            padding: EdgeInsets.fromLTRB(inner, 12, inner, 14),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [

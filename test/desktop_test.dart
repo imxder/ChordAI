@@ -3,6 +3,8 @@ import 'package:chordai/models/chord_recognition_mode.dart';
 import 'package:chordai/screens/app_shell.dart';
 import 'package:chordai/screens/chord_detail_screen.dart';
 import 'package:chordai/screens/free_practice_screen.dart';
+import 'package:chordai/screens/profile_screen.dart';
+import 'package:chordai/screens/preferences_screen.dart';
 import 'package:chordai/screens/home_screen.dart';
 import 'package:chordai/screens/tuner_screen.dart';
 import 'package:chordai/screens/guide_list_screen.dart';
@@ -64,7 +66,16 @@ void main() {
       await _abrir(tester);
       expect(find.byKey(appSideBarKey), findsOneWidget);
       expect(find.byKey(appTabBarKey), findsNothing);
-      for (final aba in ['Início', 'Músicas', 'Acordes', 'Perfil']) {
+      for (final aba in [
+        'Início',
+        'Afinador',
+        'Aprender acordes',
+        'Reconhecer acorde',
+        'Guia do iniciante',
+        'Músicas',
+        'Preferências',
+        'Perfil',
+      ]) {
         expect(_aba(aba), findsOneWidget);
       }
     }, variant: _windows);
@@ -98,7 +109,7 @@ void main() {
 
     testWidgets('trocar de aba pela barra lateral', (tester) async {
       await _abrir(tester);
-      await tester.tap(_aba('Acordes'));
+      await tester.tap(_aba('Aprender acordes'));
       await settle(tester);
       expect(find.byType(ChordDetailScreen), findsOneWidget);
       await tester.tap(_aba('Perfil'));
@@ -174,7 +185,7 @@ void main() {
       tester,
     ) async {
       await _abrir(tester);
-      await tester.tap(_aba('Acordes'));
+      await tester.tap(_aba('Aprender acordes'));
       await settle(tester);
       final primeiro = appState.chordsInModel.first;
       final outro = appState.chordsInModel[1];
@@ -506,5 +517,102 @@ void main() {
       expect(_aba('Afinador'), findsNothing);
       expect(find.byKey(appTabBarKey), findsOneWidget);
     }, variant: TargetPlatformVariant.mobile());
+  });
+
+  group('ordem da barra, preferências e afinador sem rolar', () {
+    testWidgets(
+      'a barra segue a ordem combinada, com preferências e perfil no pé',
+      (tester) async {
+        await _abrir(tester);
+        final ordem = [
+          'Início',
+          'Afinador',
+          'Aprender acordes',
+          'Reconhecer acorde',
+          'Guia do iniciante',
+          'Músicas',
+        ];
+        for (var i = 1; i < ordem.length; i++) {
+          expect(
+            tester.getTopLeft(_aba(ordem[i])).dy,
+            greaterThan(tester.getTopLeft(_aba(ordem[i - 1])).dy),
+            reason: '${ordem[i]} depois de ${ordem[i - 1]}',
+          );
+        }
+        final entrada = tester
+            .getTopLeft(find.byKey(const ValueKey('ação Entrada de áudio')))
+            .dy;
+        expect(
+          entrada,
+          greaterThan(tester.getTopLeft(_aba('Músicas')).dy + 100),
+        );
+        expect(
+          tester.getTopLeft(_aba('Preferências')).dy,
+          greaterThan(entrada),
+        );
+        expect(
+          tester.getTopLeft(_aba('Perfil')).dy,
+          greaterThan(tester.getTopLeft(_aba('Preferências')).dy),
+        );
+      },
+      variant: _windows,
+    );
+
+    testWidgets('a engrenagem abre as preferências e o perfil fica sem elas', (
+      tester,
+    ) async {
+      await _abrir(tester);
+      await tester.tap(_aba('Preferências'));
+      await settle(tester);
+      expect(find.byType(PreferencesScreen), findsOneWidget);
+      expect(find.text('Aparência'), findsOneWidget);
+      await tester.tap(_aba('Perfil'));
+      await settle(tester);
+      expect(find.text('Seu nome'), findsOneWidget);
+      expect(find.text('Aparência'), findsNothing);
+    }, variant: _windows);
+
+    testWidgets('no celular as preferências continuam no perfil', (
+      tester,
+    ) async {
+      await _abrir(
+        tester,
+        size: const Size(390, 844),
+        home: const ProfileScreen(),
+      );
+      await tester.scrollUntilVisible(
+        find.text('Aparência'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Aparência'), findsOneWidget);
+    }, variant: TargetPlatformVariant.mobile());
+
+    for (final (nome, variante) in [
+      ('Windows', TargetPlatformVariant.only(TargetPlatform.windows)),
+      ('Mac', TargetPlatformVariant.only(TargetPlatform.macOS)),
+    ]) {
+      for (final janela in const [Size(1200, 800), Size(800, 560)]) {
+        testWidgets(
+          'afinador cabe sem rolar ($nome, ${janela.width.toInt()} x ${janela.height.toInt()})',
+          (tester) async {
+            await _abrir(tester, size: janela);
+            await tester.tap(_aba('Afinador'));
+            await settle(tester);
+            expect(find.byType(TunerScreen), findsOneWidget);
+            final rolagem = tester
+                .stateList<ScrollableState>(
+                  find.descendant(
+                    of: find.byType(TunerScreen),
+                    matching: find.byType(Scrollable),
+                  ),
+                )
+                .first;
+            expect(rolagem.position.maxScrollExtent, 0);
+          },
+          variant: variante,
+        );
+      }
+    }
   });
 }

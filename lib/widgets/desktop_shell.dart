@@ -16,11 +16,16 @@ class DesktopDestination {
   /// liga o microfone ao abrir, então não pode ficar montado em outra aba).
   final bool keepAlive;
 
+  /// Verdadeiro pras abas que ficam no pé da barra, junto da entrada de
+  /// áudio (preferências e perfil).
+  final bool bottom;
+
   const DesktopDestination({
     required this.icon,
     required this.selectedIcon,
     required this.label,
     this.keepAlive = true,
+    this.bottom = false,
   });
 }
 
@@ -205,6 +210,15 @@ class _Pane extends StatelessWidget {
     required this.onToggle,
   });
 
+  Widget _destination(int i, DesktopDestination destination) => _PaneItem(
+    key: ValueKey('aba ${destination.label}'),
+    icon: i == selectedIndex ? destination.selectedIcon : destination.icon,
+    label: destination.label,
+    open: open,
+    selected: i == selectedIndex,
+    onTap: () => onSelected(i),
+  );
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -235,16 +249,7 @@ class _Pane extends StatelessWidget {
             const SizedBox(height: 8),
           ],
           for (final (i, destination) in destinations.indexed)
-            _PaneItem(
-              key: ValueKey('aba ${destination.label}'),
-              icon: i == selectedIndex
-                  ? destination.selectedIcon
-                  : destination.icon,
-              label: destination.label,
-              open: open,
-              selected: i == selectedIndex,
-              onTap: () => onSelected(i),
-            ),
+            if (!destination.bottom) _destination(i, destination),
           const Spacer(),
           for (final action in actions)
             _PaneItem(
@@ -255,6 +260,8 @@ class _Pane extends StatelessWidget {
               selected: false,
               onTap: () => action.onTap(context),
             ),
+          for (final (i, destination) in destinations.indexed)
+            if (destination.bottom) _destination(i, destination),
         ],
       ),
     );

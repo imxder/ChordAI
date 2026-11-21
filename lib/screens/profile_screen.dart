@@ -11,6 +11,7 @@ import 'privacy_screen.dart';
 import 'settings_screen.dart';
 import 'tuning_select_sheet.dart';
 import '../theme/ph.dart';
+import '../theme/platform_style.dart';
 import '../widgets/desktop_input.dart';
 
 const List<String> experienceOptions = [
@@ -92,50 +93,69 @@ class ProfileScreen extends StatelessWidget {
             ),
           ],
         ),
-        GroupedSection(
-          header: 'Preferências',
-          dividerIndent: 58,
-          children: [
-            GroupedRow(
-              leading: const IconBadge(Ph.circleHalfFill),
-              title: 'Aparência',
-              value: appState.appearance.label,
-              onTap: () => showAppearanceSheet(context),
-            ),
-            GroupedRow(
-              leading: const IconBadge(Ph.paletteFill),
-              title: 'Cor do app',
-              trailing: _ThemePicker(
-                selectedIndex: appState.selectedThemeIndex,
-              ),
-            ),
-            GroupedRow(
-              leading: const IconBadge(Ph.gaugeFill),
-              title: 'Afinação',
-              value: appState.activeTuningName,
-              onTap: () => showTuningSelectSheet(context),
-            ),
-            GroupedRow(
-              leading: const IconBadge(Ph.textAa),
-              title: 'Leitura das cifras',
-              onTap: () => showPracticeOptionsSheet(context),
-            ),
-            GroupedRow(
-              leading: const IconBadge(Ph.microphoneFill),
-              title: 'Reconhecimento',
-              value: appState.chordRecognitionMode.label,
-              onTap: () => Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
-            ),
-            GroupedRow(
-              leading: const IconBadge(Ph.shieldCheckFill),
-              title: 'Privacidade',
-              onTap: () => Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const PrivacyScreen())),
-            ),
-          ],
+        if (!isDesktop) const PreferencesSection(),
+      ],
+    );
+  }
+}
+
+/// Aparência, cor, afinação, leitura das cifras, reconhecimento e
+/// privacidade. No celular fica no Perfil; no computador é a tela da
+/// engrenagem, no pé da barra lateral.
+class PreferencesSection extends StatelessWidget {
+  final bool showHeader;
+  final double top;
+
+  const PreferencesSection({super.key, this.showHeader = true, this.top = 24});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: appState,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
+    return GroupedSection(
+      header: showHeader ? 'Preferências' : null,
+      top: top,
+      dividerIndent: 58,
+      children: [
+        GroupedRow(
+          leading: const IconBadge(Ph.circleHalfFill),
+          title: 'Aparência',
+          value: appState.appearance.label,
+          onTap: () => showAppearanceSheet(context),
+        ),
+        GroupedRow(
+          leading: const IconBadge(Ph.paletteFill),
+          title: 'Cor do app',
+          trailing: _ThemePicker(selectedIndex: appState.selectedThemeIndex),
+        ),
+        GroupedRow(
+          leading: const IconBadge(Ph.gaugeFill),
+          title: 'Afinação',
+          value: appState.activeTuningName,
+          onTap: () => showTuningSelectSheet(context),
+        ),
+        GroupedRow(
+          leading: const IconBadge(Ph.textAa),
+          title: 'Leitura das cifras',
+          onTap: () => showPracticeOptionsSheet(context),
+        ),
+        GroupedRow(
+          leading: const IconBadge(Ph.microphoneFill),
+          title: 'Reconhecimento',
+          value: appState.chordRecognitionMode.label,
+          onTap: () => Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
+        ),
+        GroupedRow(
+          leading: const IconBadge(Ph.shieldCheckFill),
+          title: 'Privacidade',
+          onTap: () => Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => const PrivacyScreen())),
         ),
       ],
     );

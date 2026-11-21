@@ -29,13 +29,14 @@ void main() {
       ),
     );
 
-    expect(find.byType(GuitarNeck), findsNothing);
+    final antes = tester.widgetList(find.byType(GuitarNeck)).length;
+    expect(find.text('Dó maior'), findsNothing);
 
-    await tester.tap(find.textContaining('C'));
+    await tester.tap(find.textContaining('C').last);
     await settle(tester);
 
     expect(find.text('Dó maior'), findsOneWidget);
-    expect(find.byType(GuitarNeck), findsOneWidget);
+    expect(find.byType(GuitarNeck), findsNWidgets(antes + 1));
   });
 
   testWidgets('rolar desce a cifra sozinho e parar interrompe', (tester) async {

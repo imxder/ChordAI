@@ -6,13 +6,18 @@ import 'package:flutter/scheduler.dart';
 import 'package:record/record.dart';
 
 import '../models/chord_names.dart';
+import '../models/lyric_practice.dart';
 import '../models/lyric_sheet.dart';
+import '../models/user_song.dart';
+import '../services/user_song_store.dart';
 import '../state/app_state.dart';
+import '../widgets/chord_sequence.dart';
 import '../widgets/cifra_line.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/practice_options_sheet.dart';
 import 'lyric_player_screen.dart';
+import 'song_editor_screen.dart';
 import '../theme/ph.dart';
 
 String sheetMeta(LyricSheet sheet) {
@@ -27,12 +32,16 @@ class LyricSheetScreen extends StatefulWidget {
   final LyricSheet sheet;
   final String serverUrl;
   final InputDevice? inputDevice;
+  final UserSong? userSong;
+  final UserSongStore? store;
 
   const LyricSheetScreen({
     super.key,
     required this.sheet,
     required this.serverUrl,
     this.inputDevice,
+    this.userSong,
+    this.store,
   });
 
   @override
@@ -51,6 +60,10 @@ class _LyricSheetScreenState extends State<LyricSheetScreen>
   bool _dragging = false;
 
   LyricSheet get sheet => widget.sheet;
+  late final LyricPracticeMap _practiceMap = buildLyricPracticeMap(sheet);
+  late final List<StrumStroke> _strokes = parseStrumPattern(
+    sheet.strummingPattern ?? const [],
+  );
 
   void _onTick(Duration elapsed) {
     final seconds = (elapsed - _lastTick).inMicroseconds / 1000000;
@@ -101,6 +114,17 @@ class _LyricSheetScreenState extends State<LyricSheetScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _edit() async {
+    _setAutoScroll(false);
+    final result = await Navigator.of(context).push<SongEditorResult>(
+      MaterialPageRoute(
+        builder: (_) =>
+            SongEditorScreen(song: widget.userSong, store: widget.store),
+      ),
+    );
+    if (result != null && mounted) Navigator.of(context).pop(result);
   }
 
   @override
@@ -197,10 +221,28 @@ class _LyricSheetScreenState extends State<LyricSheetScreen>
         child: IosPage(
           title: sheet.title,
           controller: _scroll,
-          trailing: CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () => showPracticeOptionsSheet(context),
-            child: const Icon(Ph.textAa, semanticLabel: 'Leitura das cifras'),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.userSong != null)
+                CupertinoButton(
+                  key: const ValueKey('editar música'),
+                  padding: EdgeInsets.zero,
+                  onPressed: _edit,
+                  child: const Icon(
+                    Ph.pencilSimple,
+                    semanticLabel: 'Editar música',
+                  ),
+                ),
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () => showPracticeOptionsSheet(context),
+                child: const Icon(
+                  Ph.textAa,
+                  semanticLabel: 'Leitura das cifras',
+                ),
+              ),
+            ],
           ),
           bottomBar: BottomActionBar(child: _buildBottomBar()),
           children: [
@@ -227,12 +269,38 @@ class _LyricSheetScreenState extends State<LyricSheetScreen>
                 ],
               ),
             ),
-            for (final section in sheet.sections) ...[
+            for (final (si, section) in sheet.sections.indexed) ...[
               if (section.title != null) SheetSectionLabel(section.title!),
-              for (final line in section.lines)
-                CifraLine(
-                  line: line,
+              if (section.lines.any((l) => l.lyricText.trim().isNotEmpty))
+                for (final line in section.lines)
+                  CifraLine(
+                    line: line,
+                    fontScale: appState.lyricFontScale,
+                    onChordTap: (chord) => _showChordDialog(context, chord),
+                  )
+              else
+                ChordSequence(
+                  lines: [
+                    for (final line in _practiceMap.phrasesInSection(si))
+                      [
+                        for (final i in line)
+                          SequenceChord(
+                            _practiceMap.score.steps[i].chord,
+                            _practiceMap.score.steps[i].beats,
+                            i,
+                            strum:
+                                strumSlotsInSection(
+                                  _practiceMap,
+                                  si,
+                                  _strokes,
+                                )[i] ??
+                                const [],
+                          ),
+                      ],
+                  ],
+                  collapseRepeats: true,
                   fontScale: appState.lyricFontScale,
+                  arrowScale: appState.strumArrowScale,
                   onChordTap: (chord) => _showChordDialog(context, chord),
                 ),
             ],

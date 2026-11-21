@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
 import '../models/lyric_sheet.dart';
+import '../models/user_song.dart';
 import '../services/lyric_sheet_library.dart';
+import '../services/user_song_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/page_parts.dart';
 import 'lyric_sheet_screen.dart';
 import 'practice_session_screen.dart';
+import 'song_editor_screen.dart';
 import '../theme/ph.dart';
 
 class LyricSheetListScreen extends StatefulWidget {
@@ -26,7 +29,9 @@ class LyricSheetListScreen extends StatefulWidget {
 
 class _LyricSheetListScreenState extends State<LyricSheetListScreen> {
   final _library = LyricSheetLibrary();
+  final _store = UserSongStore();
   List<LyricSheet>? _sheets;
+  List<UserSong> _mine = [];
 
   @override
   void initState() {
@@ -36,8 +41,18 @@ class _LyricSheetListScreenState extends State<LyricSheetListScreen> {
 
   Future<void> _load() async {
     final sheets = await _library.loadAll();
+    final mine = await _store.loadAll();
     if (!mounted) return;
-    setState(() => _sheets = sheets);
+    setState(() {
+      _sheets = sheets;
+      _mine = mine;
+    });
+  }
+
+  Future<void> _open(Widget screen) async {
+    final changed = await Navigator.of(context)
+        .push<Object?>(MaterialPageRoute(builder: (_) => screen));
+    if (changed != null) _load();
   }
 
   void _push(Widget screen) {
@@ -56,10 +71,36 @@ class _LyricSheetListScreenState extends State<LyricSheetListScreen> {
             padding: EdgeInsets.all(32),
             child: CupertinoActivityIndicator(),
           )
-        else
+        else ...[
           GroupedSection(
             top: 4,
-            header: 'Cifras',
+            header: 'Minhas músicas',
+            dividerIndent: 58,
+            children: [
+              GroupedRow(
+                key: const ValueKey('nova música'),
+                leading: const IconBadge(Ph.plus),
+                title: 'Nova música',
+                subtitle: 'Só com os acordes que o app reconhece',
+                onTap: () => _open(SongEditorScreen(store: _store)),
+              ),
+              for (final song in _mine)
+                _SheetRow(
+                  sheet: song.toLyricSheet(),
+                  onTap: () => _open(
+                    LyricSheetScreen(
+                      sheet: song.toLyricSheet(),
+                      serverUrl: widget.serverUrl,
+                      inputDevice: widget.inputDevice,
+                      userSong: song,
+                      store: _store,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          GroupedSection(
+            header: 'Do app',
             footer: sheets.isEmpty ? 'Nenhuma cifra encontrada.' : null,
             children: [
               for (final sheet in sheets)
@@ -75,8 +116,9 @@ class _LyricSheetListScreenState extends State<LyricSheetListScreen> {
                 ),
             ],
           ),
+        ],
         GroupedSection(
-          header: 'Sem letra',
+          header: 'Treinar acordes',
           dividerIndent: 58,
           children: [
             GroupedRow(
@@ -109,6 +151,7 @@ class _SheetRow extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final chords = extractChords(sheet);
     final meta = [
+      if (sheet.isMine) 'Minha',
       if (sheet.artist != null) sheet.artist!,
       difficultyLabel(chords),
     ].join(' · ');

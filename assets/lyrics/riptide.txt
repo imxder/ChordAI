@@ -4,106 +4,68 @@ Batida: D1 D2 U2& U3& D4 U4&
 Tempos: Am=2 G=2
 
 [Intro] Am  G  C
-        Am  G  C
+Am  G  C
 
 [Primeira Parte]
 
-Am           G                   C
-I was scared of dentists and the dark
-Am                      G
-I was scared of pretty girls
-      C
-And starting conversations
-    Am        G                  C
-Oh, all my friends are turning green
-            Am       G
-You're the magician's assistant
-           C
-In their dreams
+Am  G  C
+Am  G
+C
+Am  G  C
+Am  G
+C
 
 [Ponte]
 
-Am   G   C
-Ooh, ooh ooh
-Am  G           C
-Ooh,  and they come unstuck
+Am  G  C
+Am  G  C
 
 [Refrão]
 
- Am    G                   C
-Lady, running down to the riptide
-                   Am
-Taken away to the dark side
-G                C
-I wanna be your left hand man
-   Am        G                       C
-I love you when you're singing that song and
-                      Am
-I got a lump in my throat 'cause
-G                      C
-You're gonna sing the words wrong
+Am  G  C
+Am
+G  C
+Am  G  C
+Am
+G  C
 
 [Segunda Parte]
 
-  Am                 G
-There's this movie that
-                C
-I think you'll like
-      Am              G
-This guy decides to quit his job
-      C
-And heads to New York City
-      Am       G               C
-This cowboy's running from himself
-      Am              G                C
-And she's been living on the highest shelf
+Am  G
+C
+Am  G
+C
+Am  G  C
+Am  G  C
 
 [Ponte]
 
-Am   G   C
-Ooh, ooh ooh
-Am  G           C
-Ooh,  and they come unstuck
+Am  G  C
+Am  G  C
 
 [Refrão]
 
- Am    G                   C
-Lady, running down to the riptide
-                   Am
-Taken away to the dark side
-G                C
-I wanna be your left hand man
-   Am        G                       C
-I love you when you're singing that song and
-                      Am
-I got a lump in my throat 'cause
-G                      C
-You're gonna sing the words wrong
+Am  G  C
+Am
+G  C
+Am  G  C
+Am
+G  C
 
 [Terceira Parte]
 
-Am:4                         G:4
-I just wanna, I just wanna know
-C                                  F
-If you're gonna, if you're gonna stay
-Am:4                         G:4
-I just gotta, I just gotta know
-C                                F
-I can't have it, I can't have it any other way
+Am:4  G:4
+C  F
+Am:4  G:4
+C  F
 
-Am:4           G:4                C
-I swear she's destined for the screen
-  Am:4            G:4
-Closest thing to Michelle Pfeiffer
-  C
-That you've ever seen, oh
+Am:4  G:4  C
+Am:4  G:4
+C
 
 [Refrão]
 
- Am    G                   C
-Lady, running down to the riptide
-                   Am
-Taken away to the dark side
-G                C
-I wanna be your left hand man
-   Am        G
+Am  G  C
+Am
+G  C
+Am  G

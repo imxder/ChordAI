@@ -26,6 +26,7 @@ class AppState extends ChangeNotifier {
   static const _tuningIdKey = 'app_tuning_id';
   static const _customTuningKey = 'app_custom_tuning';
   static const _lyricFontScaleKey = 'app_lyric_font_scale';
+  static const _strumArrowScaleKey = 'app_strum_arrow_scale';
   static const _showGuitarNeckKey = 'app_show_guitar_neck';
   static const _autoScrollKey = 'app_auto_scroll';
   static const _appearanceKey = 'app_appearance';
@@ -147,6 +148,7 @@ class AppState extends ChangeNotifier {
   }
 
   double lyricFontScale = 1.0;
+  double strumArrowScale = 1.0;
   bool showGuitarNeckInPlayer = true;
   bool autoScrollInPlayer = true;
   bool playAlongWaitsForMe = false;
@@ -155,6 +157,13 @@ class AppState extends ChangeNotifier {
   /// services/audio_input.dart). `null` é a entrada padrão do sistema, e no
   /// celular fica sempre assim.
   String? inputDeviceId;
+
+  Future<void> setStrumArrowScale(double value) async {
+    strumArrowScale = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_strumArrowScaleKey, value);
+  }
 
   Future<void> setLyricFontScale(double value) async {
     lyricFontScale = value;
@@ -285,6 +294,7 @@ class AppState extends ChangeNotifier {
     tuningId = prefs.getString(_tuningIdKey) ?? 'padrao';
     customTuningNotes = prefs.getStringList(_customTuningKey);
     lyricFontScale = prefs.getDouble(_lyricFontScaleKey) ?? 1.0;
+    strumArrowScale = prefs.getDouble(_strumArrowScaleKey) ?? 1.0;
     showGuitarNeckInPlayer = prefs.getBool(_showGuitarNeckKey) ?? true;
     autoScrollInPlayer = prefs.getBool(_autoScrollKey) ?? true;
     playAlongWaitsForMe = prefs.getBool(_playAlongWaitsKey) ?? false;

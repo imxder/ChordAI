@@ -14,6 +14,7 @@ class _PracticeOptionsSheet extends StatelessWidget {
   const _PracticeOptionsSheet();
 
   static const _fontSizes = [0.85, 1.0, 1.3];
+  static const _arrowSizes = [0.75, 1.0, 1.3];
   static const _fontLabels = ['Pequeno', 'Médio', 'Grande'];
 
   @override
@@ -30,7 +31,7 @@ class _PracticeOptionsSheet extends StatelessWidget {
               const SheetHeader(title: 'Leitura das cifras'),
               GroupedSection(
                 top: 8,
-                header: 'Tamanho da letra',
+                header: 'Tamanho dos acordes',
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(12),
@@ -47,6 +48,29 @@ class _PracticeOptionsSheet extends StatelessWidget {
                       },
                       onValueChanged: (value) {
                         if (value != null) appState.setLyricFontScale(value);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              GroupedSection(
+                header: 'Tamanho das setas da batida',
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: CupertinoSlidingSegmentedControl<double>(
+                      groupValue: _arrowSizes.contains(appState.strumArrowScale)
+                          ? appState.strumArrowScale
+                          : 1.0,
+                      children: {
+                        for (var i = 0; i < _arrowSizes.length; i++)
+                          _arrowSizes[i]: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Text(_fontLabels[i]),
+                          ),
+                      },
+                      onValueChanged: (value) {
+                        if (value != null) appState.setStrumArrowScale(value);
                       },
                     ),
                   ),

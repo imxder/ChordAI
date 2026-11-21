@@ -289,6 +289,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     final engine = _engine!;
     final lines = chordsByMisses(engine.perChord);
     final notCounted = engine.notCountedChords;
+    final tooShort = engine.tooShortChords;
     final notCountedSteps = engine.results
         .where((r) => r == StepResult.notCounted)
         .length;
@@ -351,6 +352,13 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
                     const SizedBox(height: 12),
                     Text(
                       'Não contaram: ${notCounted.join(', ')} (o modelo não conhece)',
+                      style: textTheme.bodySmall,
+                    ),
+                  ],
+                  if (tooShort.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Não contaram: ${tooShort.join(', ')} quando passam rápido demais pra eu ouvir',
                       style: textTheme.bodySmall,
                     ),
                   ],
@@ -689,7 +697,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
         case StepResult.notCounted:
         case StepResult.pending:
           status = StatusLine(
-            text: '$judgedChord não conta: o modelo não conhece',
+            text: engine.modelChords[judged] == null
+                ? '$judgedChord não conta: o modelo não conhece'
+                : '$judgedChord não conta: passa rápido demais pra eu ouvir',
           );
       }
     }

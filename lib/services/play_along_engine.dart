@@ -11,6 +11,7 @@ class PlayAlongEngine {
   static const Duration lateTolerance = Duration(milliseconds: 1000);
   static const Duration earlyTolerance = Duration(milliseconds: 300);
   static const int countInBeats = 4;
+  static const Duration shortestCounted = Duration(milliseconds: 1000);
 
   final List<ChordStep> steps;
   final PlayAlongMode mode;
@@ -107,6 +108,9 @@ class PlayAlongEngine {
     bpm = value;
   }
 
+  bool isTooShort(int step) =>
+      steps[step].beats * _beatMs < shortestCounted.inMilliseconds;
+
   int _readingsNeeded(int step) {
     final ms = steps[step].beats * _beatMs;
     return ms >= 2000 ? readingsToHitLongChord : 1;
@@ -149,12 +153,14 @@ class PlayAlongEngine {
     final nextIsAudible =
         !isLast &&
         modelChords[step + 1] != null &&
+        !isTooShort(step + 1) &&
         modelChords[step + 1] != modelChords[step];
 
     if (isLast) {
       final heardLast =
           (_heard[step][modelChords[step]] ?? 0) >= _readingsNeeded(step);
-      if ((heardLast || modelChords[step] == null) && waited >= duration) {
+      if ((heardLast || modelChords[step] == null || isTooShort(step)) &&
+          waited >= duration) {
         _judge(step);
         finished = true;
       } else if (waited >= duration * 2 + _lateBeats) {
@@ -182,7 +188,7 @@ class PlayAlongEngine {
 
   void _judge(int step) {
     final chord = modelChords[step];
-    if (chord == null) {
+    if (chord == null || isTooShort(step)) {
       results[step] = StepResult.notCounted;
     } else {
       final heard = _heard[step][chord] ?? 0;
@@ -212,9 +218,10 @@ class PlayAlongEngine {
 
     _heard[index][chord] = (_heard[index][chord] ?? 0) + 1;
     _waitHeard[chord] = (_waitHeard[chord] ?? 0) + 1;
-    for (final ahead in [1, 2]) {
-      final target = index + ahead;
-      if (target >= steps.length) break;
+    var ahead = 0;
+    for (var target = index + 1; target < steps.length && ahead < 2; target++) {
+      if (isTooShort(target)) continue;
+      ahead++;
       final targetChord = modelChords[target];
       if (targetChord == null || targetChord == modelChords[index]) continue;
       if ((_waitHeard[targetChord] ?? 0) >= readingsToHitLongChord) {
@@ -258,6 +265,13 @@ class PlayAlongEngine {
 
   Set<String> get notCountedChords => {
     for (var s = 0; s < steps.length; s++)
-      if (results[s] == StepResult.notCounted) steps[s].chord,
+      if (results[s] == StepResult.notCounted && modelChords[s] == null)
+        steps[s].chord,
+  };
+
+  Set<String> get tooShortChords => {
+    for (var s = 0; s < steps.length; s++)
+      if (results[s] == StepResult.notCounted && modelChords[s] != null)
+        steps[s].chord,
   };
 }

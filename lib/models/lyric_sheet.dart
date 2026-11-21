@@ -63,6 +63,7 @@ class LyricSheet {
   final List<LyricSection> sections;
   final int? beatsPerChord;
   final Map<String, int> beatsByChord;
+  final String? userSongId;
 
   const LyricSheet({
     required this.title,
@@ -74,7 +75,10 @@ class LyricSheet {
     required this.sections,
     this.beatsPerChord,
     this.beatsByChord = const {},
+    this.userSongId,
   });
+
+  bool get isMine => userSongId != null;
 }
 
 Set<String> extractChords(LyricSheet sheet) {

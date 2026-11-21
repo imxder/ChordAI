@@ -272,11 +272,10 @@ class _LyricSheetScreenState extends State<LyricSheetScreen>
             for (final (si, section) in sheet.sections.indexed) ...[
               if (section.title != null) SheetSectionLabel(section.title!),
               if (section.lines.any((l) => l.lyricText.trim().isNotEmpty))
-                for (final (li, line) in section.lines.indexed)
+                for (final line in section.lines)
                   CifraLine(
                     line: line,
                     fontScale: appState.lyricFontScale,
-                    tokenBeats: _practiceMap.beatsFor(si, li),
                     onChordTap: (chord) => _showChordDialog(context, chord),
                   )
               else

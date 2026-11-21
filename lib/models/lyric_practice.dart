@@ -40,13 +40,6 @@ class LyricPracticeMap {
     for (var i = 0; i < locations.length; i++)
       if (locations[i].sectionIndex == sectionIndex) i,
   ];
-
-  List<int> beatsFor(int sectionIndex, int lineIndex) => [
-    for (var i = 0; i < locations.length; i++)
-      if (locations[i].sectionIndex == sectionIndex &&
-          locations[i].lineIndex == lineIndex)
-        score.steps[i].beats,
-  ];
 }
 
 final RegExp _chordTokenPattern = RegExp(r'\S+');

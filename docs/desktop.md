@@ -53,28 +53,38 @@ O que eu deixei de fora: o fundo Mica de verdade e uma barra de título própria
 
 - `test/layout_sizes_test.dart` roda as telas nos quatro tamanhos de celular de antes e também na
   janela inicial (1200 × 800) e na mínima (800 × 560) do Windows.
-- `test/desktop_test.dart` confere a barra lateral no Windows e a barra de abas no celular.
+- `test/desktop_test.dart` confere a barra lateral no Windows e no Mac e a barra de abas no celular.
 - Comparei pixel a pixel 18 telas no iPhone e 18 no Android, renderizadas a partir da master e da
   branch do layout de computador: ficaram iguais.
 
-## Pra sessão do Mac
+## A cara do Mac
 
-O Mac já usa a casca toda (barra lateral, colunas, mouse e teclado), porque `isDesktop` vale pra ele.
-O que falta é a cara do Mac, e o lugar pra ela está pronto:
+Fica em `lib/theme/mac_style.dart` e no `macos/Runner/MainFlutterWindow.swift`, e só vale quando
+`desktopLook` é `mac`. Também não usei pacote novo:
 
-- `desktopLook` (em `platform_style.dart`) já devolve `DesktopLook.mac` no macOS. É o único ponto
-  que escolhe o estilo por plataforma no computador.
-- Hoje o Mac cai no estilo comum: barra lateral sem a "folha" do Windows, cantos e fontes do
-  celular e a transição do Cupertino. Cada lugar que testa `DesktopLook.windows` é onde o Mac pode
-  ganhar o seu caso:
-  - `windows_style.dart`: fonte, cor da barra lateral, troca de tela.
-  - `glass_tokens.dart`: cantos.
-  - `app_theme.dart`: botões, escuro, transição.
-  - `desktop_shell.dart`: a folha de conteúdo e o fundo da barra.
-  - `page_parts.dart`: contorno dos cards e painel flutuante.
-- No Mac o `useLiquidGlass` é verdadeiro, mas a barra de abas de vidro não aparece no computador:
-  a barra lateral entra no lugar. Os diálogos e painéis no Mac ainda usam o Material.
-- A barra de título do Mac é do macOS e não tem o canal `chordai/window` (esse é só do Windows).
+- **Barra de título integrada.** A janela tem a barra transparente, o título escondido e o conteúdo
+  ocupando a janela toda, então os três botões do Mac ficam por cima do app, como no Finder e no
+  Música. O título continua existindo (aparece no Mission Control e no menu Janela). A barra lateral
+  e o conteúdo começam 28 px abaixo, pra nada ficar embaixo dos botões.
+- **Arrastar a janela.** O Flutter recebe todos os cliques, então a janela não arrastaria. Uma
+  faixa nativa de 28 px no topo (`TitleBarDragStrip`) arrasta a janela e, com dois cliques, maximiza.
+- **Barra lateral translúcida.** O conteúdo da janela é um `NSVisualEffectView` com o material
+  `.sidebar`, o mesmo do Finder, e o Flutter fica por cima com o fundo transparente. Na casca, a
+  barra lateral não pinta fundo (o vidro aparece) e o conteúdo à direita é opaco, com uma linha fina
+  separando.
+- **Itens da barra como no Finder.** Sem o ☰ e sem a barrinha laranja do Windows. Em cima, um título
+  pequeno em cinza; os itens têm 28 px, canto de 6, texto de 13 e a aba escolhida num retângulo com
+  a cor do app clarinha. Abaixo de 1000 px a barra continua recolhendo pra só os ícones.
+- **Escuro do Mac.** Cinza das janelas do macOS (#1E1E1E) em vez do preto do iPhone.
+- **Botões de 32 px** com canto de 6, o tamanho dos botões do macOS.
+- **A janela segue a aparência do app.** O vidro da barra lateral e os botões da janela seguem o
+  claro ou escuro do Mac, não o do app. Por isso o app avisa o runner pelo canal `chordai/window`
+  (`setAppearance`), o mesmo canal que o Windows usa pra cor da barra de título.
+
+Comparei com o `macos_window_utils` 1.9.1 e o `macos_ui` 2.2.2 (os dois MIT, só macOS, do
+publicador macosui.dev). O primeiro faz a barra de título e a transparência, mas isso deu pra fazer
+com umas 30 linhas de Swift, sem entrar no `pubspec.lock` de todas as plataformas. O segundo traz
+os widgets do Mac prontos, mas obriga a ter outra versão de cada tela, como o `fluent_ui` no Windows.
 
 ## Imagens
 

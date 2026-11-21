@@ -19,6 +19,7 @@ import '../services/tocar_junto_log.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/mic_lifecycle.dart';
+import '../widgets/chord_bars.dart';
 import '../widgets/cifra_line.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
@@ -62,6 +63,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
       createChordRecognizer(appState.chordRecognitionMode, rawReadings: true);
   final _scrollController = ScrollController();
   final Map<int, GlobalKey> _lineKeys = {};
+  final _activeRowKey = GlobalKey();
   final _stopwatch = Stopwatch();
 
   late final LyricPracticeMap _practiceMap;
@@ -107,6 +109,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     if (index < 0 || index >= _practiceMap.locations.length) return;
     final loc = _practiceMap.locations[index];
     final ctx =
+        _activeRowKey.currentContext ??
         _lineKeys[_lineKeyId(loc.sectionIndex, loc.lineIndex)]?.currentContext;
     if (ctx != null) {
       Scrollable.ensureVisible(
@@ -384,6 +387,17 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     );
   }
 
+  Map<int, bool> _stepResults() {
+    final engine = _engine;
+    if (engine == null) return const {};
+    return {
+      for (var i = 0; i < engine.results.length; i++)
+        if (engine.results[i] == StepResult.hit ||
+            engine.results[i] == StepResult.miss)
+          i: engine.results[i] == StepResult.hit,
+    };
+  }
+
   Map<int, Map<int, bool>> _tokenResults() {
     final engine = _engine;
     final out = <int, Map<int, bool>>{};
@@ -509,30 +523,51 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
             for (var si = 0; si < widget.sheet.sections.length; si++) ...[
               if (widget.sheet.sections[si].title != null)
                 SheetSectionLabel(widget.sheet.sections[si].title!),
-              for (
-                var li = 0;
-                li < widget.sheet.sections[si].lines.length;
-                li++
-              )
-                KeyedSubtree(
-                  key: _keyFor(si, li),
-                  child: CifraLine(
-                    line: widget.sheet.sections[si].lines[li],
-                    fontScale: appState.lyricFontScale,
-                    highlighted:
-                        activeLoc != null &&
-                        activeLoc.sectionIndex == si &&
-                        activeLoc.lineIndex == li,
-                    activeToken:
-                        (activeLoc != null &&
-                            activeLoc.sectionIndex == si &&
-                            activeLoc.lineIndex == li)
-                        ? activeLoc.tokenIndex
-                        : null,
-                    tokenResults: results[_lineKeyId(si, li)] ?? const {},
-                    tokenBeats: _practiceMap.beatsFor(si, li),
+              if (!widget.sheet.sections[si].lines.any(
+                (l) => l.lyricText.trim().isNotEmpty,
+              ))
+                ChordBars(
+                  chords: [
+                    for (final i in _practiceMap.stepsInSection(si))
+                      BarChord(
+                        _practiceMap.score.steps[i].chord,
+                        _practiceMap.score.steps[i].beats,
+                        i,
+                      ),
+                  ],
+                  activeStep: running ? activeIndex : null,
+                  activeBeat: running && _engine != null && !_engine!.countingIn
+                      ? _engine!.beatInStep.floor()
+                      : null,
+                  results: _stepResults(),
+                  fontScale: appState.lyricFontScale,
+                  activeRowKey: _activeRowKey,
+                )
+              else
+                for (
+                  var li = 0;
+                  li < widget.sheet.sections[si].lines.length;
+                  li++
+                )
+                  KeyedSubtree(
+                    key: _keyFor(si, li),
+                    child: CifraLine(
+                      line: widget.sheet.sections[si].lines[li],
+                      fontScale: appState.lyricFontScale,
+                      highlighted:
+                          activeLoc != null &&
+                          activeLoc.sectionIndex == si &&
+                          activeLoc.lineIndex == li,
+                      activeToken:
+                          (activeLoc != null &&
+                              activeLoc.sectionIndex == si &&
+                              activeLoc.lineIndex == li)
+                          ? activeLoc.tokenIndex
+                          : null,
+                      tokenResults: results[_lineKeyId(si, li)] ?? const {},
+                      tokenBeats: _practiceMap.beatsFor(si, li),
+                    ),
                   ),
-                ),
             ],
           ],
         ),

@@ -19,6 +19,11 @@ class LyricPracticeMap {
 
   const LyricPracticeMap({required this.score, required this.locations});
 
+  List<int> stepsInSection(int sectionIndex) => [
+    for (var i = 0; i < locations.length; i++)
+      if (locations[i].sectionIndex == sectionIndex) i,
+  ];
+
   List<int> beatsFor(int sectionIndex, int lineIndex) => [
     for (var i = 0; i < locations.length; i++)
       if (locations[i].sectionIndex == sectionIndex &&

@@ -5,12 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:record/record.dart';
 
+import '../models/chord_diagrams.dart';
+import '../models/chord_for_model.dart';
 import '../models/chord_names.dart';
 import '../models/lyric_practice.dart';
 import '../models/lyric_sheet.dart';
 import '../models/user_song.dart';
 import '../services/user_song_store.dart';
 import '../state/app_state.dart';
+import '../widgets/chord_bars.dart';
 import '../widgets/cifra_line.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
@@ -60,6 +63,13 @@ class _LyricSheetScreenState extends State<LyricSheetScreen>
 
   LyricSheet get sheet => widget.sheet;
   late final LyricPracticeMap _practiceMap = buildLyricPracticeMap(sheet);
+  late final List<String> _shapes = [
+    for (final chord in {
+      for (final step in _practiceMap.score.steps)
+        chordForModel(step.chord, chordFingerings.keys.toSet()),
+    })
+      ?chord,
+  ];
 
   void _onTick(Duration elapsed) {
     final seconds = (elapsed - _lastTick).inMicroseconds / 1000000;
@@ -265,13 +275,34 @@ class _LyricSheetScreenState extends State<LyricSheetScreen>
                 ],
               ),
             ),
+            if (_shapes.isNotEmpty) ...[
+              const SheetSectionLabel('Acordes desta música'),
+              ChordShapesStrip(
+                chords: _shapes,
+                onTap: (chord) => _showChordDialog(context, chord),
+              ),
+            ],
             for (final (si, section) in sheet.sections.indexed) ...[
               if (section.title != null) SheetSectionLabel(section.title!),
-              for (final (li, line) in section.lines.indexed)
-                CifraLine(
-                  line: line,
+              if (section.lines.any((l) => l.lyricText.trim().isNotEmpty))
+                for (final (li, line) in section.lines.indexed)
+                  CifraLine(
+                    line: line,
+                    fontScale: appState.lyricFontScale,
+                    tokenBeats: _practiceMap.beatsFor(si, li),
+                    onChordTap: (chord) => _showChordDialog(context, chord),
+                  )
+              else
+                ChordBars(
+                  chords: [
+                    for (final i in _practiceMap.stepsInSection(si))
+                      BarChord(
+                        _practiceMap.score.steps[i].chord,
+                        _practiceMap.score.steps[i].beats,
+                        i,
+                      ),
+                  ],
                   fontScale: appState.lyricFontScale,
-                  tokenBeats: _practiceMap.beatsFor(si, li),
                   onChordTap: (chord) => _showChordDialog(context, chord),
                 ),
             ],

@@ -12,11 +12,18 @@ no iPhone nem no Android: tudo passa por `isDesktop`, em `lib/theme/platform_sty
   quatro abas. Cada aba tem a própria pilha de telas: abrindo um acorde ou uma música, a barra
   continua do lado. Abaixo de 1000 px de largura a barra recolhe pra só os ícones, e o ☰ abre e
   fecha.
-- **Afinador, Reconhecer acorde e Guia do iniciante** também ficam na barra, entre Acordes e
-  Perfil. No celular eles estão nos cards do Início; no computador, sem eles na barra, só dava pra
-  chegar pelo Início. Diferente das outras abas, essas três só ficam montadas enquanto estão
-  escolhidas (`keepAlive: false` no `DesktopDestination`): o afinador liga o microfone assim que
-  abre, e se ficasse montado o microfone ligaria junto com o app.
+- **Ordem da barra:** Início, Afinador, Aprender acordes, Reconhecer acorde, Guia do iniciante e
+  Músicas. No pé ficam a Entrada de áudio, as Preferências (engrenagem) e o Perfil. No celular o
+  afinador, o reconhecer e o guia estão nos cards do Início; no computador, sem eles na barra, só
+  dava pra chegar pelo Início.
+- **Preferências** (aparência, cor, afinação, leitura das cifras, reconhecimento e privacidade)
+  saem do Perfil no computador e viram a tela da engrenagem. No celular continuam no Perfil; as
+  duas usam o mesmo `PreferencesSection`.
+- **Afinador em duas colunas** no computador: o medidor à esquerda e a afinação, as cordas e as
+  opções à direita. Assim ele cabe inteiro, sem rolar, até na janela mínima (800 × 560).
+- **Afinador, Reconhecer acorde e Guia do iniciante** só ficam montados enquanto a aba está
+  escolhida (`keepAlive: false` no `DesktopDestination`), diferente das outras abas: o afinador liga
+  o microfone assim que abre, e se ficasse montado o microfone ligaria junto com o app.
 - **"Entrada de áudio"** no pé da barra, porque no computador é comum trocar de microfone
   (interface, webcam, pedaleira). A lista também está em Perfil → Reconhecimento.
 - **Só o modelo no aparelho.** O computador roda o modelo sem esforço, então o modo servidor não

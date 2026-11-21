@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:record/record.dart';
 
+import '../models/chord_for_model.dart';
 import '../models/chord_names.dart';
 import '../models/chord_prediction.dart';
 import '../models/chord_recognition_mode.dart';
 import '../models/lyric_practice.dart';
 import '../models/lyric_sheet.dart';
+import '../models/play_along_report.dart';
 import '../services/chord_recognizer.dart';
 import '../services/chord_recognizer_factory.dart';
 import '../services/play_along_engine.dart';
@@ -22,6 +24,7 @@ import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/practice_options_sheet.dart';
 import '../widgets/recognition_mode_badge.dart';
+import 'chord_practice_screen.dart';
 import 'lyric_sheet_screen.dart';
 import '../theme/ph.dart';
 import '../widgets/desktop_shell.dart';
@@ -278,54 +281,62 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
 
   void _showSummaryDialog() {
     final engine = _engine!;
-    final perChord = engine.perChord;
-    double rate(String chord) {
-      final (hit, total) = perChord[chord]!;
-      return total == 0 ? 0 : hit / total;
-    }
-
-    final chords = perChord.keys.toList()
-      ..sort((a, b) => rate(a).compareTo(rate(b)));
-    final weakest = chords.isNotEmpty && rate(chords.first) < 1
-        ? chords.first
-        : null;
+    final lines = chordsByMisses(engine.perChord);
     final notCounted = engine.notCountedChords;
+    final notCountedSteps = engine.results
+        .where((r) => r == StepResult.notCounted)
+        .length;
+    final worst = lines.isNotEmpty && lines.first.misses > 0
+        ? lines.first
+        : null;
+    final practiceChord = worst == null
+        ? null
+        : chordForModel(worst.chord, appState.chordsInModel.toSet());
 
     showDialog(
       context: context,
       builder: (dialogContext) {
+        final textTheme = Theme.of(dialogContext).textTheme;
         final tokens = dialogContext.tokens;
         return AlertDialog(
           title: const Text('Resumo da música'),
           content: SizedBox(
-            width: 300,
+            width: 320,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (final chord in chords)
+                  Text(
+                    '${engine.hits} certos · ${engine.misses} errados'
+                    '${notCountedSteps > 0 ? ' · $notCountedSteps não contaram' : ''}',
+                    style: textTheme.bodyLarge,
+                  ),
+                  if (lines.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      worst == null ? 'Acertou todos' : 'Mais errados',
+                      style: textTheme.titleSmall,
+                    ),
+                  ],
+                  for (final line in lines)
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      padding: const EdgeInsets.symmetric(vertical: 5),
                       child: Row(
                         children: [
                           SizedBox(
                             width: 56,
-                            child: ChordName(chord, size: 16),
+                            child: ChordName(line.chord, size: 16),
                           ),
                           Expanded(
-                            child: LinearProgressIndicator(
-                              value: rate(chord),
-                              minHeight: 6,
-                              color: rate(chord) == 1
-                                  ? tokens.correct
-                                  : tokens.warning,
+                            child: Text(
+                              line.misses == 0
+                                  ? 'acertou ${line.hits} de ${line.total}'
+                                  : 'errou ${line.misses} de ${line.total}',
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: line.misses == 0 ? tokens.correct : null,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            '${perChord[chord]!.$1} de ${perChord[chord]!.$2}',
-                            style: const TextStyle(fontFamily: fontChord),
                           ),
                         ],
                       ),
@@ -334,21 +345,35 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
                     const SizedBox(height: 12),
                     Text(
                       'Não contaram: ${notCounted.join(', ')} (o modelo não conhece)',
+                      style: textTheme.bodySmall,
                     ),
-                  ],
-                  if (weakest != null) ...[
-                    const SizedBox(height: 12),
-                    Text('Vale treinar mais o $weakest.'),
                   ],
                   if (_finishedMessage != null) ...[
                     const SizedBox(height: 12),
-                    Text(_finishedMessage!),
+                    Text(_finishedMessage!, style: textTheme.bodySmall),
                   ],
                 ],
               ),
             ),
           ),
           actions: [
+            if (practiceChord != null)
+              TextButton(
+                key: const ValueKey('treinar acorde'),
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ChordPracticeScreen(
+                        serverUrl: widget.serverUrl,
+                        inputDevice: widget.inputDevice,
+                        chord: practiceChord,
+                      ),
+                    ),
+                  );
+                },
+                child: Text('Treinar $practiceChord'),
+              ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Fechar'),

@@ -118,7 +118,7 @@ class _LyricSheetListScreenState extends State<LyricSheetListScreen> {
           ),
         ],
         GroupedSection(
-          header: 'Sem letra',
+          header: 'Treinar acordes',
           dividerIndent: 58,
           children: [
             GroupedRow(

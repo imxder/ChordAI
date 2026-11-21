@@ -4,9 +4,12 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import '../state/app_state.dart';
 import 'chord_list_screen.dart';
+import 'free_practice_screen.dart';
+import 'guide_list_screen.dart';
 import 'home_screen.dart';
 import 'lyric_sheet_list_screen.dart';
 import 'profile_screen.dart';
+import 'tuner_screen.dart';
 import '../theme/ph.dart';
 import '../theme/platform_style.dart';
 import '../widgets/audio_input_section.dart';
@@ -69,6 +72,24 @@ class _AppShellState extends State<AppShell> {
       label: 'Acordes',
     ),
     DesktopDestination(
+      icon: Ph.gauge,
+      selectedIcon: Ph.gaugeFill,
+      label: 'Afinador',
+      keepAlive: false,
+    ),
+    DesktopDestination(
+      icon: Ph.ear,
+      selectedIcon: Ph.earFill,
+      label: 'Reconhecer acorde',
+      keepAlive: false,
+    ),
+    DesktopDestination(
+      icon: Ph.bookOpen,
+      selectedIcon: Ph.bookOpenFill,
+      label: 'Guia do iniciante',
+      keepAlive: false,
+    ),
+    DesktopDestination(
       icon: Ph.userCircle,
       selectedIcon: Ph.userCircleFill,
       label: 'Perfil',
@@ -110,7 +131,13 @@ class _AppShellState extends State<AppShell> {
           ),
         ],
         pages: [
-          for (var i = 0; i < _desktopTabs.length; i++) (_) => _pages()[i],
+          (_) => _pages()[0],
+          (_) => _pages()[1],
+          (_) => _pages()[2],
+          (_) => const TunerScreen(),
+          (_) => FreePracticeScreen(serverUrl: appState.serverUrl),
+          (_) => const GuideListScreen(),
+          (_) => _pages()[3],
         ],
         rebuildOn: appState,
         selectedIndex: _index,

@@ -12,10 +12,15 @@ class DesktopDestination {
   final IconData selectedIcon;
   final String label;
 
+  /// Falso pras abas que só existem enquanto estão escolhidas (o afinador
+  /// liga o microfone ao abrir, então não pode ficar montado em outra aba).
+  final bool keepAlive;
+
   const DesktopDestination({
     required this.icon,
     required this.selectedIcon,
     required this.label,
+    this.keepAlive = true,
   });
 }
 
@@ -149,20 +154,25 @@ class DesktopShellState extends State<DesktopShell> {
                           index: widget.selectedIndex,
                           children: [
                             for (var i = 0; i < widget.pages.length; i++)
-                              HeroControllerScope.none(
-                                child: Navigator(
-                                  key: _navigators[i],
-                                  onGenerateRoute: (settings) =>
-                                      MaterialPageRoute(
-                                        settings: settings,
-                                        builder: (context) => ListenableBuilder(
-                                          listenable: widget.rebuildOn,
-                                          builder: (context, _) =>
-                                              widget.pages[i](context),
+                              if (!widget.destinations[i].keepAlive &&
+                                  i != widget.selectedIndex)
+                                const SizedBox.shrink()
+                              else
+                                HeroControllerScope.none(
+                                  child: Navigator(
+                                    key: _navigators[i],
+                                    onGenerateRoute: (settings) =>
+                                        MaterialPageRoute(
+                                          settings: settings,
+                                          builder: (context) =>
+                                              ListenableBuilder(
+                                                listenable: widget.rebuildOn,
+                                                builder: (context, _) =>
+                                                    widget.pages[i](context),
+                                              ),
                                         ),
-                                      ),
+                                  ),
                                 ),
-                              ),
                           ],
                         ),
                       );

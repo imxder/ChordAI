@@ -3,6 +3,9 @@ import 'package:chordai/models/chord_recognition_mode.dart';
 import 'package:chordai/screens/app_shell.dart';
 import 'package:chordai/screens/chord_detail_screen.dart';
 import 'package:chordai/screens/free_practice_screen.dart';
+import 'package:chordai/screens/home_screen.dart';
+import 'package:chordai/screens/tuner_screen.dart';
+import 'package:chordai/screens/guide_list_screen.dart';
 import 'package:chordai/screens/settings_screen.dart';
 import 'package:chordai/state/app_state.dart';
 import 'package:chordai/theme/app_theme.dart';
@@ -36,6 +39,12 @@ Future<void> _abrir(
 final _windows = TargetPlatformVariant.only(TargetPlatform.windows);
 
 Finder _aba(String nome) => find.byKey(ValueKey('aba $nome'));
+
+/// Um texto dentro do Início. A barra lateral do computador também tem
+/// "Reconhecer acorde" e "Guia do iniciante", então o texto sozinho aparece
+/// duas vezes.
+Finder _noInicio(String texto) =>
+    find.descendant(of: find.byType(HomeScreen), matching: find.text(texto));
 
 void main() {
   setUpAll(() async {
@@ -115,7 +124,7 @@ void main() {
       tester,
     ) async {
       await _abrir(tester);
-      await tester.tap(find.text('Reconhecer acorde'));
+      await tester.tap(_noInicio('Reconhecer acorde'));
       await settle(tester);
       expect(find.byType(FreePracticeScreen), findsOneWidget);
       expect(find.byKey(appSideBarKey), findsOneWidget);
@@ -127,12 +136,12 @@ void main() {
       // Na primeira tela da aba, Esc não faz nada.
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await settle(tester);
-      expect(find.text('Guia do iniciante'), findsOneWidget);
+      expect(_noInicio('Guia do iniciante'), findsOneWidget);
     }, variant: _windows);
 
     testWidgets('o botão de voltar do cabeçalho volta', (tester) async {
       await _abrir(tester);
-      await tester.tap(find.text('Reconhecer acorde'));
+      await tester.tap(_noInicio('Reconhecer acorde'));
       await settle(tester);
       await tester.tap(find.byTooltip('Voltar'));
       await settle(tester);
@@ -143,7 +152,7 @@ void main() {
       tester,
     ) async {
       await _abrir(tester);
-      await tester.tap(find.text('Reconhecer acorde'));
+      await tester.tap(_noInicio('Reconhecer acorde'));
       await settle(tester);
       await tester.tap(_aba('Início'));
       await settle(tester);
@@ -362,7 +371,7 @@ void main() {
 
     testWidgets('troca de tela do Windows é suave', (tester) async {
       await _abrir(tester);
-      await tester.tap(find.text('Reconhecer acorde'));
+      await tester.tap(_noInicio('Reconhecer acorde'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       // No meio da troca a tela nova está aparecendo por cima.
@@ -453,5 +462,49 @@ void main() {
       await _abrir(tester);
       expect(find.byTooltip('Recolher o menu'), findsOneWidget);
     }, variant: _windows);
+  });
+
+  group('afinador, reconhecer e guia na barra lateral', () {
+    for (final (nome, variante) in [
+      ('Windows', TargetPlatformVariant.only(TargetPlatform.windows)),
+      ('Mac', TargetPlatformVariant.only(TargetPlatform.macOS)),
+    ]) {
+      testWidgets('as três abas abrem as telas ($nome)', (tester) async {
+        await _abrir(tester);
+        for (final aba in [
+          'Afinador',
+          'Reconhecer acorde',
+          'Guia do iniciante',
+        ]) {
+          expect(_aba(aba), findsOneWidget);
+        }
+        await tester.tap(_aba('Reconhecer acorde'));
+        await settle(tester);
+        expect(find.byType(FreePracticeScreen), findsOneWidget);
+        await tester.tap(_aba('Guia do iniciante'));
+        await settle(tester);
+        expect(find.byType(GuideListScreen), findsOneWidget);
+        expect(find.byType(FreePracticeScreen), findsNothing);
+      }, variant: variante);
+    }
+
+    testWidgets('o afinador só fica montado enquanto a aba está escolhida', (
+      tester,
+    ) async {
+      await _abrir(tester);
+      expect(find.byType(TunerScreen, skipOffstage: false), findsNothing);
+      await tester.tap(_aba('Afinador'));
+      await settle(tester);
+      expect(find.byType(TunerScreen), findsOneWidget);
+      await tester.tap(_aba('Início'));
+      await settle(tester);
+      expect(find.byType(TunerScreen, skipOffstage: false), findsNothing);
+    }, variant: _windows);
+
+    testWidgets('no celular continuam as 4 abas de baixo', (tester) async {
+      await _abrir(tester, size: const Size(390, 844));
+      expect(_aba('Afinador'), findsNothing);
+      expect(find.byKey(appTabBarKey), findsOneWidget);
+    }, variant: TargetPlatformVariant.mobile());
   });
 }

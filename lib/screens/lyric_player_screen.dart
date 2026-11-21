@@ -19,7 +19,7 @@ import '../services/tocar_junto_log.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/mic_lifecycle.dart';
-import '../widgets/chord_bars.dart';
+import '../widgets/chord_sequence.dart';
 import '../widgets/cifra_line.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
@@ -67,6 +67,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
   final _stopwatch = Stopwatch();
 
   late final LyricPracticeMap _practiceMap;
+  late final List<StrumStroke> _strokes = parseStrumPattern(
+    widget.sheet.strummingPattern ?? const [],
+  );
   late int _bpm;
   int _lastEighth = -1;
   String? _finishedMessage;
@@ -510,7 +513,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
       Expanded(
         child: ListView(
           controller: _scrollController,
-          padding: EdgeInsets.fromLTRB(padding.left, 12, padding.right, 24),
+          padding: isDesktop
+              ? const EdgeInsets.fromLTRB(32, 12, 32, 24)
+              : EdgeInsets.fromLTRB(padding.left, 12, padding.right, 24),
           children: [
             if (widget.sheet.artist != null || meta.isNotEmpty)
               Text(
@@ -526,14 +531,24 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
               if (!widget.sheet.sections[si].lines.any(
                 (l) => l.lyricText.trim().isNotEmpty,
               ))
-                ChordBars(
-                  chords: [
-                    for (final i in _practiceMap.stepsInSection(si))
-                      BarChord(
-                        _practiceMap.score.steps[i].chord,
-                        _practiceMap.score.steps[i].beats,
-                        i,
-                      ),
+                ChordSequence(
+                  lines: [
+                    for (final line in _practiceMap.phrasesInSection(si))
+                      [
+                        for (final i in line)
+                          SequenceChord(
+                            _practiceMap.score.steps[i].chord,
+                            _practiceMap.score.steps[i].beats,
+                            i,
+                            strum:
+                                strumSlotsInSection(
+                                  _practiceMap,
+                                  si,
+                                  _strokes,
+                                )[i] ??
+                                const [],
+                          ),
+                      ],
                   ],
                   activeStep: running ? activeIndex : null,
                   activeBeat: running && _engine != null && !_engine!.countingIn
@@ -541,7 +556,12 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
                       : null,
                   results: _stepResults(),
                   fontScale: appState.lyricFontScale,
-                  activeRowKey: _activeRowKey,
+                  arrowScale: appState.strumArrowScale,
+                  activeEighth:
+                      running && _engine != null && !_engine!.countingIn
+                      ? (_engine!.beatInStep * 2).floor()
+                      : null,
+                  activeLineKey: _activeRowKey,
                 )
               else
                 for (

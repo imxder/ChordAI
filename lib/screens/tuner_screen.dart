@@ -17,6 +17,7 @@ import 'custom_tuning_screen.dart';
 import 'guide_detail_screen.dart';
 import 'tuning_select_sheet.dart';
 import '../theme/ph.dart';
+import '../theme/platform_style.dart';
 import '../widgets/desktop_input.dart';
 
 class TunerScreen extends StatefulWidget {
@@ -188,142 +189,178 @@ class _TunerScreenState extends State<TunerScreen> with MicLifecycle {
 
     final auto = _targetIndex == null;
 
-    return IosPage(
-      title: 'Afinador',
+    final tuningRow = GroupedSection(
+      top: 8,
       children: [
-        GroupedSection(
-          top: 8,
+        GroupedRow(
+          title: 'Afinação',
+          value: appState.activeTuningName,
+          onTap: () => showTuningSelectSheet(context),
+        ),
+      ],
+    );
+    final gaugeCard = Material(
+      color: tokens.cell,
+      borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
+        child: Column(
           children: [
-            GroupedRow(
-              title: 'Afinação',
-              value: appState.activeTuningName,
-              onTap: () => showTuningSelectSheet(context),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: TuningGauge(
+                cents: reading?.cents ?? 0,
+                color: color,
+                active: reading != null,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('grave', style: textTheme.bodySmall),
+                Text(
+                  reading == null
+                      ? ''
+                      : '${reading.cents >= 0 ? '+' : ''}${reading.cents.round()} cents',
+                  style: textTheme.bodySmall?.copyWith(fontFamily: fontChord),
+                ),
+                Text('agudo', style: textTheme.bodySmall),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Semantics(
+              liveRegion: true,
+              child: Column(
+                children: [
+                  Text(
+                    reading == null
+                        ? '–'
+                        : _stripOctave(reading.nearestString.name),
+                    style: textTheme.displayLarge?.copyWith(
+                      color: reading == null
+                          ? colorScheme.outlineVariant
+                          : color,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  StatusLine(
+                    icon: inTune ? Ph.checkCircleFill : null,
+                    text: status,
+                    color: reading == null ? null : color,
+                    textAlign: TextAlign.center,
+                  ),
+                  if (reading != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '${reading.nearestString.label} · ${reading.nearestString.frequency.toStringAsFixed(1)} Hz',
+                      style: textTheme.bodySmall,
+                    ),
+                  ],
+                ],
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        Material(
-          color: tokens.cell,
-          borderRadius: BorderRadius.circular(GlassTokens.radiusXl),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
-            child: Column(
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: TuningGauge(
-                    cents: reading?.cents ?? 0,
-                    color: color,
-                    active: reading != null,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('grave', style: textTheme.bodySmall),
-                    Text(
-                      reading == null
-                          ? ''
-                          : '${reading.cents >= 0 ? '+' : ''}${reading.cents.round()} cents',
-                      style: textTheme.bodySmall?.copyWith(
-                        fontFamily: fontChord,
-                      ),
-                    ),
-                    Text('agudo', style: textTheme.bodySmall),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Semantics(
-                  liveRegion: true,
-                  child: Column(
-                    children: [
-                      Text(
-                        reading == null
-                            ? '–'
-                            : _stripOctave(reading.nearestString.name),
-                        style: textTheme.displayLarge?.copyWith(
-                          color: reading == null
-                              ? colorScheme.outlineVariant
-                              : color,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      StatusLine(
-                        icon: inTune ? Ph.checkCircleFill : null,
-                        text: status,
-                        color: reading == null ? null : color,
-                        textAlign: TextAlign.center,
-                      ),
-                      if (reading != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          '${reading.nearestString.label} · ${reading.nearestString.frequency.toStringAsFixed(1)} Hz',
-                          style: textTheme.bodySmall,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+      ),
+    );
+    final strings = Row(
+      children: [
+        for (final (i, note) in appState.activeTuning.indexed) ...[
+          if (i > 0) const SizedBox(width: 6),
+          Expanded(
+            child: _StringCell(
+              label: _stripOctave(note.name),
+              number: '${appState.activeTuning.length - i}ª',
+              semanticsLabel: 'Afinar a ${note.label}',
+              active: auto
+                  ? reading?.nearestString.name == note.name
+                  : _targetIndex == i,
+              onTap: () => _setTarget(i),
+            ),
+          ),
+        ],
+      ],
+    );
+    final options = GroupedSection(
+      children: [
+        GroupedRow(
+          title: 'Reconhecer a corda sozinho',
+          subtitle: auto
+              ? 'O app descobre qual corda está soando'
+              : 'Toque na corda que quer afinar',
+          chevron: false,
+          onTap: () => _setAuto(!auto),
+          trailing: CupertinoSwitch(
+            value: auto,
+            activeTrackColor: colorScheme.primary,
+            onChanged: _setAuto,
+          ),
+        ),
+        GroupedRow(
+          title: 'Afinação personalizada',
+          subtitle: 'Escolha a nota de cada corda',
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const CustomTuningScreen())),
+        ),
+        GroupedRow(
+          title: 'Primeira vez?',
+          subtitle: 'Veja qual corda é qual',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => GuideDetailScreen(
+                topic: guideTopics.firstWhere((t) => t.id == 'afinar'),
+                showTunerButton: false,
+              ),
             ),
           ),
         ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            for (final (i, note) in appState.activeTuning.indexed) ...[
-              if (i > 0) const SizedBox(width: 6),
+      ],
+    );
+
+    if (isDesktop && MediaQuery.sizeOf(context).width >= 600) {
+      return IosPage(
+        title: 'Afinador',
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Expanded(
-                child: _StringCell(
-                  label: _stripOctave(note.name),
-                  number: '${appState.activeTuning.length - i}ª',
-                  semanticsLabel: 'Afinar a ${note.label}',
-                  active: auto
-                      ? reading?.nearestString.name == note.name
-                      : _targetIndex == i,
-                  onTap: () => _setTarget(i),
+                flex: 3,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: gaugeCard,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    tuningRow,
+                    const SizedBox(height: 16),
+                    strings,
+                    options,
+                  ],
                 ),
               ),
             ],
-          ],
-        ),
-        GroupedSection(
-          children: [
-            GroupedRow(
-              title: 'Reconhecer a corda sozinho',
-              subtitle: auto
-                  ? 'O app descobre qual corda está soando'
-                  : 'Toque na corda que quer afinar',
-              chevron: false,
-              onTap: () => _setAuto(!auto),
-              trailing: CupertinoSwitch(
-                value: auto,
-                activeTrackColor: colorScheme.primary,
-                onChanged: _setAuto,
-              ),
-            ),
-            GroupedRow(
-              title: 'Afinação personalizada',
-              subtitle: 'Escolha a nota de cada corda',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CustomTuningScreen()),
-              ),
-            ),
-            GroupedRow(
-              title: 'Primeira vez?',
-              subtitle: 'Veja qual corda é qual',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => GuideDetailScreen(
-                    topic: guideTopics.firstWhere((t) => t.id == 'afinar'),
-                    showTunerButton: false,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
+      );
+    }
+
+    return IosPage(
+      title: 'Afinador',
+      children: [
+        tuningRow,
+        const SizedBox(height: 16),
+        gaugeCard,
+        const SizedBox(height: 16),
+        strings,
+        options,
       ],
     );
   }

@@ -19,8 +19,9 @@ no iPhone nem no Android: tudo passa por `isDesktop`, em `lib/theme/platform_sty
 - **Preferências** (aparência, cor, afinação, leitura das cifras, reconhecimento e privacidade)
   saem do Perfil no computador e viram a tela da engrenagem. No celular continuam no Perfil; as
   duas usam o mesmo `PreferencesSection`.
-- **Afinador em duas colunas** no computador: o medidor à esquerda e a afinação, as cordas e as
-  opções à direita. Assim ele cabe inteiro, sem rolar, até na janela mínima (800 × 560).
+- **Afinador mais compacto** no computador: a mesma coluna do celular, com o desenho do medidor
+  limitado a 110 px de altura. Assim ele cabe inteiro, sem rolar, na janela inicial (1200 × 800);
+  na mínima (800 × 560) ainda rola um pouco.
 - **Afinador, Reconhecer acorde e Guia do iniciante** só ficam montados enquanto a aba está
   escolhida (`keepAlive: false` no `DesktopDestination`), diferente das outras abas: o afinador liga
   o microfone assim que abre, e se ficasse montado o microfone ligaria junto com o app.

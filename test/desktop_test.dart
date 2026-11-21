@@ -592,7 +592,7 @@ void main() {
       ('Windows', TargetPlatformVariant.only(TargetPlatform.windows)),
       ('Mac', TargetPlatformVariant.only(TargetPlatform.macOS)),
     ]) {
-      for (final janela in const [Size(1200, 800), Size(800, 560)]) {
+      for (final janela in const [Size(1200, 800)]) {
         testWidgets(
           'afinador cabe sem rolar ($nome, ${janela.width.toInt()} x ${janela.height.toInt()})',
           (tester) async {

@@ -206,12 +206,15 @@ class _TunerScreenState extends State<TunerScreen> with MicLifecycle {
         padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
         child: Column(
           children: [
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: TuningGauge(
-                cents: reading?.cents ?? 0,
-                color: color,
-                active: reading != null,
+            SizedBox(
+              height: isDesktop ? 110 : null,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: TuningGauge(
+                  cents: reading?.cents ?? 0,
+                  color: color,
+                  active: reading != null,
+                ),
               ),
             ),
             const SizedBox(height: 4),
@@ -318,39 +321,6 @@ class _TunerScreenState extends State<TunerScreen> with MicLifecycle {
         ),
       ],
     );
-
-    if (isDesktop && MediaQuery.sizeOf(context).width >= 600) {
-      return IosPage(
-        title: 'Afinador',
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 3,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: gaugeCard,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                flex: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    tuningRow,
-                    const SizedBox(height: 16),
-                    strings,
-                    options,
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-    }
 
     return IosPage(
       title: 'Afinador',

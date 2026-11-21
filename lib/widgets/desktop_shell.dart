@@ -121,7 +121,9 @@ class DesktopShellState extends State<DesktopShell> {
       child: Focus(
         autofocus: true,
         child: Scaffold(
-          backgroundColor: windows ? windowsPaneColor(theme) : null,
+          backgroundColor: windows
+              ? windowsPaneColor(theme)
+              : (isMacLook ? Colors.transparent : null),
           body: Row(
             children: [
               _Pane(
@@ -208,16 +210,20 @@ class _Pane extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _PaneItem(
-            icon: Ph.list,
-            label: 'ChordAI',
-            labelStyle: textTheme.titleSmall,
-            tooltip: open ? 'Recolher o menu' : 'Abrir o menu',
-            open: open,
-            selected: false,
-            onTap: onToggle,
-          ),
-          const SizedBox(height: 8),
+          if (isMacLook)
+            _MacSectionTitle(open: open)
+          else ...[
+            _PaneItem(
+              icon: Ph.list,
+              label: 'ChordAI',
+              labelStyle: textTheme.titleSmall,
+              tooltip: open ? 'Recolher o menu' : 'Abrir o menu',
+              open: open,
+              selected: false,
+              onTap: onToggle,
+            ),
+            const SizedBox(height: 8),
+          ],
           for (final (i, destination) in destinations.indexed)
             _PaneItem(
               key: ValueKey('aba ${destination.label}'),
@@ -280,6 +286,8 @@ class _PaneItem extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final onSurface = colorScheme.onSurface;
+
+    if (isMacLook) return _macItem(context);
 
     Widget item = Padding(
       padding: const EdgeInsets.symmetric(horizontal: margin, vertical: 2),
@@ -373,6 +381,101 @@ class _PaneItem extends StatelessWidget {
   }
 }
 
+extension on _PaneItem {
+  Widget _macItem(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final onSurface = colorScheme.onSurface;
+    const radius = BorderRadius.all(Radius.circular(6));
+
+    Widget item = Padding(
+      padding: EdgeInsets.symmetric(horizontal: open ? 10 : 6, vertical: 1),
+      child: Material(
+        color: selected
+            ? colorScheme.primary.withValues(alpha: 0.16)
+            : Colors.transparent,
+        borderRadius: radius,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: radius,
+          hoverColor: onSurface.withValues(alpha: 0.05),
+          splashFactory: NoSplash.splashFactory,
+          child: SizedBox(
+            height: 28,
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 30,
+                  child: Icon(
+                    icon,
+                    size: 16,
+                    color: selected ? colorScheme.primary : onSurface,
+                  ),
+                ),
+                if (open)
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.clip,
+                      softWrap: false,
+                      style: textTheme.bodyMedium?.copyWith(
+                        fontSize: 13,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    item = Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: item,
+    );
+    if (!open) {
+      item = Tooltip(
+        message: label,
+        waitDuration: const Duration(milliseconds: 400),
+        child: item,
+      );
+    }
+    return item;
+  }
+}
+
+class _MacSectionTitle extends StatelessWidget {
+  final bool open;
+
+  const _MacSectionTitle({required this.open});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!open) return const SizedBox(height: 8);
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 12, 6),
+      child: Text(
+        'ChordAI',
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
 /// Uma coluna de tela no computador. As telas medem a largura pela
 /// MediaQuery (ver pagePadding); aqui ela vira a largura da coluna, então
 /// uma tela inteira (lista, detalhe do acorde) cabe certinho dentro dela.
@@ -442,8 +545,14 @@ class _ContentSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (mac) {
-      return ColoredBox(
-        color: Theme.of(context).scaffoldBackgroundColor,
+      final theme = Theme.of(context);
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          border: Border(
+            left: BorderSide(color: theme.colorScheme.outlineVariant),
+          ),
+        ),
         child: Padding(
           padding: const EdgeInsets.only(top: macTitleBarHeight),
           child: child,

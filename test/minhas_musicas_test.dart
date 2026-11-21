@@ -12,6 +12,7 @@ import 'package:chordai/services/lyric_sheet_library.dart';
 import 'package:chordai/services/play_along_engine.dart';
 import 'package:chordai/services/user_song_store.dart';
 import 'package:chordai/state/app_state.dart';
+import 'package:chordai/widgets/practice_options_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -254,6 +255,170 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('salvar música')));
       await tester.pump();
       expect(find.text('Dê um nome pra música'), findsOneWidget);
+    });
+  });
+
+  group('editor mexendo na música', () {
+    setUp(() async {
+      mockPlatform();
+      await appState.loadProgress();
+    });
+
+    Future<void> abrir(WidgetTester tester, {UserSong? song}) async {
+      setScreen(tester, const Size(400, 2400));
+      await tester.pumpWidget(
+        appUnderTest(SongEditorScreen(song: song ?? _minha)),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('troca a duração de um acorde e tira outro', (tester) async {
+      await abrir(tester);
+      await tester.tap(find.text('Am · 2'));
+      await settle(tester);
+      await tester.tap(find.byKey(const ValueKey('escolher Em')));
+      await tester.tap(find.text('8'));
+      await tester.pump();
+      await tester.tap(find.text('Pronto'));
+      await settle(tester);
+      expect(find.text('Em · 8'), findsOneWidget);
+
+      await tester.tap(find.text('G · 2'));
+      await settle(tester);
+      await tester.tap(find.text('Tirar acorde'));
+      await settle(tester);
+      expect(find.text('G · 2'), findsNothing);
+    });
+
+    testWidgets('cria parte da lista e com outro nome, muda a ordem e tira', (
+      tester,
+    ) async {
+      await abrir(tester);
+      await tester.tap(find.byKey(const ValueKey('mais parte')));
+      await settle(tester);
+      await tester.tap(find.text('Ponte'));
+      await settle(tester);
+      expect(find.text('Ponte'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('mais parte')));
+      await settle(tester);
+      await tester.enterText(find.byType(TextField).last, 'Ponte 2');
+      await tester.tap(find.text('Usar esse nome'));
+      await settle(tester);
+      expect(find.text('Ponte 2'), findsOneWidget);
+
+      final antes = tester.getTopLeft(find.text('Intro')).dy;
+      await tester.tap(find.bySemanticsLabel('Descer parte').first);
+      await tester.pump();
+      expect(tester.getTopLeft(find.text('Intro')).dy, greaterThan(antes));
+      await tester.tap(find.bySemanticsLabel('Subir parte').at(1));
+      await tester.pump();
+      expect(tester.getTopLeft(find.text('Intro')).dy, antes);
+
+      await tester.tap(find.bySemanticsLabel('Tirar parte').last);
+      await tester.pump();
+      expect(find.text('Ponte 2'), findsNothing);
+    });
+
+    testWidgets('muda o BPM e a batida', (tester) async {
+      await abrir(tester);
+      await tester.tap(find.bySemanticsLabel('Mais rápido'));
+      await tester.pump();
+      expect(find.text('61 BPM'), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('Mais devagar'));
+      await tester.tap(find.bySemanticsLabel('Mais devagar'));
+      await tester.pump();
+      expect(find.text('59 BPM'), findsOneWidget);
+
+      await tester.tap(find.text('Batida'));
+      await settle(tester);
+      await tester.tap(find.text('Só pra baixo'));
+      await settle(tester);
+      expect(find.text('Só pra baixo'), findsOneWidget);
+    });
+
+    testWidgets('acorde fora do modelo aparece avisado', (tester) async {
+      await abrir(
+        tester,
+        song: const UserSong(
+          id: '3',
+          title: 'Com Lá',
+          parts: [
+            SongPart(name: 'Verso', chords: [SongChord('A', 4)]),
+          ],
+        ),
+      );
+      expect(find.textContaining('não reconhece'), findsOneWidget);
+    });
+
+    testWidgets('sem acorde não salva', (tester) async {
+      await abrir(
+        tester,
+        song: const UserSong(id: '4', title: 'Vazia'),
+      );
+      await tester.tap(find.byKey(const ValueKey('salvar música')));
+      await tester.pump();
+      expect(find.text('Coloque pelo menos um acorde'), findsOneWidget);
+    });
+
+    testWidgets('apaga a música depois de confirmar', (tester) async {
+      await tester.runAsync(() => UserSongStore().save(_minha));
+      await abrir(tester);
+      await tester.tap(find.text('Apagar música'));
+      await settle(tester);
+      await tester.tap(find.text('Cancelar'));
+      await settle(tester);
+      await tester.tap(find.text('Apagar música'));
+      await settle(tester);
+      await tester.tap(find.text('Apagar'));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await settle(tester);
+      expect(await tester.runAsync(() => UserSongStore().loadAll()), isEmpty);
+    });
+
+    testWidgets('na lista, abre a música e o lápis abre o editor', (
+      tester,
+    ) async {
+      await tester.runAsync(() => UserSongStore().save(_minha));
+      await tester.runAsync(() => LyricSheetLibrary().loadAll());
+      await tester.pumpWidget(
+        appUnderTest(const LyricSheetListScreen(serverUrl: '')),
+      );
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 200)),
+      );
+      await settle(tester);
+      await tester.tap(find.text('Minha música'));
+      await settle(tester);
+      await tester.tap(find.byKey(const ValueKey('editar música')));
+      await settle(tester);
+      expect(find.byType(SongEditorScreen), findsOneWidget);
+      expect(find.text('Editar música'), findsOneWidget);
+    });
+
+    testWidgets('no Aa dá pra mudar o tamanho das setas', (tester) async {
+      setScreen(tester, const Size(400, 1200));
+      await tester.pumpWidget(
+        appUnderTest(
+          Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showPracticeOptionsSheet(context),
+              child: const Text('abrir'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('abrir'));
+      await settle(tester);
+      expect(find.text('Tamanho dos acordes'), findsOneWidget);
+      expect(find.text('Tamanho das setas da batida'), findsOneWidget);
+      await tester.tap(find.text('Grande').last);
+      await settle(tester);
+      expect(appState.strumArrowScale, 1.3);
+      await tester.tap(find.text('Médio').last);
+      await settle(tester);
     });
   });
 }

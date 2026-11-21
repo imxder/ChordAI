@@ -1,6 +1,6 @@
 # Política de privacidade
 
-Última atualização: 18/11/2026
+Última atualização: 20/11/2026
 
 Eu sou o Alexandre Salgado e fiz o ChordAI como meu TCC de Engenharia de Software na Católica SC. Aqui eu explico, seguindo a LGPD (Lei 13.709/2018), quais dados o app usa, pra quê, onde eles ficam e o que você pode fazer com eles.
 
@@ -17,6 +17,7 @@ O app guarda algumas informações na memória do próprio aparelho, pra lembrar
 - Perfil: o nome que você digitar (é opcional) e o seu nível de experiência no violão.
 - Progresso: os acordes que você aprendeu, quantos acordes você acertou, quantos treinos concluiu e a data do último treino.
 - Preferências: aparência e cor do app, afinação escolhida (e a personalizada, se você criar uma), tamanho da letra das cifras, se mostra o braço do violão, se a cifra rola sozinha, o modo de reconhecimento, o modelo escolhido e o endereço do servidor.
+- Músicas que você cria: nome, artista (opcional), andamento, batida, partes e acordes. Elas ficam só no aparelho, não vão pra lugar nenhum e somem se o app for apagado.
 
 O nome é o único dado pessoal dessa lista, e você só informa se quiser. O resto serve só pra o app funcionar do jeito que você deixou.
 

@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:record/record.dart';
 
+import '../models/chord_for_model.dart';
 import '../models/chord_names.dart';
 import '../models/chord_prediction.dart';
 import '../models/chord_recognition_mode.dart';
 import '../models/lyric_practice.dart';
 import '../models/lyric_sheet.dart';
+import '../models/play_along_report.dart';
 import '../services/chord_recognizer.dart';
 import '../services/chord_recognizer_factory.dart';
 import '../services/play_along_engine.dart';
@@ -17,11 +19,13 @@ import '../services/tocar_junto_log.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/mic_lifecycle.dart';
+import '../widgets/chord_sequence.dart';
 import '../widgets/cifra_line.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/practice_options_sheet.dart';
 import '../widgets/recognition_mode_badge.dart';
+import 'chord_practice_screen.dart';
 import 'lyric_sheet_screen.dart';
 import '../theme/ph.dart';
 import '../widgets/desktop_shell.dart';
@@ -59,9 +63,13 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
       createChordRecognizer(appState.chordRecognitionMode, rawReadings: true);
   final _scrollController = ScrollController();
   final Map<int, GlobalKey> _lineKeys = {};
+  final _activeRowKey = GlobalKey();
   final _stopwatch = Stopwatch();
 
   late final LyricPracticeMap _practiceMap;
+  late final List<StrumStroke> _strokes = parseStrumPattern(
+    widget.sheet.strummingPattern ?? const [],
+  );
   late int _bpm;
   int _lastEighth = -1;
   String? _finishedMessage;
@@ -104,6 +112,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     if (index < 0 || index >= _practiceMap.locations.length) return;
     final loc = _practiceMap.locations[index];
     final ctx =
+        _activeRowKey.currentContext ??
         _lineKeys[_lineKeyId(loc.sectionIndex, loc.lineIndex)]?.currentContext;
     if (ctx != null) {
       Scrollable.ensureVisible(
@@ -278,54 +287,62 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
 
   void _showSummaryDialog() {
     final engine = _engine!;
-    final perChord = engine.perChord;
-    double rate(String chord) {
-      final (hit, total) = perChord[chord]!;
-      return total == 0 ? 0 : hit / total;
-    }
-
-    final chords = perChord.keys.toList()
-      ..sort((a, b) => rate(a).compareTo(rate(b)));
-    final weakest = chords.isNotEmpty && rate(chords.first) < 1
-        ? chords.first
-        : null;
+    final lines = chordsByMisses(engine.perChord);
     final notCounted = engine.notCountedChords;
+    final notCountedSteps = engine.results
+        .where((r) => r == StepResult.notCounted)
+        .length;
+    final worst = lines.isNotEmpty && lines.first.misses > 0
+        ? lines.first
+        : null;
+    final practiceChord = worst == null
+        ? null
+        : chordForModel(worst.chord, appState.chordsInModel.toSet());
 
     showDialog(
       context: context,
       builder: (dialogContext) {
+        final textTheme = Theme.of(dialogContext).textTheme;
         final tokens = dialogContext.tokens;
         return AlertDialog(
           title: const Text('Resumo da música'),
           content: SizedBox(
-            width: 300,
+            width: 320,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (final chord in chords)
+                  Text(
+                    '${engine.hits} certos · ${engine.misses} errados'
+                    '${notCountedSteps > 0 ? ' · $notCountedSteps não contaram' : ''}',
+                    style: textTheme.bodyLarge,
+                  ),
+                  if (lines.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      worst == null ? 'Acertou todos' : 'Mais errados',
+                      style: textTheme.titleSmall,
+                    ),
+                  ],
+                  for (final line in lines)
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      padding: const EdgeInsets.symmetric(vertical: 5),
                       child: Row(
                         children: [
                           SizedBox(
                             width: 56,
-                            child: ChordName(chord, size: 16),
+                            child: ChordName(line.chord, size: 16),
                           ),
                           Expanded(
-                            child: LinearProgressIndicator(
-                              value: rate(chord),
-                              minHeight: 6,
-                              color: rate(chord) == 1
-                                  ? tokens.correct
-                                  : tokens.warning,
+                            child: Text(
+                              line.misses == 0
+                                  ? 'acertou ${line.hits} de ${line.total}'
+                                  : 'errou ${line.misses} de ${line.total}',
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: line.misses == 0 ? tokens.correct : null,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            '${perChord[chord]!.$1} de ${perChord[chord]!.$2}',
-                            style: const TextStyle(fontFamily: fontChord),
                           ),
                         ],
                       ),
@@ -334,21 +351,35 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
                     const SizedBox(height: 12),
                     Text(
                       'Não contaram: ${notCounted.join(', ')} (o modelo não conhece)',
+                      style: textTheme.bodySmall,
                     ),
-                  ],
-                  if (weakest != null) ...[
-                    const SizedBox(height: 12),
-                    Text('Vale treinar mais o $weakest.'),
                   ],
                   if (_finishedMessage != null) ...[
                     const SizedBox(height: 12),
-                    Text(_finishedMessage!),
+                    Text(_finishedMessage!, style: textTheme.bodySmall),
                   ],
                 ],
               ),
             ),
           ),
           actions: [
+            if (practiceChord != null)
+              TextButton(
+                key: const ValueKey('treinar acorde'),
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ChordPracticeScreen(
+                        serverUrl: widget.serverUrl,
+                        inputDevice: widget.inputDevice,
+                        chord: practiceChord,
+                      ),
+                    ),
+                  );
+                },
+                child: Text('Treinar $practiceChord'),
+              ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Fechar'),
@@ -357,6 +388,17 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
         );
       },
     );
+  }
+
+  Map<int, bool> _stepResults() {
+    final engine = _engine;
+    if (engine == null) return const {};
+    return {
+      for (var i = 0; i < engine.results.length; i++)
+        if (engine.results[i] == StepResult.hit ||
+            engine.results[i] == StepResult.miss)
+          i: engine.results[i] == StepResult.hit,
+    };
   }
 
   Map<int, Map<int, bool>> _tokenResults() {
@@ -471,7 +513,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
       Expanded(
         child: ListView(
           controller: _scrollController,
-          padding: EdgeInsets.fromLTRB(padding.left, 12, padding.right, 24),
+          padding: isDesktop
+              ? const EdgeInsets.fromLTRB(32, 12, 32, 24)
+              : EdgeInsets.fromLTRB(padding.left, 12, padding.right, 24),
           children: [
             if (widget.sheet.artist != null || meta.isNotEmpty)
               Text(
@@ -484,29 +528,65 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
             for (var si = 0; si < widget.sheet.sections.length; si++) ...[
               if (widget.sheet.sections[si].title != null)
                 SheetSectionLabel(widget.sheet.sections[si].title!),
-              for (
-                var li = 0;
-                li < widget.sheet.sections[si].lines.length;
-                li++
-              )
-                KeyedSubtree(
-                  key: _keyFor(si, li),
-                  child: CifraLine(
-                    line: widget.sheet.sections[si].lines[li],
-                    fontScale: appState.lyricFontScale,
-                    highlighted:
-                        activeLoc != null &&
-                        activeLoc.sectionIndex == si &&
-                        activeLoc.lineIndex == li,
-                    activeToken:
-                        (activeLoc != null &&
-                            activeLoc.sectionIndex == si &&
-                            activeLoc.lineIndex == li)
-                        ? activeLoc.tokenIndex
-                        : null,
-                    tokenResults: results[_lineKeyId(si, li)] ?? const {},
+              if (!widget.sheet.sections[si].lines.any(
+                (l) => l.lyricText.trim().isNotEmpty,
+              ))
+                ChordSequence(
+                  lines: [
+                    for (final line in _practiceMap.phrasesInSection(si))
+                      [
+                        for (final i in line)
+                          SequenceChord(
+                            _practiceMap.score.steps[i].chord,
+                            _practiceMap.score.steps[i].beats,
+                            i,
+                            strum:
+                                strumSlotsInSection(
+                                  _practiceMap,
+                                  si,
+                                  _strokes,
+                                )[i] ??
+                                const [],
+                          ),
+                      ],
+                  ],
+                  activeStep: running ? activeIndex : null,
+                  activeBeat: running && _engine != null && !_engine!.countingIn
+                      ? _engine!.beatInStep.floor()
+                      : null,
+                  results: _stepResults(),
+                  fontScale: appState.lyricFontScale,
+                  arrowScale: appState.strumArrowScale,
+                  activeEighth:
+                      running && _engine != null && !_engine!.countingIn
+                      ? (_engine!.beatInStep * 2).floor()
+                      : null,
+                  activeLineKey: _activeRowKey,
+                )
+              else
+                for (
+                  var li = 0;
+                  li < widget.sheet.sections[si].lines.length;
+                  li++
+                )
+                  KeyedSubtree(
+                    key: _keyFor(si, li),
+                    child: CifraLine(
+                      line: widget.sheet.sections[si].lines[li],
+                      fontScale: appState.lyricFontScale,
+                      highlighted:
+                          activeLoc != null &&
+                          activeLoc.sectionIndex == si &&
+                          activeLoc.lineIndex == li,
+                      activeToken:
+                          (activeLoc != null &&
+                              activeLoc.sectionIndex == si &&
+                              activeLoc.lineIndex == li)
+                          ? activeLoc.tokenIndex
+                          : null,
+                      tokenResults: results[_lineKeyId(si, li)] ?? const {},
+                    ),
                   ),
-                ),
             ],
           ],
         ),

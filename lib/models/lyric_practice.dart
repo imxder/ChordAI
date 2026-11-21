@@ -18,6 +18,28 @@ class LyricPracticeMap {
   final List<LyricChordLocation> locations;
 
   const LyricPracticeMap({required this.score, required this.locations});
+
+  List<List<int>> phrasesInSection(int sectionIndex, {int beats = 8}) {
+    final phrases = <List<int>>[];
+    var current = <int>[];
+    var total = 0;
+    for (final i in stepsInSection(sectionIndex)) {
+      current.add(i);
+      total += score.steps[i].beats;
+      if (total >= beats) {
+        phrases.add(current);
+        current = [];
+        total = 0;
+      }
+    }
+    if (current.isNotEmpty) phrases.add(current);
+    return phrases;
+  }
+
+  List<int> stepsInSection(int sectionIndex) => [
+    for (var i = 0; i < locations.length; i++)
+      if (locations[i].sectionIndex == sectionIndex) i,
+  ];
 }
 
 final RegExp _chordTokenPattern = RegExp(r'\S+');
@@ -68,4 +90,26 @@ LyricPracticeMap buildLyricPracticeMap(
     score: Score(title: sheet.title, steps: steps),
     locations: locations,
   );
+}
+
+/// As casas de colcheia (2 por tempo) que cada acorde da parte ocupa no
+/// compasso, com o movimento da batida que cai em cada uma (null = o braço só
+/// passa). A parte começa no tempo 1. Vazio se a batida não diz o tempo.
+Map<int, List<StrumKind?>> strumSlotsInSection(
+  LyricPracticeMap map,
+  int sectionIndex,
+  List<StrumStroke> strokes,
+) {
+  if (strokes.isEmpty || strokes.any((s) => s.eighth == null)) return {};
+  final byEighth = {for (final s in strokes) s.eighth!: s.kind};
+  final out = <int, List<StrumKind?>>{};
+  var position = 0;
+  for (final step in map.stepsInSection(sectionIndex)) {
+    final eighths = map.score.steps[step].beats * 2;
+    out[step] = [
+      for (var e = 0; e < eighths; e++) byEighth[(position + e) % 8],
+    ];
+    position += eighths;
+  }
+  return out;
 }

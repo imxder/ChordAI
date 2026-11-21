@@ -1,6 +1,8 @@
 import '../models/lyric_sheet.dart';
 
-// Formato das cifras em assets/lyrics/*.txt, no estilo do Cifra Club:
+// Formato das cifras (assets/lyrics/*.txt e as músicas criadas no app). Só
+// acordes, partes, andamento e batida: as letras têm direito autoral e não
+// ficam no app.
 //
 //   Tom: C               tom da música (só mostra na tela)
 //   Tempo: 100           BPM inicial do tocar junto
@@ -13,10 +15,14 @@ import '../models/lyric_sheet.dart';
 //   Tempos: 4            quantos tempos cada acorde dura no tocar junto;
 //   Tempos: Am=2 G=2 C=4 também dá pra dizer por acorde (o resto fica com 4)
 //
-//   [Refrão]             começa uma seção
-//   Am:2  G:2  C         linha de acordes em cima da linha de letra; o :2 diz
-//   letra da música      que aquele acorde dura 2 tempos e vale mais que o
-//                        Tempos: do topo. O :2 não aparece na tela.
+//   [Refrão]             começa uma parte
+//   Am:2  G:2  C         uma linha de acordes, na ordem em que tocam (até 4
+//   Am  G  C             por linha). O :2 diz que aquele acorde dura 2 tempos
+//                        e vale mais que o Tempos: do topo; ele não aparece
+//                        na tela, que mostra os tempos em bolinhas.
+//
+// Uma linha que não é só de acordes vira texto (era a letra, nas cifras
+// antigas); o teste cifras_sem_letra_test.dart quebra se isso voltar.
 
 final RegExp _chordToken = RegExp(
   r'^[A-G](#|b)?(maj|m|dim|aug|sus|add|M|°|ø|\+|\d|\(|\)|b|#)*(/[A-G](#|b)?)?$',

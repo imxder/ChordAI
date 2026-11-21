@@ -18,6 +18,13 @@ class LyricPracticeMap {
   final List<LyricChordLocation> locations;
 
   const LyricPracticeMap({required this.score, required this.locations});
+
+  List<int> beatsFor(int sectionIndex, int lineIndex) => [
+    for (var i = 0; i < locations.length; i++)
+      if (locations[i].sectionIndex == sectionIndex &&
+          locations[i].lineIndex == lineIndex)
+        score.steps[i].beats,
+  ];
 }
 
 final RegExp _chordTokenPattern = RegExp(r'\S+');

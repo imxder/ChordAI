@@ -505,6 +505,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
                         ? activeLoc.tokenIndex
                         : null,
                     tokenResults: results[_lineKeyId(si, li)] ?? const {},
+                    tokenBeats: _practiceMap.beatsFor(si, li),
                   ),
                 ),
             ],

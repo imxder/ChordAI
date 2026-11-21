@@ -6,6 +6,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:record/record.dart';
 
 import '../models/chord_names.dart';
+import '../models/lyric_practice.dart';
 import '../models/lyric_sheet.dart';
 import '../state/app_state.dart';
 import '../widgets/cifra_line.dart';
@@ -51,6 +52,7 @@ class _LyricSheetScreenState extends State<LyricSheetScreen>
   bool _dragging = false;
 
   LyricSheet get sheet => widget.sheet;
+  late final LyricPracticeMap _practiceMap = buildLyricPracticeMap(sheet);
 
   void _onTick(Duration elapsed) {
     final seconds = (elapsed - _lastTick).inMicroseconds / 1000000;
@@ -227,12 +229,13 @@ class _LyricSheetScreenState extends State<LyricSheetScreen>
                 ],
               ),
             ),
-            for (final section in sheet.sections) ...[
+            for (final (si, section) in sheet.sections.indexed) ...[
               if (section.title != null) SheetSectionLabel(section.title!),
-              for (final line in section.lines)
+              for (final (li, line) in section.lines.indexed)
                 CifraLine(
                   line: line,
                   fontScale: appState.lyricFontScale,
+                  tokenBeats: _practiceMap.beatsFor(si, li),
                   onChordTap: (chord) => _showChordDialog(context, chord),
                 ),
             ],

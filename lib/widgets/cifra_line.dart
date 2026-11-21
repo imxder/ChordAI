@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../models/lyric_sheet.dart';
 import '../theme/app_theme.dart';
+import '../theme/glass_tokens.dart';
 
 class CifraLine extends StatelessWidget {
   final LyricLine line;
@@ -11,6 +12,7 @@ class CifraLine extends StatelessWidget {
   final bool highlighted;
   final ValueChanged<String>? onChordTap;
   final Map<int, bool> tokenResults;
+  final List<int> tokenBeats;
 
   const CifraLine({
     super.key,
@@ -20,6 +22,7 @@ class CifraLine extends StatelessWidget {
     this.highlighted = false,
     this.onChordTap,
     this.tokenResults = const {},
+    this.tokenBeats = const [],
   });
 
   static const _baseSize = 14.0;
@@ -33,6 +36,8 @@ class CifraLine extends StatelessWidget {
     if (!hasChord && !hasLyric) return const SizedBox(height: 14);
 
     final fontSize = _baseSize * fontScale;
+
+    if (hasChord && !hasLyric) return _chordBlocks(context, fontSize);
 
     // Quebrar a linha desalinharia o acorde da sílaba, então ela rola na horizontal.
     return Container(
@@ -58,6 +63,35 @@ class CifraLine extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _chordBlocks(BuildContext context, double fontSize) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final tokens = context.tokens;
+    final chords = RegExp(r'\S+')
+        .allMatches(line.chordLine!)
+        .map((m) => m.group(0)!)
+        .toList();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          for (final (i, chord) in chords.indexed)
+            _ChordBlock(
+              chord: chord,
+              beats: i < tokenBeats.length ? tokenBeats[i] : null,
+              fontSize: fontSize,
+              active: i == activeToken,
+              result: tokenResults[i],
+              onTap: onChordTap == null ? null : () => onChordTap!(chord),
+              colorScheme: colorScheme,
+              tokens: tokens,
+            ),
+        ],
       ),
     );
   }
@@ -130,6 +164,99 @@ class CifraLine extends StatelessWidget {
         children: spans,
       ),
       softWrap: false,
+    );
+  }
+}
+
+class _ChordBlock extends StatelessWidget {
+  final String chord;
+  final int? beats;
+  final double fontSize;
+  final bool active;
+  final bool? result;
+  final VoidCallback? onTap;
+  final ColorScheme colorScheme;
+  final AppTokens tokens;
+
+  const _ChordBlock({
+    required this.chord,
+    required this.beats,
+    required this.fontSize,
+    required this.active,
+    required this.result,
+    required this.onTap,
+    required this.colorScheme,
+    required this.tokens,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color background;
+    final Color foreground;
+    if (active) {
+      background = colorScheme.primary;
+      foreground = colorScheme.onPrimary;
+    } else if (result == true) {
+      background = tokens.cell;
+      foreground = tokens.correct;
+    } else if (result == false) {
+      background = tokens.cell;
+      foreground = colorScheme.error;
+    } else {
+      background = tokens.cell;
+      foreground = colorScheme.primary;
+    }
+    final count = beats ?? 0;
+    return Semantics(
+      button: onTap != null,
+      label: beats == null ? chord : '$chord, $beats tempos',
+      excludeSemantics: true,
+      child: Material(
+        color: background,
+        borderRadius: BorderRadius.circular(GlassTokens.radiusMd),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(GlassTokens.radiusMd),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 7),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  chord,
+                  style: TextStyle(
+                    fontFamily: fontChord,
+                    fontWeight: FontWeight.w600,
+                    fontSize: fontSize * 1.15,
+                    height: 1.3,
+                    color: foreground,
+                    decoration: result == false && !active
+                        ? TextDecoration.lineThrough
+                        : null,
+                    decorationColor: colorScheme.error,
+                  ),
+                ),
+                if (count > 0)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (var b = 0; b < count; b++)
+                        Container(
+                          width: 4,
+                          height: 4,
+                          margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: foreground.withValues(alpha: 0.55),
+                          ),
+                        ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

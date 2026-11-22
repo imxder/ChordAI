@@ -895,6 +895,7 @@ Color onStopButtonColor(BuildContext context) {
 
 class StatusLine extends StatelessWidget {
   final IconData? icon;
+  final Widget? leading;
   final String text;
   final Color? color;
   final TextAlign textAlign;
@@ -903,6 +904,7 @@ class StatusLine extends StatelessWidget {
     super.key,
     required this.text,
     this.icon,
+    this.leading,
     this.color,
     this.textAlign = TextAlign.start,
   });
@@ -916,7 +918,10 @@ class StatusLine extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (icon != null) ...[
+          if (leading != null) ...[
+            Padding(padding: const EdgeInsets.only(top: 1), child: leading),
+            const SizedBox(width: 6),
+          ] else if (icon != null) ...[
             ExcludeSemantics(child: Icon(icon, size: 18, color: resolved)),
             const SizedBox(width: 6),
           ],

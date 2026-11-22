@@ -12,6 +12,7 @@ import '../theme/app_theme.dart';
 import '../theme/glass_tokens.dart';
 import '../widgets/mic_lifecycle.dart';
 import '../widgets/guitar_neck.dart';
+import '../widgets/listening_bars.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/recognition_mode_badge.dart';
 import '../theme/ph.dart';
@@ -226,7 +227,15 @@ class _FreePracticeScreenState extends State<FreePracticeScreen>
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: StatusLine(
-              icon: _listening ? Ph.waveform : null,
+              leading: _listening
+                  ? ListeningBars(
+                      color: colorScheme.primary,
+                      level: switch (_service) {
+                        final OnDeviceChordService s => s.level,
+                        _ => null,
+                      },
+                    )
+                  : null,
               text: _statusMessage,
               color: _listening ? colorScheme.primary : null,
             ),

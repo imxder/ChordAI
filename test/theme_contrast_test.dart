@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:chordai/models/app_theme.dart';
 import 'package:chordai/theme/app_theme.dart';
+import 'package:chordai/widgets/page_parts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -57,6 +58,31 @@ void main() {
             _contrast(scheme.onSurface, scheme.surfaceContainerHigh),
             greaterThanOrEqualTo(4.5),
           );
+        },
+      );
+    }
+  }
+
+  for (final option in appThemeOptions) {
+    for (final look in [AppAppearance.paper, AppAppearance.dark]) {
+      testWidgets(
+        'botão Parar não fica igual ao Começar (${option.name}, ${look.label})',
+        (tester) async {
+          late Color parar;
+          late Color comecar;
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: buildAppTheme(option, appearance: look),
+              home: Builder(
+                builder: (context) {
+                  parar = stopButtonColor(context);
+                  comecar = Theme.of(context).colorScheme.primary;
+                  return const SizedBox();
+                },
+              ),
+            ),
+          );
+          expect(_contrast(parar, comecar), greaterThanOrEqualTo(1.5));
         },
       );
     }

@@ -162,8 +162,8 @@ class _FreePracticeScreenState extends State<FreePracticeScreen>
             label: Text(_listening ? 'Parar' : 'Ouvir'),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(50),
-              backgroundColor: _listening ? colorScheme.onSurface : null,
-              foregroundColor: _listening ? colorScheme.surface : null,
+              backgroundColor: _listening ? stopButtonColor(context) : null,
+              foregroundColor: _listening ? onStopButtonColor(context) : null,
             ),
           ),
         ),

@@ -871,6 +871,28 @@ class ChordName extends StatelessWidget {
   }
 }
 
+bool _accentIsInk(ColorScheme colorScheme) {
+  final a = colorScheme.primary.computeLuminance();
+  final b = colorScheme.onSurface.computeLuminance();
+  return (max(a, b) + 0.05) / (min(a, b) + 0.05) < 2;
+}
+
+/// O botão de Parar é da cor do texto pra se diferenciar do Começar. Na cor
+/// Grafite o Começar já é dessa cor, então o Parar fica cinza.
+Color stopButtonColor(BuildContext context) {
+  final colorScheme = Theme.of(context).colorScheme;
+  return _accentIsInk(colorScheme)
+      ? context.tokens.fill
+      : colorScheme.onSurface;
+}
+
+Color onStopButtonColor(BuildContext context) {
+  final colorScheme = Theme.of(context).colorScheme;
+  return _accentIsInk(colorScheme)
+      ? colorScheme.onSurface
+      : colorScheme.surface;
+}
+
 class StatusLine extends StatelessWidget {
   final IconData? icon;
   final String text;

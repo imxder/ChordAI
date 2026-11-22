@@ -848,9 +848,11 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
                         label: Text(running ? 'Parar' : 'Começar'),
                         style: FilledButton.styleFrom(
                           backgroundColor: running
-                              ? colorScheme.onSurface
+                              ? stopButtonColor(context)
                               : null,
-                          foregroundColor: running ? colorScheme.surface : null,
+                          foregroundColor: running
+                              ? onStopButtonColor(context)
+                              : null,
                         ),
                       ),
                     ),

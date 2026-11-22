@@ -173,8 +173,8 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
             label: Text(_listening ? 'Parar' : 'Começar'),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(50),
-              backgroundColor: _listening ? colorScheme.onSurface : null,
-              foregroundColor: _listening ? colorScheme.surface : null,
+              backgroundColor: _listening ? stopButtonColor(context) : null,
+              foregroundColor: _listening ? onStopButtonColor(context) : null,
             ),
           ),
         ),

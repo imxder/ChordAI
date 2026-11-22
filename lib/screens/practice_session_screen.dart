@@ -218,8 +218,8 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen>
             label: Text(running ? 'Parar' : 'Começar'),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(50),
-              backgroundColor: running ? colorScheme.onSurface : null,
-              foregroundColor: running ? colorScheme.surface : null,
+              backgroundColor: running ? stopButtonColor(context) : null,
+              foregroundColor: running ? onStopButtonColor(context) : null,
             ),
           ),
         ),

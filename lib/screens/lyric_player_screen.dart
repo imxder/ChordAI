@@ -15,6 +15,7 @@ import '../models/play_along_report.dart';
 import '../services/chord_recognizer.dart';
 import '../services/chord_recognizer_factory.dart';
 import '../services/play_along_engine.dart';
+import '../services/screen_awake.dart';
 import '../services/tocar_junto_log.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -155,6 +156,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     _engine = engine;
     _ticker?.cancel();
     _ticker = Timer.periodic(_tick, (_) => _onTick());
+    keepScreenOn(true);
 
     _startListening();
   }
@@ -202,6 +204,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     _ticker?.cancel();
     _ticker = null;
     _stopwatch.stop();
+    keepScreenOn(false);
     await _service.stop();
     appState.stopSession();
     if (mounted) setState(() {});
@@ -255,6 +258,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     _ticker?.cancel();
     _ticker = null;
     _stopwatch.stop();
+    keepScreenOn(false);
     _service.stop();
     final engine = _engine!;
     final total = engine.hits + engine.misses;
@@ -446,6 +450,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
   void dispose() {
     _ticker?.cancel();
     _bpmRepeat?.cancel();
+    keepScreenOn(false);
     appState.removeListener(_onAppStateChanged);
     // Sem isso a sessão continuava "rodando" depois de sair da tela.
     if (appState.sessionStatus != SessionStatus.idle) {

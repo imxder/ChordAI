@@ -122,8 +122,8 @@ class _AppShellState extends State<AppShell> {
       onOpenChords: () => _select(isDesktop ? _desktopChordsTab : _chordsTab),
       onOpenSongs: () => _select(isDesktop ? _desktopSongsTab : _songsTab),
     ),
-    LyricSheetListScreen(serverUrl: appState.serverUrl),
-    ChordListScreen(serverUrl: appState.serverUrl),
+    LyricSheetListScreen(),
+    ChordListScreen(),
     const ProfileScreen(),
   ];
 
@@ -146,7 +146,7 @@ class _AppShellState extends State<AppShell> {
           (_) => _pages()[0],
           (_) => const TunerScreen(),
           (_) => _pages()[2],
-          (_) => FreePracticeScreen(serverUrl: appState.serverUrl),
+          (_) => FreePracticeScreen(),
           (_) => const GuideListScreen(),
           (_) => _pages()[1],
           (_) => const PreferencesScreen(),

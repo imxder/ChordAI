@@ -1,36 +1,29 @@
 # Segurança
 
-O ChordAI não tem conta, login nem servidor meu. O único dado que pode sair do celular é o som do microfone, e só no modo servidor, que vem desligado.
+O ChordAI não tem conta, login nem servidor meu, e não usa a internet. O som do microfone é analisado no próprio aparelho e não sai dele. Até a v0.2.1 tinha um modo "Servidor", que mandava o áudio pra API Flask no meu computador; ele saiu do app, e o motivo está no [ADR 0003](adr/0003-sem-modo-servidor.md).
 
 ## O que o app acessa
 
 | Permissão | Onde | Pra quê |
 |---|---|---|
-| Microfone | `RECORD_AUDIO` no Android, `NSMicrophoneUsageDescription` no iOS | ouvir o violão (reconhecer o acorde e o afinador) |
-| Internet | `INTERNET` no Android | só o modo servidor usa |
-| Rede local | `NSLocalNetworkUsageDescription` no iOS | só o modo servidor usa |
+| Microfone | `RECORD_AUDIO` no Android, `NSMicrophoneUsageDescription` no iOS e no Mac, `com.apple.security.device.audio-input` no Mac | ouvir o violão (reconhecer o acorde e o afinador) |
 
-## O que sai do aparelho
+Só isso. O app de release não pede internet em nenhuma plataforma:
 
-- **No aparelho (o padrão):** nada. O som fica na memória, o modelo TFLite roda no próprio celular e o app não faz nenhuma chamada de rede.
-- **Servidor (opção avançada):** a cada 1,5 s, um WAV com o som do microfone vai por `POST /predict_chord` pro endereço que eu digitei, e volta só o nome do acorde. Não vai nome do perfil, progresso nem nada além do áudio.
+- **Android:** o `AndroidManifest.xml` de `src/main` só tem o `RECORD_AUDIO`. A `INTERNET` aparece só nos manifestos de `src/debug` e `src/profile`, porque o Flutter precisa dela pro hot reload e pro DevTools; eles não entram no APK de release.
+- **iOS:** não tem `NSLocalNetworkUsageDescription`, então o app nem pede acesso à rede local.
+- **Mac:** o app roda no sandbox, e o `Release.entitlements` só libera o microfone. O `DebugProfile.entitlements` tem o `network.server`, também só pro hot reload.
+- **Windows:** o Windows não tem permissão por app; o microfone depende da opção do sistema pros apps da área de trabalho.
 
 ## O que fica salvo
 
-- No `shared_preferences`: o perfil (nome e experiência), o progresso, as preferências e o endereço do servidor. Nada disso sai do aparelho.
-- No modo servidor, cada janela de 1,5 s vira um arquivo `chordai_janela_<hora>.wav` na pasta temporária do app. Ele é apagado assim que a resposta chega; se o app fechar no meio, o que sobrou é apagado da próxima vez que o modo servidor começa a ouvir (`deleteLeftoverWindows` em `lib/services/chord_recognition_service.dart`).
-- Nenhum áudio, endereço ou nome do perfil vai pra `print` ou log, e a mensagem de erro do reconhecimento é fixa (`chordRecognitionErrorMessage`), sem o endereço nem o erro de rede.
+- No `shared_preferences`: o perfil (nome e experiência), o progresso, as preferências e as músicas que eu crio. Nada disso sai do aparelho.
+- O áudio não fica salvo: ele só existe na memória enquanto o modelo analisa a janela de 1,5 s.
+- Na primeira vez que o app abre depois de tirar o modo servidor, ele apaga as chaves antigas desse modo (`app_server_url`, `app_chord_recognition_mode` e `app_on_device_default_migrated`, em `lib/state/app_state.dart`). A `app_server_url` guardava o IP do computador. O resto fica como estava.
+- Nenhum áudio ou nome do perfil vai pra `print` ou log, e a mensagem de erro do reconhecimento é fixa (`chordRecognitionErrorMessage`).
 
 ## Decisões
 
-- **Endereço do servidor conferido antes de salvar** (`lib/services/server_address.dart`): tem que ser http ou https, ter IP ou nome válido, porta de 1 a 65535 e nada depois da porta.
-- **HTTP só pra rede local.** Sem criptografia, o app só aceita IP privado (192.168.x.x, 10.x.x.x, 172.16 a 172.31), localhost ou nome `.local`. Pra qualquer outro endereço, só HTTPS. Assim o áudio sem criptografia não sai pela internet.
-- **Aviso na tela do modo servidor**, dizendo que o som vai sem criptografia e que é pra usar só numa rede confiável.
+- **Sem rede nenhuma.** Com o reconhecimento só no aparelho, o app não tem nada que precise de internet. Tirar a permissão garante isso no sistema, não só no código.
 - **Keystore fora do repositório.** O APK da release é assinado no GitHub Actions com a keystore que fica nos secrets; `key.properties`, `*.jks` e `*.keystore` estão no `.gitignore`. Sem esses secrets (no CI de PR e no `flutter run`), o build usa a chave de debug.
 - **Dependabot** confere toda segunda os pacotes do `pub` e as Actions (`.github/dependabot.yml`). O `tflite_flutter` fica fora das atualizações automáticas, porque roda os modelos congelados e só troco testando no celular.
-
-## Riscos que eu aceitei
-
-- **HTTP sem criptografia no modo servidor.** Colocar HTTPS no backend Flask pede certificado pra um IP que muda, e o modo servidor é só uma ferramenta de desenvolvimento: o padrão é o reconhecimento no aparelho. Por isso ficou o aviso e a regra de rede local.
-- **`usesCleartextTraffic="true"` no Android pro app inteiro.** O `network_security_config` do Android só libera HTTP por domínio, não por faixa de IP ([documentação](https://developer.android.com/privacy-and-security/security-config)), e o IP do computador é diferente em cada rede. Quem limita o HTTP à rede local é a validação do endereço no app. O app não tem WebView nem outra biblioteca de rede, então o único HTTP que existe é o do modo servidor.
-- **Quem está na mesma rede consegue mandar áudio pro backend**, porque a API não tem senha. Ela só devolve o nome de um acorde e não guarda nada, então não tem o que vazar.

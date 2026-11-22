@@ -1,5 +1,4 @@
 import 'package:chordai/models/app_theme.dart';
-import 'package:chordai/models/chord_recognition_mode.dart';
 import 'package:chordai/screens/app_shell.dart';
 import 'package:chordai/screens/chord_detail_screen.dart';
 import 'package:chordai/screens/free_practice_screen.dart';
@@ -21,7 +20,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'test_helpers.dart';
 
@@ -302,20 +300,6 @@ void main() {
       expect(find.text('Endereço do servidor'), findsNothing);
       expect(find.text('Modelo no aparelho'), findsOneWidget);
     }, variant: _windows);
-
-    test('modo servidor salvo não vale no computador', () async {
-      SharedPreferences.setMockInitialValues({
-        'app_on_device_default_migrated': true,
-        'app_chord_recognition_mode': 'server',
-      });
-      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-      await appState.loadProgress();
-      expect(appState.chordRecognitionMode, ChordRecognitionMode.onDevice);
-      debugDefaultTargetPlatformOverride = TargetPlatform.android;
-      await appState.loadProgress();
-      expect(appState.chordRecognitionMode, ChordRecognitionMode.server);
-      debugDefaultTargetPlatformOverride = null;
-    });
   });
 
   group('cara do Windows 11', () {

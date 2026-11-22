@@ -14,23 +14,16 @@ import '../widgets/mic_lifecycle.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/metronome.dart';
 import '../widgets/page_parts.dart';
-import '../widgets/recognition_mode_badge.dart';
 import '../theme/ph.dart';
 import '../widgets/desktop_input.dart';
 
 class PracticeSessionScreen extends StatefulWidget {
-  final String serverUrl;
   final InputDevice? inputDevice;
 
   /// Só pros testes: um reconhecedor falso no lugar do microfone.
   final ChordRecognizer? recognizer;
 
-  const PracticeSessionScreen({
-    super.key,
-    required this.serverUrl,
-    this.inputDevice,
-    this.recognizer,
-  });
+  const PracticeSessionScreen({super.key, this.inputDevice, this.recognizer});
 
   @override
   State<PracticeSessionScreen> createState() => _PracticeSessionScreenState();
@@ -39,7 +32,7 @@ class PracticeSessionScreen extends StatefulWidget {
 class _PracticeSessionScreenState extends State<PracticeSessionScreen>
     with MicLifecycle {
   late final ChordRecognizer _service =
-      widget.recognizer ?? createChordRecognizer(appState.chordRecognitionMode);
+      widget.recognizer ?? createChordRecognizer();
   final _scoreLibrary = ScoreLibrary();
 
   List<Score> _scores = [];
@@ -87,7 +80,6 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen>
     _beatsInStep = 0;
 
     _service.start(
-      serverUrl: widget.serverUrl,
       onPrediction: (p) => appState.updatePrediction(p),
       onError: (error) {
         // Microfone bloqueado ou entrada desconectada (só no computador).
@@ -96,9 +88,7 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen>
           _showSnackBar(error.message);
           return;
         }
-        _showSnackBar(
-          chordRecognitionErrorMessage(appState.chordRecognitionMode),
-        );
+        _showSnackBar(chordRecognitionErrorMessage);
       },
     );
 
@@ -326,10 +316,6 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen>
                 ],
               ),
             ),
-          ),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: RecognitionModeBadge(),
           ),
         ],
       ),

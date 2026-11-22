@@ -14,12 +14,10 @@ import '../widgets/mic_lifecycle.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/listening_bars.dart';
 import '../widgets/page_parts.dart';
-import '../widgets/recognition_mode_badge.dart';
 import '../theme/ph.dart';
 import '../widgets/desktop_input.dart';
 
 class ChordPracticeScreen extends StatefulWidget {
-  final String serverUrl;
   final InputDevice? inputDevice;
 
   /// Só pros testes: um reconhecedor falso no lugar do microfone.
@@ -28,7 +26,6 @@ class ChordPracticeScreen extends StatefulWidget {
 
   const ChordPracticeScreen({
     super.key,
-    required this.serverUrl,
     required this.chord,
     this.inputDevice,
     this.recognizer,
@@ -41,7 +38,7 @@ class ChordPracticeScreen extends StatefulWidget {
 class _ChordPracticeScreenState extends State<ChordPracticeScreen>
     with MicLifecycle {
   late final ChordRecognizer _service =
-      widget.recognizer ?? createChordRecognizer(appState.chordRecognitionMode);
+      widget.recognizer ?? createChordRecognizer();
 
   bool _listening = false;
   int _hits = 0;
@@ -71,7 +68,6 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
     });
 
     _service.start(
-      serverUrl: widget.serverUrl,
       onPrediction: _handlePrediction,
       onError: (error) {
         // Microfone bloqueado ou entrada desconectada (só no computador).
@@ -80,9 +76,7 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
           _showSnackBar(error.message);
           return;
         }
-        _showSnackBar(
-          chordRecognitionErrorMessage(appState.chordRecognitionMode),
-        );
+        _showSnackBar(chordRecognitionErrorMessage);
       },
     );
   }
@@ -221,7 +215,7 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
           GroupedSection(
             footer: learned
                 ? 'Você já aprendeu este acorde. Treine o quanto quiser.'
-                : 'Acerte ${AppState.chordMasteryHits} vezes seguidas para marcar como aprendido.\nReconhecendo: ${recognitionModeLabel()}',
+                : 'Acerte ${AppState.chordMasteryHits} vezes seguidas para marcar como aprendido.',
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),

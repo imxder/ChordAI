@@ -27,8 +27,6 @@ no iPhone nem no Android: tudo passa por `isDesktop`, em `lib/theme/platform_sty
   o microfone assim que abre, e se ficasse montado o microfone ligaria junto com o app.
 - **"Entrada de áudio"** no pé da barra, porque no computador é comum trocar de microfone
   (interface, webcam, pedaleira). A lista também está em Perfil → Reconhecimento.
-- **Só o modelo no aparelho.** O computador roda o modelo sem esforço, então o modo servidor não
-  aparece. Se ele ficou salvo de antes, o computador ignora.
 - **Cabeçalho** com o título grande à esquerda e o botão de voltar, e a coluna de leitura com até 720
   px (no celular são 600).
 - **Duas colunas** onde ajuda:

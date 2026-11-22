@@ -57,8 +57,7 @@ class HomeScreen extends StatelessWidget {
         icon: Ph.earDuotone,
         title: 'Reconhecer acorde',
         detail: 'O app diz qual acorde ouviu',
-        onTap: () =>
-            _push(context, FreePracticeScreen(serverUrl: appState.serverUrl)),
+        onTap: () => _push(context, FreePracticeScreen()),
       ),
     ];
 
@@ -94,10 +93,7 @@ class HomeScreen extends StatelessWidget {
               '${appState.learnedChordCount} de ${appState.chordsInModel.length} aprendidos',
         ),
         _ChordMap(
-          onOpen: (chord) => _push(
-            context,
-            ChordDetailScreen(serverUrl: appState.serverUrl, chord: chord),
-          ),
+          onOpen: (chord) => _push(context, ChordDetailScreen(chord: chord)),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 10, 4, 0),

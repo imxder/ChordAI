@@ -1,17 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../config.dart';
 import '../models/app_theme.dart';
 import '../models/chord_difficulty.dart';
 import '../models/chord_model_info.dart';
 import '../models/chord_prediction.dart';
-import '../models/chord_recognition_mode.dart';
 import '../models/on_device_model.dart';
 import '../models/score.dart';
 import '../models/tuner_note.dart';
 import '../models/tuning_preset.dart';
-import '../theme/platform_style.dart';
 
 enum SessionStatus { idle, running, paused }
 
@@ -21,7 +18,6 @@ class AppState extends ChangeNotifier {
   static const _lastPracticeDateKey = 'app_last_practice_date';
   static const _selectedThemeKey = 'app_selected_theme';
   static const _learnedChordsKey = 'app_learned_chords';
-  static const _serverUrlKey = 'app_server_url';
   static const _hasOnboardedKey = 'app_has_onboarded';
   static const _tuningIdKey = 'app_tuning_id';
   static const _customTuningKey = 'app_custom_tuning';
@@ -32,8 +28,13 @@ class AppState extends ChangeNotifier {
   static const _appearanceKey = 'app_appearance';
   static const _profileNameKey = 'app_profile_name';
   static const _profileExperienceKey = 'app_profile_experience';
-  static const _chordRecognitionModeKey = 'app_chord_recognition_mode';
-  static const _onDeviceDefaultMigratedKey = 'app_on_device_default_migrated';
+  // Chaves do modo servidor, que saiu do app. Só servem pra apagar o que
+  // ficou salvo de versões antigas (o endereço era o IP do computador).
+  static const _oldServerKeys = [
+    'app_server_url',
+    'app_chord_recognition_mode',
+    'app_on_device_default_migrated',
+  ];
   static const _onDeviceModelKey = 'app_on_device_model';
   static const _playAlongWaitsKey = 'app_play_along_waits_for_me';
   static const _inputDeviceIdKey = 'app_input_device_id';
@@ -74,8 +75,6 @@ class AppState extends ChangeNotifier {
   String profileName = '';
   String? profileExperience;
 
-  String serverUrl = defaultServerUrl;
-  ChordRecognitionMode chordRecognitionMode = ChordRecognitionMode.onDevice;
   OnDeviceModel onDeviceModel = OnDeviceModel.v3;
   Set<String>? _modelChords;
   bool hasCompletedOnboarding = false;
@@ -107,15 +106,10 @@ class AppState extends ChangeNotifier {
     return chordsByDifficulty.where(chords.contains).toList();
   }
 
-  OnDeviceModel get _chordListModel =>
-      chordRecognitionMode == ChordRecognitionMode.server
-      ? OnDeviceModel.v3
-      : onDeviceModel;
-
   static final Map<OnDeviceModel, Set<String>> _chordsByModel = {};
 
   Future<void> _refreshModelChords() async {
-    final model = _chordListModel;
+    final model = onDeviceModel;
     _modelChords = _chordsByModel[model] ??= (await ChordModelInfo.load(
       model.assetDir,
     )).chords;
@@ -213,21 +207,6 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setServerUrl(String value) async {
-    serverUrl = value;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_serverUrlKey, value);
-    notifyListeners();
-  }
-
-  Future<void> setChordRecognitionMode(ChordRecognitionMode mode) async {
-    chordRecognitionMode = mode;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_chordRecognitionModeKey, mode.name);
-    await _refreshModelChords();
-    notifyListeners();
-  }
-
   Future<void> setOnDeviceModel(OnDeviceModel model) async {
     onDeviceModel = model;
     final prefs = await SharedPreferences.getInstance();
@@ -268,22 +247,9 @@ class AppState extends ChangeNotifier {
     learnedChords = (prefs.getStringList(_learnedChordsKey) ?? []).toSet();
     profileName = prefs.getString(_profileNameKey) ?? '';
     profileExperience = prefs.getString(_profileExperienceKey);
-    serverUrl = prefs.getString(_serverUrlKey) ?? defaultServerUrl;
-    if (!(prefs.getBool(_onDeviceDefaultMigratedKey) ?? false)) {
-      await prefs.setString(
-        _chordRecognitionModeKey,
-        ChordRecognitionMode.onDevice.name,
-      );
-      await prefs.setBool(_onDeviceDefaultMigratedKey, true);
+    for (final key in _oldServerKeys) {
+      if (prefs.containsKey(key)) await prefs.remove(key);
     }
-    final savedMode = prefs.getString(_chordRecognitionModeKey);
-    chordRecognitionMode = ChordRecognitionMode.values.firstWhere(
-      (m) => m.name == savedMode,
-      orElse: () => ChordRecognitionMode.onDevice,
-    );
-    // No computador só tem o modelo no aparelho (a tela nem mostra o modo
-    // servidor). O que estava salvo fica salvo, só não vale aqui.
-    if (isDesktop) chordRecognitionMode = ChordRecognitionMode.onDevice;
     final savedModel = prefs.getString(_onDeviceModelKey);
     onDeviceModel = OnDeviceModel.values.firstWhere(
       (m) => m.name == savedModel,

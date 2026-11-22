@@ -1,4 +1,3 @@
-import 'package:chordai/models/chord_recognition_mode.dart';
 import 'package:chordai/models/lyric_practice.dart';
 import 'package:chordai/models/lyric_sheet.dart';
 import 'package:chordai/models/score.dart';
@@ -97,18 +96,12 @@ Future<Resultado> simularTela(
   required LyricSheet cifra,
   required List<Tocado> Function(List<ChordStep> passos, int bpm) tocar,
   required ModeloFalso modelo,
-  bool servidor = false,
   bool esperarPorMim = false,
   int sobraMs = 12000,
 }) async {
   mockPlatform();
   await tester.runAsync(() => appState.loadProgress());
   await tester.runAsync(() => appState.setPlayAlongWaitsForMe(esperarPorMim));
-  await tester.runAsync(
-    () => appState.setChordRecognitionMode(
-      servidor ? ChordRecognitionMode.server : ChordRecognitionMode.onDevice,
-    ),
-  );
   setScreen(tester, const Size(500, 1200));
 
   final passos = buildLyricPracticeMap(cifra).score.steps;
@@ -120,14 +113,12 @@ Future<Resultado> simularTela(
     modelo: modelo,
     tocados: tocados,
     agora: agora,
-    servidor: servidor,
   );
 
   await tester.pumpWidget(
     appUnderTest(
       LyricPlayerScreen(
         sheet: cifra,
-        serverUrl: 'http://teste',
         recognizer: reconhecedor,
         elapsed: () => agora().difference(t0),
       ),

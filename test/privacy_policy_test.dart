@@ -35,7 +35,7 @@ void main() {
       'Quem cuida dos dados',
       'O que o app guarda no seu aparelho',
       'O microfone',
-      'O modo servidor',
+      'O app não usa a internet',
       'Compartilhamento com terceiros',
       'Por quanto tempo os dados ficam',
       'Seus direitos',
@@ -44,6 +44,8 @@ void main() {
       expect(titles, contains(expected));
     }
     expect(markdown, contains('não é gravado em arquivo e não é enviado'));
+    expect(markdown, contains('não faz nenhuma chamada de rede'));
+    expect(markdown, isNot(contains('HTTP')));
   });
 
   test('o PRIVACY.md vai junto no app', () {

@@ -71,7 +71,6 @@ class OnDeviceChordService implements ChordRecognizer {
 
   @override
   Future<void> start({
-    String? serverUrl,
     required void Function(ChordPrediction prediction) onPrediction,
     required void Function(Object error) onError,
   }) async {

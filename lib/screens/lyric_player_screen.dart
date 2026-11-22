@@ -8,7 +8,6 @@ import 'package:record/record.dart';
 import '../models/chord_for_model.dart';
 import '../models/chord_names.dart';
 import '../models/chord_prediction.dart';
-import '../models/chord_recognition_mode.dart';
 import '../models/lyric_practice.dart';
 import '../models/lyric_sheet.dart';
 import '../models/play_along_report.dart';
@@ -25,7 +24,6 @@ import '../widgets/cifra_line.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/practice_options_sheet.dart';
-import '../widgets/recognition_mode_badge.dart';
 import 'chord_practice_screen.dart';
 import 'lyric_sheet_screen.dart';
 import '../theme/ph.dart';
@@ -34,7 +32,6 @@ import '../theme/platform_style.dart';
 import '../widgets/desktop_input.dart';
 
 class LyricPlayerScreen extends StatefulWidget {
-  final String serverUrl;
   final InputDevice? inputDevice;
   final LyricSheet sheet;
   final ChordRecognizer? recognizer;
@@ -42,7 +39,6 @@ class LyricPlayerScreen extends StatefulWidget {
 
   const LyricPlayerScreen({
     super.key,
-    required this.serverUrl,
     required this.sheet,
     this.inputDevice,
     this.recognizer,
@@ -60,8 +56,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
   static const _tick = Duration(milliseconds: 30);
 
   late final ChordRecognizer _service =
-      widget.recognizer ??
-      createChordRecognizer(appState.chordRecognitionMode, rawReadings: true);
+      widget.recognizer ?? createChordRecognizer(rawReadings: true);
   final _scrollController = ScrollController();
   final Map<int, GlobalKey> _lineKeys = {};
   final _activeRowKey = GlobalKey();
@@ -133,7 +128,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
 
     appState.startSession(_practiceMap.score);
     TocarJuntoLog.evento(
-      'comecou ${widget.sheet.title} bpm=$_bpm passos=${_practiceMap.score.steps.length} modo=${appState.chordRecognitionMode.name} modelo=${appState.onDeviceModel.name} esperar=${appState.playAlongWaitsForMe}',
+      'comecou ${widget.sheet.title} bpm=$_bpm passos=${_practiceMap.score.steps.length} modelo=${appState.onDeviceModel.name} esperar=${appState.playAlongWaitsForMe}',
     );
     _lastEighth = -1;
     _finishedMessage = null;
@@ -150,8 +145,6 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
       mode: appState.playAlongWaitsForMe
           ? PlayAlongMode.waitForMe
           : PlayAlongMode.followTempo,
-      readingsToHitLongChord:
-          appState.chordRecognitionMode == ChordRecognitionMode.server ? 1 : 2,
     )..start();
     _engine = engine;
     _ticker?.cancel();
@@ -163,11 +156,8 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
 
   void _startListening() {
     _service.start(
-      serverUrl: widget.serverUrl,
       onPrediction: _onPrediction,
-      onError: (_) => _showSnackBar(
-        chordRecognitionErrorMessage(appState.chordRecognitionMode),
-      ),
+      onError: (_) => _showSnackBar(chordRecognitionErrorMessage),
     );
   }
 
@@ -383,7 +373,6 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => ChordPracticeScreen(
-                        serverUrl: widget.serverUrl,
                         inputDevice: widget.inputDevice,
                         chord: practiceChord,
                       ),
@@ -528,14 +517,14 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
               ? const EdgeInsets.fromLTRB(32, 12, 32, 24)
               : EdgeInsets.fromLTRB(padding.left, 12, padding.right, 24),
           children: [
-            Text(
-              [
-                if (widget.sheet.artist != null) widget.sheet.artist!,
-                if (meta.isNotEmpty) meta,
-                recognitionModeLabel(),
-              ].join(' · '),
-              style: textTheme.bodySmall,
-            ),
+            if (widget.sheet.artist != null || meta.isNotEmpty)
+              Text(
+                [
+                  if (widget.sheet.artist != null) widget.sheet.artist!,
+                  if (meta.isNotEmpty) meta,
+                ].join(' · '),
+                style: textTheme.bodySmall,
+              ),
             for (var si = 0; si < widget.sheet.sections.length; si++) ...[
               if (widget.sheet.sections[si].title != null)
                 SheetSectionLabel(widget.sheet.sections[si].title!),

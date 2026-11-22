@@ -147,7 +147,7 @@ class PreferencesSection extends StatelessWidget {
         GroupedRow(
           leading: const IconBadge(Ph.microphoneFill),
           title: 'Reconhecimento',
-          value: appState.chordRecognitionMode.label,
+          value: appState.onDeviceModel.label,
           onTap: () => Navigator.of(context)
               .push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
         ),
@@ -265,10 +265,7 @@ class _LearnedChordTile extends StatelessWidget {
           child: InkWell(
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => ChordDetailScreen(
-                  serverUrl: appState.serverUrl,
-                  chord: chord,
-                ),
+                builder: (_) => ChordDetailScreen(chord: chord),
               ),
             ),
             child: ConstrainedBox(

@@ -1,7 +1,7 @@
 import 'package:chordai/models/on_device_model.dart';
 import 'package:chordai/screens/free_practice_screen.dart';
 import 'package:chordai/screens/lyric_player_screen.dart';
-import 'package:chordai/screens/profile_screen.dart';
+import 'package:chordai/screens/recognition_settings_screen.dart';
 import 'package:chordai/screens/settings_screen.dart';
 import 'package:chordai/services/cifra_parser.dart';
 import 'package:chordai/services/on_device_chord_service.dart';
@@ -50,16 +50,16 @@ void main() {
     });
 
     testWidgets(
-      'Reconhecimento no perfil mostra o modelo e só a escolha dele',
+      'Reconhecimento nas configurações mostra o modelo e só a escolha dele',
       (tester) async {
         setScreen(tester, const Size(390, 1600));
-        await tester.pumpWidget(appUnderTest(const ProfileScreen()));
+        await tester.pumpWidget(appUnderTest(const SettingsScreen()));
         await tester.pump();
         expect(find.text('v3 + meu dataset'), findsOneWidget);
 
         await tester.tap(find.text('Reconhecimento'));
         await settle(tester);
-        expect(find.byType(SettingsScreen), findsOneWidget);
+        expect(find.byType(RecognitionSettingsScreen), findsOneWidget);
         expect(find.text('Modelo no aparelho'), findsOneWidget);
         expect(find.text('Servidor'), findsNothing);
         expect(find.byType(TextField), findsNothing);

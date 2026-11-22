@@ -179,7 +179,7 @@ void main() {
       for (final topic in guideTopics.take(4)) {
         final card = find
             .ancestor(
-              of: find.text(topic.title),
+              of: find.text(topic.cardTitle),
               matching: find.byType(PressScale),
             )
             .first;
@@ -188,5 +188,11 @@ void main() {
       expect(linhas, hasLength(1));
       expect(find.text(guideTopics[4].title), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
+  });
+
+  test('os títulos dos cards do início cabem em pouco espaço', () {
+    for (final topic in guideTopics.take(4)) {
+      expect(topic.cardTitle.length, lessThanOrEqualTo(20), reason: topic.id);
+    }
   });
 }

@@ -28,7 +28,7 @@ class SpaceToToggle extends StatelessWidget {
 }
 
 /// Cursor de mão em coisas clicáveis que não são botões do Material (as
-/// casinhas das cordas no afinador, as cores no Perfil). Os botões e as
+/// casinhas das cordas no afinador, as cores nas Configurações). Os botões e as
 /// linhas com InkWell já mostram a mão sozinhos.
 class ClickCursor extends StatelessWidget {
   final Widget child;

@@ -24,11 +24,7 @@ void main() {
     final state = AppState();
     await state.loadProgress();
 
-    expect(state.profileName, 'Alexandre');
-    expect(state.profileExperience, 'Iniciante');
     expect(state.learnedChords, {'Em', 'Am', 'C'});
-    expect(state.totalCorrectChords, 42);
-    expect(state.totalSessionsCompleted, 7);
     expect(state.selectedThemeIndex, 3);
     expect(state.onDeviceModel, OnDeviceModel.v3Meu);
 

@@ -2,8 +2,6 @@ import 'package:chordai/models/app_theme.dart';
 import 'package:chordai/screens/app_shell.dart';
 import 'package:chordai/screens/chord_detail_screen.dart';
 import 'package:chordai/screens/free_practice_screen.dart';
-import 'package:chordai/screens/profile_screen.dart';
-import 'package:chordai/screens/preferences_screen.dart';
 import 'package:chordai/screens/home_screen.dart';
 import 'package:chordai/screens/tuner_screen.dart';
 import 'package:chordai/screens/guide_list_screen.dart';
@@ -19,6 +17,7 @@ import 'package:chordai/widgets/page_parts.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:chordai/screens/recognition_settings_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'test_helpers.dart';
@@ -71,8 +70,7 @@ void main() {
         'Reconhecer acorde',
         'Guia do iniciante',
         'Músicas',
-        'Preferências',
-        'Perfil',
+        'Configurações',
       ]) {
         expect(_aba(aba), findsOneWidget);
       }
@@ -110,9 +108,9 @@ void main() {
       await tester.tap(_aba('Aprender acordes'));
       await settle(tester);
       expect(find.byType(ChordDetailScreen), findsOneWidget);
-      await tester.tap(_aba('Perfil'));
+      await tester.tap(_aba('Configurações'));
       await settle(tester);
-      expect(find.text('Seu nome'), findsOneWidget);
+      expect(find.text('Aparência'), findsOneWidget);
     }, variant: _windows);
 
     testWidgets('janela estreita recolhe a barra e o menu abre de novo', (
@@ -170,11 +168,12 @@ void main() {
 
     testWidgets('as abas se refazem quando o app muda', (tester) async {
       await _abrir(tester);
-      await tester.tap(_aba('Perfil'));
+      await tester.tap(_aba('Configurações'));
       await settle(tester);
-      await appState.setProfile(name: 'Alexandre');
+      expect(find.text('Papel'), findsOneWidget);
+      await appState.setAppearance(AppAppearance.white);
       await settle(tester);
-      expect(find.text('Alexandre'), findsOneWidget);
+      expect(find.text('Branco'), findsOneWidget);
     }, variant: _windows);
   });
 
@@ -295,7 +294,7 @@ void main() {
 
   group('reconhecimento no computador', () {
     testWidgets('só tem o modelo no aparelho', (tester) async {
-      await _abrir(tester, home: const SettingsScreen());
+      await _abrir(tester, home: const RecognitionSettingsScreen());
       expect(find.text('Reconhecimento de acordes'), findsNothing);
       expect(find.text('Endereço do servidor'), findsNothing);
       expect(find.text('Modelo no aparelho'), findsOneWidget);
@@ -531,38 +530,37 @@ void main() {
           greaterThan(tester.getTopLeft(_aba('Músicas')).dy + 100),
         );
         expect(
-          tester.getTopLeft(_aba('Preferências')).dy,
+          tester.getTopLeft(_aba('Configurações')).dy,
           greaterThan(entrada),
-        );
-        expect(
-          tester.getTopLeft(_aba('Perfil')).dy,
-          greaterThan(tester.getTopLeft(_aba('Preferências')).dy),
         );
       },
       variant: _windows,
     );
 
-    testWidgets('a engrenagem abre as preferências e o perfil fica sem elas', (
+    testWidgets('a engrenagem do pé da barra abre as configurações', (
       tester,
     ) async {
       await _abrir(tester);
-      await tester.tap(_aba('Preferências'));
+      await tester.tap(_aba('Configurações'));
       await settle(tester);
-      expect(find.byType(PreferencesScreen), findsOneWidget);
+      expect(find.byType(SettingsScreen), findsOneWidget);
       expect(find.text('Aparência'), findsOneWidget);
-      await tester.tap(_aba('Perfil'));
-      await settle(tester);
-      expect(find.text('Seu nome'), findsOneWidget);
-      expect(find.text('Aparência'), findsNothing);
+      expect(find.text('Seu nome'), findsNothing);
     }, variant: _windows);
 
-    testWidgets('no celular as preferências continuam no perfil', (
+    testWidgets('no Mac o item se chama Ajustes', (tester) async {
+      await _abrir(tester);
+      expect(_aba('Ajustes'), findsOneWidget);
+      expect(_aba('Configurações'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
+
+    testWidgets('no celular as configurações têm as preferências', (
       tester,
     ) async {
       await _abrir(
         tester,
         size: const Size(390, 844),
-        home: const ProfileScreen(),
+        home: const SettingsScreen(),
       );
       await tester.scrollUntilVisible(
         find.text('Aparência'),

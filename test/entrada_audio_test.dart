@@ -1,4 +1,4 @@
-import 'package:chordai/screens/settings_screen.dart';
+import 'package:chordai/screens/recognition_settings_screen.dart';
 import 'package:chordai/services/audio_input.dart';
 import 'package:chordai/state/app_state.dart';
 import 'package:flutter/foundation.dart';
@@ -85,7 +85,7 @@ void main() {
 
   group('tela Reconhecimento', () {
     testWidgets('no celular não mostra a entrada de áudio', (tester) async {
-      await tester.pumpWidget(appUnderTest(const SettingsScreen()));
+      await tester.pumpWidget(appUnderTest(const RecognitionSettingsScreen()));
       await settle(tester);
       expect(find.text('Entrada de áudio'), findsNothing);
       expect(_listou, 0);
@@ -96,7 +96,7 @@ void main() {
     ) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.windows;
       setScreen(tester, const Size(500, 1400));
-      await tester.pumpWidget(appUnderTest(const SettingsScreen()));
+      await tester.pumpWidget(appUnderTest(const RecognitionSettingsScreen()));
       await settle(tester);
 
       expect(find.text('Entrada de áudio'), findsOneWidget);

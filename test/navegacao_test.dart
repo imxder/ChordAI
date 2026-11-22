@@ -6,7 +6,6 @@ import 'package:chordai/screens/lyric_player_screen.dart';
 import 'package:chordai/screens/lyric_sheet_list_screen.dart';
 import 'package:chordai/screens/lyric_sheet_screen.dart';
 import 'package:chordai/screens/practice_session_screen.dart';
-import 'package:chordai/screens/profile_screen.dart';
 import 'package:chordai/services/chord_recognizer.dart';
 import 'package:chordai/services/chord_recognizer_factory.dart';
 import 'package:chordai/services/cifra_parser.dart';
@@ -62,15 +61,6 @@ void main() {
       await tester.tap(find.text('Tocar e testar'));
       await settle(tester);
       expect(find.byType(ChordPracticeScreen), findsOneWidget);
-    });
-
-    testWidgets('acorde do perfil abre o detalhe', (tester) async {
-      setScreen(tester, const Size(390, 1400));
-      await tester.pumpWidget(appUnderTest(const ProfileScreen()));
-      await settle(tester);
-      await tester.tap(find.bySemanticsLabel('Em, ainda não aprendido'));
-      await settle(tester);
-      expect(find.byType(ChordDetailScreen), findsOneWidget);
     });
 
     testWidgets('músicas abre as sequências de acordes', (tester) async {

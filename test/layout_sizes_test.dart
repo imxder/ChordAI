@@ -13,6 +13,7 @@ import 'package:chordai/screens/lyric_sheet_screen.dart';
 import 'package:chordai/screens/onboarding_screen.dart';
 import 'package:chordai/screens/practice_session_screen.dart';
 import 'package:chordai/screens/privacy_screen.dart';
+import 'package:chordai/screens/recognition_settings_screen.dart';
 import 'package:chordai/screens/settings_screen.dart';
 import 'package:chordai/screens/tuner_screen.dart';
 import 'package:chordai/screens/tuning_check_screen.dart';
@@ -35,7 +36,8 @@ final _screens = <String, Widget Function(LyricSheet sheet)>{
   'reconhecer': (_) => const FreePracticeScreen(),
   'afinador': (_) => const TunerScreen(),
   'afinação personalizada': (_) => const CustomTuningScreen(),
-  'servidor': (_) => const SettingsScreen(),
+  'reconhecimento': (_) => const RecognitionSettingsScreen(),
+  'ajustes': (_) => const SettingsScreen(),
   'guia': (_) => const GuideListScreen(),
   'guia detalhe': (_) => GuideDetailScreen(topic: guideTopicById('afinar')),
   'guia partes': (_) => GuideDetailScreen(topic: guideTopicById('partes')),
@@ -101,7 +103,7 @@ void main() {
         await tester.pumpWidget(appUnderTest(const AppShell()));
         await tester.pump(const Duration(milliseconds: 300));
 
-        for (final tab in ['Músicas', 'Acordes', 'Perfil']) {
+        for (final tab in ['Acordes', 'Reconhecer', 'Afinador']) {
           await tester.tap(
             find
                 .descendant(
@@ -164,8 +166,7 @@ void main() {
         'Reconhecer acorde',
         'Guia do iniciante',
         'Músicas',
-        'Preferências',
-        'Perfil',
+        'Configurações',
         'Início',
       ]) {
         await tester.tap(find.byKey(ValueKey('aba $tab')));

@@ -17,7 +17,7 @@ class DesktopDestination {
   final bool keepAlive;
 
   /// Verdadeiro pras abas que ficam no pé da barra, junto da entrada de
-  /// áudio (preferências e perfil).
+  /// áudio (configurações).
   final bool bottom;
 
   const DesktopDestination({

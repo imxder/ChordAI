@@ -10,11 +10,13 @@ import '../theme/glass_tokens.dart';
 import '../theme/platform_style.dart';
 import '../widgets/desktop_input.dart';
 import '../widgets/guitar_neck.dart';
+import '../widgets/listening_bars.dart';
 import '../widgets/page_parts.dart';
 import 'chord_detail_screen.dart';
 import 'free_practice_screen.dart';
 import 'guide_detail_screen.dart';
 import 'guide_list_screen.dart';
+import 'settings_screen.dart';
 import 'tuner_screen.dart';
 import '../theme/ph.dart';
 
@@ -64,21 +66,49 @@ class HomeScreen extends StatelessWidget {
     return IosPage(
       title: 'ChordAI',
       largeTitle: true,
+      titleAccessory: isDesktop
+          ? null
+          : ListeningBars(
+              color: Theme.of(context).colorScheme.primary,
+              level: const AlwaysStoppedAnimation(1.0),
+              size: 28,
+            ),
+      titleTrailing: isDesktop
+          ? null
+          : Semantics(
+              container: true,
+              button: true,
+              label: settingsTitle,
+              excludeSemantics: true,
+              child: CupertinoButton(
+                key: const ValueKey('abrir ajustes'),
+                padding: EdgeInsets.zero,
+                minimumSize: Size.square(useLiquidGlass ? 44 : 48),
+                onPressed: () => _push(context, const SettingsScreen()),
+                child: const Icon(Ph.gearSix, size: 28),
+              ),
+            ),
       children: [
         const SizedBox(height: 4),
-        for (var row = 0; row < tiles.length; row += 2) ...[
-          if (row > 0) const SizedBox(height: 12),
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(child: tiles[row]),
-                const SizedBox(width: 12),
-                Expanded(child: tiles[row + 1]),
-              ],
+        if (!isDesktop)
+          for (final tile in tiles.take(2)) ...[
+            tile.wide(),
+            const SizedBox(height: 12),
+          ]
+        else
+          for (var row = 0; row < tiles.length; row += 2) ...[
+            if (row > 0) const SizedBox(height: 12),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: tiles[row]),
+                  const SizedBox(width: 12),
+                  Expanded(child: tiles[row + 1]),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
         _HomeSectionHeader(
           title: 'Guia do iniciante',
           action: 'Ver tudo',
@@ -194,12 +224,17 @@ class _GuideCards extends StatelessWidget {
                     guideTopicIcons[topic.id] ?? Ph.bookOpenFill,
                     size: 34,
                   ),
-                  const Spacer(),
-                  Text(
-                    topic.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.titleSmall,
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Text(
+                        topic.cardTitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.titleSmall,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -212,7 +247,7 @@ class _GuideCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.textScalerOf(context).scale(110).clamp(110, 190);
+    final height = MediaQuery.textScalerOf(context).scale(132).clamp(132, 220);
     if (isDesktop) {
       return LayoutBuilder(
         builder: (context, constraints) {
@@ -366,13 +401,23 @@ class _HomeTile extends StatelessWidget {
   final String title;
   final String detail;
   final VoidCallback onTap;
+  final bool isWide;
 
   const _HomeTile({
     required this.icon,
     required this.title,
     required this.detail,
     required this.onTap,
+    this.isWide = false,
   });
+
+  _HomeTile wide() => _HomeTile(
+    icon: icon,
+    title: title,
+    detail: detail,
+    onTap: onTap,
+    isWide: true,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -390,35 +435,69 @@ class _HomeTile extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 140),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      shape: BoxShape.circle,
+            child: isWide
+                ? Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: DuotoneIcon(
+                              icon,
+                              size: 28,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(title, style: textTheme.titleLarge),
+                              const SizedBox(height: 2),
+                              Text(detail, style: textTheme.bodyMedium),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    child: Center(
-                      child: DuotoneIcon(
-                        icon,
-                        size: 22,
-                        color: colorScheme.primary,
-                      ),
+                  )
+                : Container(
+                    constraints: const BoxConstraints(minHeight: 140),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: DuotoneIcon(
+                              icon,
+                              size: 22,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        const SizedBox(height: 16),
+                        Text(title, style: textTheme.titleMedium),
+                        const SizedBox(height: 2),
+                        Text(detail, style: textTheme.bodySmall),
+                      ],
                     ),
                   ),
-                  const Spacer(),
-                  const SizedBox(height: 16),
-                  Text(title, style: textTheme.titleMedium),
-                  const SizedBox(height: 2),
-                  Text(detail, style: textTheme.bodySmall),
-                ],
-              ),
-            ),
           ),
         ),
       ),

@@ -22,6 +22,7 @@ enum GuideAction {
 class GuideTopic {
   final String id;
   final String title;
+  final String? shortTitle;
   final String summary;
   final GuideGroup group;
   final List<String> paragraphs;
@@ -34,6 +35,7 @@ class GuideTopic {
   const GuideTopic({
     required this.id,
     required this.title,
+    this.shortTitle,
     required this.summary,
     required this.group,
     required this.action,
@@ -42,6 +44,10 @@ class GuideTopic {
     this.highlight,
     this.sources = const [],
   });
+}
+
+extension GuideTopicCardTitle on GuideTopic {
+  String get cardTitle => shortTitle ?? title;
 }
 
 GuideTopic guideTopicById(String id) =>
@@ -83,6 +89,7 @@ const List<GuideTopic> guideTopics = [
   GuideTopic(
     id: 'afinar',
     title: 'Como afinar o violão',
+    shortTitle: 'Como afinar',
     summary: 'Afinação padrão, corda por corda',
     group: GuideGroup.beforePlaying,
     action: GuideAction.tuner,
@@ -105,6 +112,7 @@ const List<GuideTopic> guideTopics = [
   GuideTopic(
     id: 'diagrama',
     title: 'Como ler o diagrama do acorde',
+    shortTitle: 'Ler o diagrama',
     summary: 'O desenho que mostra onde apertar',
     group: GuideGroup.firstChords,
     action: GuideAction.chords,
@@ -128,6 +136,7 @@ const List<GuideTopic> guideTopics = [
   GuideTopic(
     id: 'primeiro_acorde',
     title: 'Seu primeiro acorde: Em',
+    shortTitle: 'Primeiro acorde: Em',
     summary: 'Mi menor, com dois dedos',
     group: GuideGroup.firstChords,
     action: GuideAction.practiceEm,

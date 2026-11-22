@@ -13,12 +13,10 @@ import '../models/tuning_preset.dart';
 enum SessionStatus { idle, running, paused }
 
 class AppState extends ChangeNotifier {
-  static const _totalCorrectKey = 'app_total_correct';
-  static const _totalSessionsKey = 'app_total_sessions';
-  static const _lastPracticeDateKey = 'app_last_practice_date';
   static const _selectedThemeKey = 'app_selected_theme';
   static const _learnedChordsKey = 'app_learned_chords';
   static const _hasOnboardedKey = 'app_has_onboarded';
+  static const _alwaysOnboardingKey = 'app_always_onboarding';
   static const _tuningIdKey = 'app_tuning_id';
   static const _customTuningKey = 'app_custom_tuning';
   static const _lyricFontScaleKey = 'app_lyric_font_scale';
@@ -26,9 +24,7 @@ class AppState extends ChangeNotifier {
   static const _showGuitarNeckKey = 'app_show_guitar_neck';
   static const _autoScrollKey = 'app_auto_scroll';
   static const _appearanceKey = 'app_appearance';
-  static const _profileNameKey = 'app_profile_name';
   static const _guideReadKey = 'app_guide_read';
-  static const _profileExperienceKey = 'app_profile_experience';
   // Chaves do modo servidor, que saiu do app. Só servem pra apagar o que
   // ficou salvo de versões antigas (o endereço era o IP do computador).
   static const _oldServerKeys = [
@@ -42,6 +38,11 @@ class AppState extends ChangeNotifier {
 
   // Quem instalou uma versão antiga ainda tem esses dados salvos no aparelho.
   static const _removedKeys = [
+    'app_total_correct',
+    'app_total_sessions',
+    'app_last_practice_date',
+    'app_profile_name',
+    'app_profile_experience',
     'app_xp',
     'app_coins',
     'app_correct_chords',
@@ -64,10 +65,6 @@ class AppState extends ChangeNotifier {
   int sessionHits = 0;
   int sessionMisses = 0;
 
-  int totalCorrectChords = 0;
-  int totalSessionsCompleted = 0;
-  String? lastPracticeDateIso;
-
   int selectedThemeIndex = 0;
   AppAppearance appearance = AppAppearance.paper;
 
@@ -75,12 +72,11 @@ class AppState extends ChangeNotifier {
 
   Set<String> readGuideTopics = {};
 
-  String profileName = '';
-  String? profileExperience;
-
   OnDeviceModel onDeviceModel = OnDeviceModel.v3;
   Set<String>? _modelChords;
   bool hasCompletedOnboarding = false;
+  bool alwaysShowOnboarding = false;
+  bool showOnboardingAtLaunch = true;
   String tuningId = 'padrao';
   List<String>? customTuningNotes;
 
@@ -190,21 +186,16 @@ class AppState extends ChangeNotifier {
     await prefs.setString(_appearanceKey, value.name);
   }
 
-  Future<void> setProfile({required String name, String? experience}) async {
-    profileName = name.trim();
-    profileExperience = experience;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_profileNameKey, profileName);
-    if (experience == null) {
-      await prefs.remove(_profileExperienceKey);
-    } else {
-      await prefs.setString(_profileExperienceKey, experience);
-    }
+  Future<void> setAlwaysShowOnboarding(bool value) async {
+    alwaysShowOnboarding = value;
     notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_alwaysOnboardingKey, value);
   }
 
   Future<void> completeOnboarding() async {
     hasCompletedOnboarding = true;
+    showOnboardingAtLaunch = false;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_hasOnboardedKey, true);
     notifyListeners();
@@ -226,7 +217,6 @@ class AppState extends ChangeNotifier {
 
   bool isChordLearned(String chord) => learnedChords.contains(chord);
 
-  /// Retorna true só na vez em que o acorde passa a contar como aprendido.
   Future<void> markGuideTopicRead(String id) async {
     if (!readGuideTopics.add(id)) return;
     notifyListeners();
@@ -234,11 +224,11 @@ class AppState extends ChangeNotifier {
     await prefs.setStringList(_guideReadKey, readGuideTopics.toList());
   }
 
+  /// Retorna true só na vez em que o acorde passa a contar como aprendido.
   bool registerChordHits(String chord, int consecutiveHits) {
     if (learnedChords.contains(chord)) return false;
     if (consecutiveHits < chordMasteryHits) return false;
     learnedChords.add(chord);
-    _markPracticedToday();
     _saveProgress();
     notifyListeners();
     return true;
@@ -249,15 +239,10 @@ class AppState extends ChangeNotifier {
     for (final key in _removedKeys) {
       await prefs.remove(key);
     }
-    totalCorrectChords = prefs.getInt(_totalCorrectKey) ?? 0;
-    totalSessionsCompleted = prefs.getInt(_totalSessionsKey) ?? 0;
-    lastPracticeDateIso = prefs.getString(_lastPracticeDateKey);
     final savedTheme = prefs.getInt(_selectedThemeKey) ?? 0;
     selectedThemeIndex = savedTheme < appThemeOptions.length ? savedTheme : 0;
     learnedChords = (prefs.getStringList(_learnedChordsKey) ?? []).toSet();
     readGuideTopics = (prefs.getStringList(_guideReadKey) ?? []).toSet();
-    profileName = prefs.getString(_profileNameKey) ?? '';
-    profileExperience = prefs.getString(_profileExperienceKey);
     for (final key in _oldServerKeys) {
       if (prefs.containsKey(key)) await prefs.remove(key);
     }
@@ -268,6 +253,8 @@ class AppState extends ChangeNotifier {
     );
     await _refreshModelChords();
     hasCompletedOnboarding = prefs.getBool(_hasOnboardedKey) ?? false;
+    alwaysShowOnboarding = prefs.getBool(_alwaysOnboardingKey) ?? false;
+    showOnboardingAtLaunch = !hasCompletedOnboarding || alwaysShowOnboarding;
     tuningId = prefs.getString(_tuningIdKey) ?? 'padrao';
     customTuningNotes = prefs.getStringList(_customTuningKey);
     lyricFontScale = prefs.getDouble(_lyricFontScaleKey) ?? 1.0;
@@ -286,11 +273,6 @@ class AppState extends ChangeNotifier {
 
   Future<void> _saveProgress() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_totalCorrectKey, totalCorrectChords);
-    await prefs.setInt(_totalSessionsKey, totalSessionsCompleted);
-    if (lastPracticeDateIso != null) {
-      await prefs.setString(_lastPracticeDateKey, lastPracticeDateIso!);
-    }
     await prefs.setInt(_selectedThemeKey, selectedThemeIndex);
     await prefs.setStringList(_learnedChordsKey, learnedChords.toList());
   }
@@ -358,7 +340,6 @@ class AppState extends ChangeNotifier {
   void recordChordResult({required bool hit}) {
     if (hit) {
       sessionHits++;
-      totalCorrectChords++;
     } else {
       sessionMisses++;
     }
@@ -374,7 +355,6 @@ class AppState extends ChangeNotifier {
   void advanceStep({required bool matched}) {
     if (matched) {
       sessionHits++;
-      totalCorrectChords++;
     } else {
       sessionMisses++;
     }
@@ -390,22 +370,8 @@ class AppState extends ChangeNotifier {
       _saveProgress();
       notifyListeners();
     } else {
-      totalSessionsCompleted++;
-      _markPracticedToday();
-      _saveProgress();
       stopSession();
     }
-  }
-
-  void _markPracticedToday() {
-    lastPracticeDateIso = _dateOnlyIso(DateTime.now());
-  }
-
-  String _dateOnlyIso(DateTime d) {
-    final y = d.year.toString().padLeft(4, '0');
-    final m = d.month.toString().padLeft(2, '0');
-    final day = d.day.toString().padLeft(2, '0');
-    return '$y-$m-$day';
   }
 }
 

@@ -81,9 +81,9 @@ class ChordAIApp extends StatelessWidget {
               ),
             );
           },
-          home: appState.hasCompletedOnboarding
-              ? const AppShell()
-              : const OnboardingScreen(),
+          home: appState.showOnboardingAtLaunch
+              ? const OnboardingScreen()
+              : const AppShell(),
         );
       },
     );

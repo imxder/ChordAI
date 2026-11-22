@@ -1,47 +1,202 @@
 import 'package:flutter/material.dart';
 
-import '../models/on_device_model.dart';
-import '../services/audio_input.dart';
+import '../models/app_theme.dart';
 import '../state/app_state.dart';
-import '../widgets/audio_input_section.dart';
+import '../theme/platform_style.dart';
+import '../widgets/desktop_input.dart';
 import '../widgets/page_parts.dart';
+import '../widgets/practice_options_sheet.dart';
+import 'privacy_screen.dart';
+import 'recognition_settings_screen.dart';
+import 'tuning_select_sheet.dart';
+import '../theme/ph.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
-
-  @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  Future<void> _selectModel(OnDeviceModel model) async {
-    await appState.setOnDeviceModel(model);
-    setState(() {});
-  }
 
   @override
   Widget build(BuildContext context) {
     return IosPage(
-      title: 'Reconhecimento',
+      title: settingsTitle,
+      largeTitle: true,
+      children: const [PreferencesSection(showHeader: false, top: 8)],
+    );
+  }
+}
+
+class PreferencesSection extends StatelessWidget {
+  final bool showHeader;
+  final double top;
+
+  const PreferencesSection({super.key, this.showHeader = true, this.top = 24});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: appState,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        _preferences(context),
         GroupedSection(
-          top: 8,
-          header: 'Modelo no aparelho',
+          header: 'Apresentação',
           footer:
-              'O v3 + meu dataset mostra menos acorde quando não tem acorde '
-              'sendo tocado (cordas abafadas, tarraxa, fala).',
+              'Ligado, a apresentação do app aparece toda vez que ele abre. '
+              'Desligado, ela só aparece na primeira vez.',
           children: [
-            for (final option in OnDeviceModel.values)
-              CheckRow(
-                title: option.label,
-                subtitle: option.description,
-                selected: appState.onDeviceModel == option,
-                onTap: () => _selectModel(option),
-              ),
+            SwitchRow(
+              key: const ValueKey('apresentação ao abrir'),
+              title: 'Mostrar ao abrir o app',
+              value: appState.alwaysShowOnboarding,
+              onChanged: appState.setAlwaysShowOnboarding,
+            ),
           ],
         ),
-        if (canChooseAudioInput) const AudioInputSection(),
       ],
     );
   }
+
+  Widget _preferences(BuildContext context) {
+    return GroupedSection(
+      header: showHeader ? 'Preferências' : null,
+      top: top,
+      dividerIndent: 58,
+      children: [
+        GroupedRow(
+          leading: const IconBadge(Ph.circleHalfFill),
+          title: 'Aparência',
+          value: appState.appearance.label,
+          onTap: () => showAppearanceSheet(context),
+        ),
+        GroupedRow(
+          leading: const IconBadge(Ph.paletteFill),
+          title: 'Cor do app',
+          trailing: _ThemePicker(selectedIndex: appState.selectedThemeIndex),
+        ),
+        GroupedRow(
+          leading: const IconBadge(Ph.gaugeFill),
+          title: 'Afinação',
+          value: appState.activeTuningName,
+          onTap: () => showTuningSelectSheet(context),
+        ),
+        GroupedRow(
+          leading: const IconBadge(Ph.textAa),
+          title: 'Leitura das cifras',
+          onTap: () => showPracticeOptionsSheet(context),
+        ),
+        GroupedRow(
+          leading: const IconBadge(Ph.microphoneFill),
+          title: 'Reconhecimento',
+          value: appState.onDeviceModel.label,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const RecognitionSettingsScreen(),
+            ),
+          ),
+        ),
+        GroupedRow(
+          leading: const IconBadge(Ph.shieldCheckFill),
+          title: 'Privacidade',
+          onTap: () => Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => const PrivacyScreen())),
+        ),
+      ],
+    );
+  }
+}
+
+class _ThemePicker extends StatelessWidget {
+  final int selectedIndex;
+
+  const _ThemePicker({required this.selectedIndex});
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < appThemeOptions.length; i++)
+          Semantics(
+            selected: selectedIndex == i,
+            button: true,
+            label: 'Cor ${appThemeOptions[i].name}',
+            excludeSemantics: true,
+            child: ClickCursor(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => appState.selectTheme(i),
+                child: SizedBox(
+                  width: 40,
+                  height: 44,
+                  child: Center(
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: selectedIndex == i
+                              ? onSurface
+                              : Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: dark
+                              ? appThemeOptions[i].darkColor
+                              : appThemeOptions[i].color,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+Future<void> showAppearanceSheet(BuildContext context) {
+  return showGlassSheet(
+    context,
+    size: 0.6,
+    builder: (sheetContext) => SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: ListenableBuilder(
+          listenable: appState,
+          builder: (context, _) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SheetHeader(title: 'Aparência'),
+              GroupedSection(
+                top: 8,
+                children: [
+                  for (final option in AppAppearance.values)
+                    CheckRow(
+                      title: option.label,
+                      subtitle: option.description,
+                      selected: appState.appearance == option,
+                      onTap: () => appState.setAppearance(option),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }

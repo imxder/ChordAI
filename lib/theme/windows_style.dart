@@ -57,7 +57,7 @@ const _window = MethodChannel('chordai/window');
 /// Pinta a barra de título da janela (a faixa com o X) com a cor da barra
 /// lateral, pra a janela parecer uma peça só. Quem pinta é o runner em C++
 /// (windows/runner/flutter_window.cpp), porque o Flutter não desenha essa
-/// barra. Muda junto quando a pessoa troca a aparência no Perfil.
+/// barra. Muda junto quando a pessoa troca a aparência nas Configurações.
 class WindowsTitleBarColor extends StatefulWidget {
   final Widget child;
 

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:record/record.dart';
 
 import '../models/chord_prediction.dart';
+import '../models/chord_repeat_gate.dart';
 import '../services/audio_input.dart';
 import '../services/chord_recognizer.dart';
 import '../services/on_device_chord_service.dart';
@@ -40,6 +41,7 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
   late final ChordRecognizer _service =
       widget.recognizer ?? createChordRecognizer();
 
+  late final _gate = ChordRepeatGate(widget.chord);
   bool _listening = false;
   int _hits = 0;
   ChordMatchState _matchState = ChordMatchState.neutral;
@@ -60,6 +62,7 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
       return;
     }
 
+    _gate.reset();
     setState(() {
       _listening = true;
       _hits = 0;
@@ -99,35 +102,40 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
   void _handlePrediction(ChordPrediction prediction) {
     if (!mounted) return;
 
-    if (prediction.status == 'silence' || prediction.status == 'too_short') {
-      setState(() => _statusMessage = 'Ouvindo');
-      return;
-    }
-
-    if (prediction.status != 'ok') {
-      setState(() => _statusMessage = prediction.message ?? 'Ouvindo');
-      return;
-    }
-
-    final matched =
-        prediction.chord?.toLowerCase() == widget.chord.toLowerCase();
-
-    setState(() {
-      if (matched) {
-        _hits++;
-        _matchState = ChordMatchState.correct;
-        _statusMessage = 'Certo';
-      } else {
-        _hits = 0;
-        _matchState = ChordMatchState.incorrect;
-        _statusMessage = 'Ouvi ${prediction.chord}. Tente de novo';
-      }
-    });
-
-    if (matched) HapticFeedback.lightImpact();
-    if (matched && appState.registerChordHits(widget.chord, _hits)) {
-      HapticFeedback.mediumImpact();
-      _showSnackBar('${widget.chord} entrou nos seus acordes aprendidos');
+    switch (_gate.process(prediction)) {
+      case ChordRepeatEvent.hit:
+        setState(() {
+          _hits++;
+          _matchState = ChordMatchState.correct;
+          _statusMessage = 'Certo! Abafe as cordas e toque de novo';
+        });
+        HapticFeedback.lightImpact();
+        if (appState.registerChordHits(widget.chord, _hits)) {
+          HapticFeedback.mediumImpact();
+          _showSnackBar('${widget.chord} entrou nos seus acordes aprendidos');
+        }
+      case ChordRepeatEvent.stillRinging:
+        return;
+      case ChordRepeatEvent.released:
+        setState(() {
+          _matchState = ChordMatchState.neutral;
+          _statusMessage = 'Agora toque de novo';
+        });
+      case ChordRepeatEvent.miss:
+        setState(() {
+          _hits = 0;
+          _matchState = ChordMatchState.incorrect;
+          _statusMessage = 'Ouvi ${prediction.chord}. Tente de novo';
+        });
+      case ChordRepeatEvent.none:
+        if (prediction.status == 'silence' ||
+            prediction.status == 'too_short') {
+          if (_matchState == ChordMatchState.incorrect) {
+            setState(() => _statusMessage = 'Ouvindo');
+          }
+          return;
+        }
+        setState(() => _statusMessage = prediction.message ?? 'Ouvindo');
     }
   }
 

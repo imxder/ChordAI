@@ -3,6 +3,7 @@ import FlutterMacOS
 
 class MainFlutterWindow: NSWindow {
   static let titleBarHeight: CGFloat = 28
+  private var menuChannel: FlutterMethodChannel?
 
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
@@ -49,9 +50,16 @@ class MainFlutterWindow: NSWindow {
       }
     }
 
+    menuChannel = FlutterMethodChannel(
+      name: "chordai/menu", binaryMessenger: flutterViewController.engine.binaryMessenger)
+
     RegisterGeneratedPlugins(registry: flutterViewController)
 
     super.awakeFromNib()
+  }
+
+  @IBAction func abrirAjustes(_ sender: Any?) {
+    menuChannel?.invokeMethod("abrirAjustes", arguments: nil)
   }
 }
 

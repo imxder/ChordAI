@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:chordai/models/privacy_policy.dart';
 import 'package:chordai/screens/onboarding_screen.dart';
 import 'package:chordai/screens/privacy_screen.dart';
-import 'package:chordai/screens/profile_screen.dart';
+import 'package:chordai/screens/settings_screen.dart';
 import 'package:chordai/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -73,11 +73,13 @@ void main() {
     }
   });
 
-  testWidgets('a linha Privacidade do perfil abre a política', (tester) async {
+  testWidgets('a linha Privacidade das configurações abre a política', (
+    tester,
+  ) async {
     mockPlatform();
     await appState.loadProgress();
     setScreen(tester, const Size(400, 1800));
-    await tester.pumpWidget(appUnderTest(const ProfileScreen()));
+    await tester.pumpWidget(appUnderTest(const SettingsScreen()));
     await tester.pump();
     await tester.tap(find.text('Privacidade'));
     await tester.pumpAndSettle();

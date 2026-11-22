@@ -15,7 +15,7 @@ void main() {
     await appState.loadProgress();
   });
 
-  testWidgets('início mostra os quatro atalhos, o guia e os acordes', (
+  testWidgets('início mostra os dois atalhos, o guia e os acordes', (
     tester,
   ) async {
     setScreen(tester, const Size(390, 1400));
@@ -24,10 +24,9 @@ void main() {
 
     expect(find.text('Aprender acordes'), findsOneWidget);
     expect(find.text('Tocar músicas'), findsOneWidget);
-    expect(find.text('Afinador'), findsOneWidget);
-    expect(find.text('Reconhecer acorde'), findsOneWidget);
+    expect(find.text('Reconhecer acorde'), findsNothing);
     expect(find.text('Guia do iniciante'), findsOneWidget);
-    expect(find.text('Acessórios essenciais'), findsOneWidget);
+    expect(find.text('Partes do violão'), findsOneWidget);
     expect(find.text('Seus acordes'), findsOneWidget);
     expect(find.text('0 de 8 aprendidos'), findsOneWidget);
     final guide = tester.getTopLeft(find.text('Guia do iniciante')).dy;
@@ -64,9 +63,9 @@ void main() {
     await tester.pumpWidget(appUnderTest(const AppShell()));
     await settle(tester);
 
-    await tester.tap(find.text('Perfil'));
+    await tester.tap(find.text('Reconhecer'));
     await settle(tester);
-    expect(find.text('Seu nome'), findsOneWidget);
+    expect(find.text('Reconhecer acorde'), findsWidgets);
     expect(find.byType(BackButton), findsNothing);
 
     await tester.tap(find.text('Acordes').last);
@@ -80,7 +79,9 @@ void main() {
   testWidgets('não sobrou nada da gamificação', (tester) async {
     await tester.pumpWidget(appUnderTest(const AppShell()));
     await settle(tester);
-    await tester.tap(find.text('Perfil'));
+    await tester.tap(
+      find.byKey(const ValueKey('abrir ajustes')).hitTestable().first,
+    );
     await settle(tester);
 
     for (final word in [
@@ -120,7 +121,7 @@ void main() {
     await tester.pumpWidget(appUnderTest(const AppShell()));
     await settle(tester);
 
-    await tester.tap(find.text('Acessórios essenciais'));
+    await tester.tap(find.text('Partes do violão'));
     await settle(tester);
     expect(find.byType(GuideDetailScreen), findsOneWidget);
 

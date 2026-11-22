@@ -17,10 +17,11 @@ Só isso. O app de release não pede internet em nenhuma plataforma:
 
 ## O que fica salvo
 
-- No `shared_preferences`: o perfil (nome e experiência), o progresso, as preferências e as músicas que eu crio. Nada disso sai do aparelho.
+- No `shared_preferences`: os acordes aprendidos, os tópicos do guia já abertos, as preferências e as músicas que eu crio. Nada disso sai do aparelho, e nada disso é dado pessoal.
+- O app não guarda mais nome nem experiência com violão, nem os números de prática (acordes certos, treinos concluídos e último treino). Na primeira vez que abre depois de atualizar, ele apaga essas chaves (`app_profile_name`, `app_profile_experience`, `app_total_correct`, `app_total_sessions` e `app_last_practice_date`, na lista `_removedKeys` de `lib/state/app_state.dart`).
 - O áudio não fica salvo: ele só existe na memória enquanto o modelo analisa a janela de 1,5 s.
 - Na primeira vez que o app abre depois de tirar o modo servidor, ele apaga as chaves antigas desse modo (`app_server_url`, `app_chord_recognition_mode` e `app_on_device_default_migrated`, em `lib/state/app_state.dart`). A `app_server_url` guardava o IP do computador. O resto fica como estava.
-- Nenhum áudio ou nome do perfil vai pra `print` ou log, e a mensagem de erro do reconhecimento é fixa (`chordRecognitionErrorMessage`).
+- Nenhum áudio vai pra `print` ou log, e a mensagem de erro do reconhecimento é fixa (`chordRecognitionErrorMessage`).
 
 ## Decisões
 

@@ -1,5 +1,10 @@
 import 'package:flutter/foundation.dart';
 
+String get settingsTitle => switch (defaultTargetPlatform) {
+  TargetPlatform.iOS || TargetPlatform.macOS => 'Ajustes',
+  _ => 'Configurações',
+};
+
 bool get useLiquidGlass =>
     defaultTargetPlatform == TargetPlatform.iOS ||
     defaultTargetPlatform == TargetPlatform.macOS;

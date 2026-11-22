@@ -8,8 +8,7 @@ import 'free_practice_screen.dart';
 import 'guide_list_screen.dart';
 import 'home_screen.dart';
 import 'lyric_sheet_list_screen.dart';
-import 'preferences_screen.dart';
-import 'profile_screen.dart';
+import 'settings_screen.dart';
 import 'tuner_screen.dart';
 import '../theme/ph.dart';
 import '../theme/platform_style.dart';
@@ -29,8 +28,9 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  static const _songsTab = 1;
-  static const _chordsTab = 2;
+  static const _chordsTab = 1;
+  static const _recognizeTab = 2;
+  static const _tunerTab = 3;
 
   static const _tabs = [
     GlassTab(
@@ -39,26 +39,23 @@ class _AppShellState extends State<AppShell> {
       label: 'Início',
     ),
     GlassTab(
-      icon: Icon(Ph.musicNotes),
-      activeIcon: Icon(Ph.musicNotesFill),
-      label: 'Músicas',
-    ),
-    GlassTab(
       icon: Icon(Ph.squaresFour),
       activeIcon: Icon(Ph.squaresFourFill),
       label: 'Acordes',
     ),
     GlassTab(
-      icon: Icon(Ph.userCircle),
-      activeIcon: Icon(Ph.userCircleFill),
-      label: 'Perfil',
+      icon: Icon(Ph.ear),
+      activeIcon: Icon(Ph.earFill),
+      label: 'Reconhecer',
+    ),
+    GlassTab(
+      icon: Icon(Ph.gauge),
+      activeIcon: Icon(Ph.gaugeFill),
+      label: 'Afinador',
     ),
   ];
 
-  // No computador a barra lateral tem as abas do celular e também o que no
-  // celular fica nos cards do Início. Preferências e Perfil vão pro pé da
-  // barra, junto da entrada de áudio.
-  static const _desktopTabs = [
+  static List<DesktopDestination> get _desktopTabs => [
     DesktopDestination(
       icon: Ph.house,
       selectedIcon: Ph.houseFill,
@@ -95,20 +92,35 @@ class _AppShellState extends State<AppShell> {
     DesktopDestination(
       icon: Ph.gearSix,
       selectedIcon: Ph.gearSixFill,
-      label: 'Preferências',
-      bottom: true,
-    ),
-    DesktopDestination(
-      icon: Ph.userCircle,
-      selectedIcon: Ph.userCircleFill,
-      label: 'Perfil',
+      label: settingsTitle,
       bottom: true,
     ),
   ];
   static const _desktopChordsTab = 2;
   static const _desktopSongsTab = 5;
+  static const _desktopSettingsTab = 6;
 
   int _index = 0;
+
+  static const _macMenu = MethodChannel('chordai/menu');
+
+  @override
+  void initState() {
+    super.initState();
+    if (desktopLook == DesktopLook.mac) {
+      _macMenu.setMethodCallHandler((call) async {
+        if (call.method == 'abrirAjustes' && mounted) {
+          _select(_desktopSettingsTab);
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    if (desktopLook == DesktopLook.mac) _macMenu.setMethodCallHandler(null);
+    super.dispose();
+  }
 
   void _select(int index) => setState(() => _index = index);
 
@@ -117,14 +129,28 @@ class _AppShellState extends State<AppShell> {
     _select(index);
   }
 
+  void _openSongs() {
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const LyricSheetListScreen()));
+  }
+
   List<Widget> _pages() => [
     HomeScreen(
-      onOpenChords: () => _select(isDesktop ? _desktopChordsTab : _chordsTab),
-      onOpenSongs: () => _select(isDesktop ? _desktopSongsTab : _songsTab),
+      onOpenChords: () => _select(_desktopChordsTab),
+      onOpenSongs: () => _select(_desktopSongsTab),
     ),
     LyricSheetListScreen(),
     ChordListScreen(),
-    const ProfileScreen(),
+  ];
+
+  List<Widget> _mobilePages() => [
+    HomeScreen(
+      onOpenChords: () => _select(_chordsTab),
+      onOpenSongs: _openSongs,
+    ),
+    ChordListScreen(),
+    if (_index == _recognizeTab) FreePracticeScreen() else const SizedBox(),
+    if (_index == _tunerTab) const TunerScreen() else const SizedBox(),
   ];
 
   @override
@@ -149,8 +175,7 @@ class _AppShellState extends State<AppShell> {
           (_) => FreePracticeScreen(),
           (_) => const GuideListScreen(),
           (_) => _pages()[1],
-          (_) => const PreferencesScreen(),
-          (_) => _pages()[3],
+          (_) => const SettingsScreen(),
         ],
         rebuildOn: appState,
         selectedIndex: _index,
@@ -168,7 +193,7 @@ class _AppShellState extends State<AppShell> {
         body: ListenableBuilder(
           listenable: appState,
           builder: (context, _) =>
-              IndexedStack(index: _index, children: _pages()),
+              IndexedStack(index: _index, children: _mobilePages()),
         ),
         bottomNavigationBar: useLiquidGlass
             ? GlassTabBar.bottom(

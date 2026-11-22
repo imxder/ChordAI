@@ -5,7 +5,7 @@ import '../state/app_state.dart';
 import 'page_parts.dart';
 
 /// Lista das entradas de áudio conectadas, com "Padrão do sistema" em
-/// cima. Aparece em Perfil → Reconhecimento e no diálogo "Entrada de áudio"
+/// cima. Aparece em Configurações → Reconhecimento e no diálogo "Entrada de áudio"
 /// do menu lateral (só no Windows e no Mac, ver canChooseAudioInput).
 class AudioInputSection extends StatefulWidget {
   final double top;

@@ -73,20 +73,19 @@ conhece o A. Os nomes vêm de `assets/models/*/labels.json`.
 
 - [ ] Na aba Acordes, abro um acorde e toco em "Tocar e testar".
 - [ ] Toco em Começar e faço o acorde: o contador de acertos seguidos sobe.
-- [ ] Com 3 acertos seguidos o acorde fica marcado como aprendido, na lista e no Perfil.
+- [ ] Com 3 acertos seguidos o acorde fica marcado como aprendido, na lista e em "Seus acordes", na tela inicial.
 - [ ] Fazendo outro acorde, aparece "Ouvi X. Tente de novo" e o contador zera.
 
 ## 7. Sequências
 
-- [ ] Na aba Músicas, abro Sequências de acordes.
+- [ ] Na tela inicial, toco em Tocar músicas e abro Sequências de acordes.
 - [ ] Escolho uma sequência, ajusto o andamento e toco em Começar.
 - [ ] O metrônomo marca o tempo e os acertos aparecem enquanto eu toco.
-- [ ] No fim aparece "Treino concluído" com o número de acertos, e o Perfil atualiza "Treinos
-      concluídos" e "Último treino".
+- [ ] No fim aparece "Treino concluído" com o número de acertos.
 
 ## 8. Tocar junto
 
-- [ ] Na aba Músicas, abro Riptide ou All Too Well.
+- [ ] Na tela inicial, toco em Tocar músicas e abro Riptide ou All Too Well.
 - [ ] A cifra rola sozinha. Os botões de velocidade mudam a rolagem.
 - [ ] Toco em Tocar junto e depois em Começar: aparece a contagem e depois o acorde a tocar.
 - [ ] Os acertos aparecem enquanto eu toco. No fim aparece o "Resumo da música".
@@ -102,12 +101,12 @@ Em cada tela com microfone (afinador, Reconhecer acorde, Tocar e testar, Sequên
       esperando eu tocar em Ouvir ou Começar.
 - [ ] No Tocar junto, bloqueio no meio da música. Quando volto, a música continua de onde parou.
 
-## 10. Perfil e dados guardados
+## 10. Configurações e dados guardados
 
-- [ ] No Perfil, preencho o nome e a experiência com violão.
+- [ ] Na tela inicial, a engrenagem no canto do título abre as Configurações.
 - [ ] Troco a cor do app e a aparência (claro e escuro): todas as telas mudam.
-- [ ] Fecho o app pelos recentes e abro de novo: nome, cor, acordes aprendidos e treinos
-      continuam lá.
+- [ ] Fecho o app pelos recentes e abro de novo: a cor, a aparência, os acordes aprendidos e as
+      músicas que eu criei continuam lá.
 - [ ] "Privacidade" abre o texto da política.
 
 ## 11. Atualização
@@ -115,7 +114,7 @@ Em cada tela com microfone (afinador, Reconhecer acorde, Tocar e testar, Sequên
 Num celular que já tem uma versão instalada pelo QR Code:
 
 - [ ] Instalo a versão nova pelo mesmo link, por cima da antiga, sem desinstalar.
-- [ ] Os acordes aprendidos, o perfil e os treinos continuam lá.
+- [ ] Os acordes aprendidos, as músicas e as preferências continuam lá.
 
 ## Pronto quando
 

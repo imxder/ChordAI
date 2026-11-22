@@ -13,12 +13,13 @@ no iPhone nem no Android: tudo passa por `isDesktop`, em `lib/theme/platform_sty
   continua do lado. Abaixo de 1000 px de largura a barra recolhe pra só os ícones, e o ☰ abre e
   fecha.
 - **Ordem da barra:** Início, Afinador, Aprender acordes, Reconhecer acorde, Guia do iniciante e
-  Músicas. No pé ficam a Entrada de áudio, as Preferências (engrenagem) e o Perfil. No celular o
-  afinador, o reconhecer e o guia estão nos cards do Início; no computador, sem eles na barra, só
-  dava pra chegar pelo Início.
-- **Preferências** (aparência, cor, afinação, leitura das cifras, reconhecimento e privacidade)
-  saem do Perfil no computador e viram a tela da engrenagem. No celular continuam no Perfil; as
-  duas usam o mesmo `PreferencesSection`.
+  Músicas. No pé ficam a Entrada de áudio e as Configurações (Ajustes no Mac), com a engrenagem.
+  No celular o guia fica no Início e o afinador e o reconhecer são abas; no computador tudo isso
+  fica na barra lateral.
+- **Configurações** (Ajustes no Mac): aparência, cor, afinação, leitura das cifras, reconhecimento
+  e privacidade, na `SettingsScreen` (`lib/screens/settings_screen.dart`). É a mesma tela da
+  engrenagem do celular, no canto da tela inicial. O nome vem do `settingsTitle`, em
+  `lib/theme/platform_style.dart`. No Mac, o ⌘, do menu do app abre essa tela.
 - **Afinador mais compacto** no computador: a mesma coluna do celular, com o desenho do medidor
   limitado a 110 px de altura. Assim ele cabe inteiro, sem rolar, na janela inicial (1200 × 800);
   na mínima (800 × 560) ainda rola um pouco.
@@ -26,7 +27,7 @@ no iPhone nem no Android: tudo passa por `isDesktop`, em `lib/theme/platform_sty
   escolhida (`keepAlive: false` no `DesktopDestination`), diferente das outras abas: o afinador liga
   o microfone assim que abre, e se ficasse montado o microfone ligaria junto com o app.
 - **"Entrada de áudio"** no pé da barra, porque no computador é comum trocar de microfone
-  (interface, webcam, pedaleira). A lista também está em Perfil → Reconhecimento.
+  (interface, webcam, pedaleira). A lista também está em Configurações → Reconhecimento.
 - **Cabeçalho** com o título grande à esquerda e o botão de voltar, e a coluna de leitura com até 720
   px (no celular são 600).
 - **Duas colunas** onde ajuda:

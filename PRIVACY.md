@@ -12,14 +12,13 @@ O responsável (controlador, na LGPD) sou eu, Alexandre Salgado, pessoa física.
 
 ## O que o app guarda no seu aparelho
 
-O app guarda algumas informações na memória do próprio aparelho, pra lembrar de você quando abrir de novo. Nada disso é enviado pra internet.
+O app guarda algumas informações na memória do próprio aparelho, pra abrir do jeito que você deixou. Nada disso é enviado pra internet, e nada disso é dado pessoal: o app não pede nome, idade, e-mail nem nada sobre você.
 
-- Perfil: o nome que você digitar (é opcional) e o seu nível de experiência no violão.
-- Progresso: os acordes que você aprendeu, quantos acordes você acertou, quantos treinos concluiu e a data do último treino.
+- Progresso: os acordes que você aprendeu e os tópicos do guia que você já abriu.
 - Preferências: aparência e cor do app, afinação escolhida (e a personalizada, se você criar uma), tamanho da letra das cifras, se mostra o braço do violão, se a cifra rola sozinha e o modelo de reconhecimento escolhido.
 - Músicas que você cria: nome, artista (opcional), andamento, batida, partes e acordes. Elas ficam só no aparelho, não vão pra lugar nenhum e somem se o app for apagado.
 
-O nome é o único dado pessoal dessa lista, e você só informa se quiser. O resto serve só pra o app funcionar do jeito que você deixou.
+Versões antigas também guardavam um nome (opcional), o nível de experiência no violão, quantos acordes você acertou, quantos treinos concluiu e a data do último treino. Isso saiu do app: na primeira vez que ele abre depois de atualizar, esses dados são apagados do aparelho.
 
 ## O microfone
 
@@ -39,13 +38,13 @@ O app não manda dados pra nenhum terceiro: não tem Firebase, Google Analytics,
 
 ## Por quanto tempo os dados ficam
 
-Os dados ficam no seu aparelho até você apagar. Você pode trocar o nome e o nível no perfil a qualquer momento. Pra apagar tudo, é só limpar os dados do app nas configurações do sistema ou desinstalar o app.
+Os dados ficam no seu aparelho até você apagar. Pra apagar tudo, é só limpar os dados do app nas configurações do sistema ou desinstalar o app.
 
 O áudio do microfone não fica guardado: ele só existe na memória enquanto é analisado.
 
 ## Por que o app pode usar esses dados
 
-O microfone só é usado depois que você dá a permissão no sistema (consentimento, art. 7º, I da LGPD), e você pode tirar essa permissão quando quiser nas configurações do aparelho. O nome do perfil é opcional e você mesmo informa. As preferências e o progresso servem só pra entregar o que o app faz.
+O microfone só é usado depois que você dá a permissão no sistema (consentimento, art. 7º, I da LGPD), e você pode tirar essa permissão quando quiser nas configurações do aparelho. As preferências e o progresso servem só pra entregar o que o app faz.
 
 ## Seus direitos
 

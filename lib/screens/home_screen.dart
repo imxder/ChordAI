@@ -307,7 +307,6 @@ class _ChordMapItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final tokens = context.tokens;
     final radius = BorderRadius.circular(GlassTokens.radiusLg);
     return Semantics(
@@ -316,7 +315,7 @@ class _ChordMapItem extends StatelessWidget {
       excludeSemantics: true,
       child: PressScale(
         child: Material(
-          color: learned ? colorScheme.primaryContainer : tokens.cell,
+          color: tokens.cell,
           borderRadius: radius,
           clipBehavior: Clip.antiAlias,
           child: InkWell(

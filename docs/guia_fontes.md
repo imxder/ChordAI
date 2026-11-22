@@ -16,7 +16,6 @@ Todas as páginas foram acessadas em 22/11/2026.
 | Partes do violão | A lista das partes de novo, e a ordem E A D G B E da corda mais grossa pra mais fina | Martin Guitar, "Acoustic Guitar Playing Guide" | https://www.martinguitar.com/blog-categories/tips-tutorials/blog-032723-acoustic-guitar-playing-guide.html | 22/11/2026 |
 | Partes do violão | As cordas são numeradas da 1ª (mais fina) à 6ª (mais grossa) | o próprio app: o desenho das cordas do afinador (`lib/widgets/strings_illustration.dart`, que mostra 6ª Mi a mais grossa até 1ª Mi a mais fina) | — | — |
 | Partes do violão | "Casa" é o espaço entre dois trastes | termo de violão em português, sem fonte externa; é o mesmo termo que o app já usa no afinador e nos diagramas | — | — |
-| Como segurar o violão | A corda mais grossa fica em cima, mais perto do teto; costas retas; a outra mão segura o braço | Martin Guitar, "Acoustic Guitar Playing Guide" | https://www.martinguitar.com/blog-categories/tips-tutorials/blog-032723-acoustic-guitar-playing-guide.html | 22/11/2026 |
 | Como afinar o violão | Afinação padrão E A D G B E, da 6ª corda pra 1ª | `lib/models/tuning_preset.dart` (preset Padrão: E2 A2 D3 G3 B3 E4) | — | — |
 | Como ler o diagrama | Linhas em pé são as cordas (a 6ª à esquerda), deitadas são os trastes, a linha grossa de cima é a pestana, bolinha é a casa, "o" é corda solta e "x" é corda que não toca | `lib/widgets/guitar_neck.dart` (o desenho que o app usa) e `lib/models/chord_diagrams.dart` (a lista de casas vai da 6ª corda pra 1ª) | — | — |
 | Seu primeiro acorde: Em | 2ª casa nas cordas 5 e 4, as outras soltas | `lib/models/chord_diagrams.dart` (`'Em': [0, 2, 2, 0, 0, 0]`) | — | — |
@@ -35,6 +34,16 @@ Todas as páginas foram acessadas em 22/11/2026.
 | Dor nos dedos | Os dedos se acostumam rápido com treino regular | Yamaha, "Eight Great Tips for Learning Steel-String Acoustic Guitar" | https://hub.yamaha.com/guitars/g-acoustic/eight-great-tips-for-learning-steel-string-acoustic-guitar/ | 22/11/2026 |
 | Acessórios | Palheta média: entre 0,60 e 0,80 mm; pra quem começa batendo nas cordas, uma mais fina também serve | Martin Guitar, "Guitar Pick Buying Guide" | https://www.martinguitar.com/blog-categories/tips-tutorials/blog-110123-guitar-picks.html | 22/11/2026 |
 | Trocar as cordas | Quem toca de vez em quando troca a cada 2 ou 3 meses; trocar antes se a corda estiver enferrujada, áspera, torta ou com o som sem vida | Taylor Guitars, "How Often Should You Change Guitar Strings?" | https://blog.taylorguitars.com/how-often-should-you-change-guitar-strings | 22/11/2026 |
+
+## A imagem do violão
+
+O tópico "Partes do violão" usa um desenho pronto, só de contorno, e os nomes das partes (em português) o app escreve por cima, pelo código (`lib/widgets/guitar_parts_drawing.dart`). O app pinta o contorno com a cor do texto do tema, por isso ele aparece escuro no tema claro e claro no tema escuro.
+
+| Arquivo no app | Imagem original | Autor | Licença | Link | Acesso |
+|---|---|---|---|---|---|
+| `assets/images/violao.png` | "Simple line art vector image of acoustic guitar" ("Simple Guitar" no arquivo), publicada no Openclipart e no Public Domain Vectors | jppi_Stu | Domínio público (o próprio arquivo marca http://creativecommons.org/licenses/publicdomain/, e a página diz que dá pra copiar, modificar, distribuir e usar até com fins comerciais sem pedir permissão) | https://publicdomainvectors.org/en/free-clipart/Simple-line-art-vector-image-of-acoustic-guitar/13848.html | 22/11/2026 |
+
+O que eu mudei no arquivo: gerei um PNG de 613 × 1478 a partir do SVG, cortei a margem branca e transformei o branco em transparente, deixando só as linhas. Mesmo sem a licença pedir, eu deixo o crédito aqui.
 
 ## O que ficou sem número
 

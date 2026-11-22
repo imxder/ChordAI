@@ -31,6 +31,7 @@ flutter:
     - PRIVACY.md
     - assets/scores/
     - assets/lyrics/
+    - assets/images/
     - assets/models/v3/
     - assets/models/v3_meu/
   fonts:

@@ -27,7 +27,7 @@ void main() {
     expect(find.text('Afinador'), findsOneWidget);
     expect(find.text('Reconhecer acorde'), findsOneWidget);
     expect(find.text('Guia do iniciante'), findsOneWidget);
-    expect(find.text('Acessórios essenciais'), findsOneWidget);
+    expect(find.text('Partes do violão'), findsOneWidget);
     expect(find.text('Seus acordes'), findsOneWidget);
     expect(find.text('0 de 8 aprendidos'), findsOneWidget);
     final guide = tester.getTopLeft(find.text('Guia do iniciante')).dy;
@@ -120,7 +120,7 @@ void main() {
     await tester.pumpWidget(appUnderTest(const AppShell()));
     await settle(tester);
 
-    await tester.tap(find.text('Acessórios essenciais'));
+    await tester.tap(find.text('Partes do violão'));
     await settle(tester);
     expect(find.byType(GuideDetailScreen), findsOneWidget);
 

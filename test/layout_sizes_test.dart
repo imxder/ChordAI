@@ -37,7 +37,11 @@ final _screens = <String, Widget Function(LyricSheet sheet)>{
   'afinação personalizada': (_) => const CustomTuningScreen(),
   'servidor': (_) => const SettingsScreen(),
   'guia': (_) => const GuideListScreen(),
-  'guia detalhe': (_) => GuideDetailScreen(topic: guideTopics[2]),
+  'guia detalhe': (_) => GuideDetailScreen(topic: guideTopicById('afinar')),
+  'guia partes': (_) => GuideDetailScreen(topic: guideTopicById('partes')),
+  'guia diagrama': (_) => GuideDetailScreen(topic: guideTopicById('diagrama')),
+  'guia cifra': (_) => GuideDetailScreen(topic: guideTopicById('cifra')),
+  'guia batida': (_) => GuideDetailScreen(topic: guideTopicById('batida')),
   'privacidade': (_) => const PrivacyScreen(),
 };
 

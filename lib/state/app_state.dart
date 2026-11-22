@@ -27,6 +27,7 @@ class AppState extends ChangeNotifier {
   static const _autoScrollKey = 'app_auto_scroll';
   static const _appearanceKey = 'app_appearance';
   static const _profileNameKey = 'app_profile_name';
+  static const _guideReadKey = 'app_guide_read';
   static const _profileExperienceKey = 'app_profile_experience';
   // Chaves do modo servidor, que saiu do app. Só servem pra apagar o que
   // ficou salvo de versões antigas (o endereço era o IP do computador).
@@ -71,6 +72,9 @@ class AppState extends ChangeNotifier {
   AppAppearance appearance = AppAppearance.paper;
 
   Set<String> learnedChords = {};
+
+  /// Tópicos do guia que já foram abertos (só pra mostrar o visto na lista).
+  Set<String> readGuideTopics = {};
 
   String profileName = '';
   String? profileExperience;
@@ -224,6 +228,13 @@ class AppState extends ChangeNotifier {
   bool isChordLearned(String chord) => learnedChords.contains(chord);
 
   /// Retorna true só na vez em que o acorde passa a contar como aprendido.
+  Future<void> markGuideTopicRead(String id) async {
+    if (!readGuideTopics.add(id)) return;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_guideReadKey, readGuideTopics.toList());
+  }
+
   bool registerChordHits(String chord, int consecutiveHits) {
     if (learnedChords.contains(chord)) return false;
     if (consecutiveHits < chordMasteryHits) return false;
@@ -245,6 +256,7 @@ class AppState extends ChangeNotifier {
     final savedTheme = prefs.getInt(_selectedThemeKey) ?? 0;
     selectedThemeIndex = savedTheme < appThemeOptions.length ? savedTheme : 0;
     learnedChords = (prefs.getStringList(_learnedChordsKey) ?? []).toSet();
+    readGuideTopics = (prefs.getStringList(_guideReadKey) ?? []).toSet();
     profileName = prefs.getString(_profileNameKey) ?? '';
     profileExperience = prefs.getString(_profileExperienceKey);
     for (final key in _oldServerKeys) {

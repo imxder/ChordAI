@@ -166,7 +166,6 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
       onToggle: _listening ? _stop : _start,
       child: IosPage(
         title: 'Testar ${widget.chord}',
-        trailing: const RecognitionModeBadge(),
         bottomBar: BottomActionBar(
           child: FilledButton.icon(
             onPressed: _listening ? _stop : _start,
@@ -211,7 +210,7 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
           GroupedSection(
             footer: learned
                 ? 'Você já aprendeu este acorde. Treine o quanto quiser.'
-                : 'Acerte ${AppState.chordMasteryHits} vezes seguidas para marcar como aprendido.',
+                : 'Acerte ${AppState.chordMasteryHits} vezes seguidas para marcar como aprendido.\nReconhecendo: ${recognitionModeLabel()}',
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),

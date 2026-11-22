@@ -479,8 +479,6 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     final trailing = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const RecognitionModeBadge(),
-        const SizedBox(width: 8),
         CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => showPracticeOptionsSheet(context),
@@ -525,14 +523,14 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
               ? const EdgeInsets.fromLTRB(32, 12, 32, 24)
               : EdgeInsets.fromLTRB(padding.left, 12, padding.right, 24),
           children: [
-            if (widget.sheet.artist != null || meta.isNotEmpty)
-              Text(
-                [
-                  if (widget.sheet.artist != null) widget.sheet.artist!,
-                  if (meta.isNotEmpty) meta,
-                ].join(' · '),
-                style: textTheme.bodySmall,
-              ),
+            Text(
+              [
+                if (widget.sheet.artist != null) widget.sheet.artist!,
+                if (meta.isNotEmpty) meta,
+                recognitionModeLabel(),
+              ].join(' · '),
+              style: textTheme.bodySmall,
+            ),
             for (var si = 0; si < widget.sheet.sections.length; si++) ...[
               if (widget.sheet.sections[si].title != null)
                 SheetSectionLabel(widget.sheet.sections[si].title!),

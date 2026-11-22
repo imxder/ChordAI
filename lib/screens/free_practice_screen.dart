@@ -155,7 +155,6 @@ class _FreePracticeScreenState extends State<FreePracticeScreen>
       onToggle: _toggle,
       child: IosPage(
         title: 'Reconhecer acorde',
-        trailing: const RecognitionModeBadge(),
         bottomBar: BottomActionBar(
           child: FilledButton.icon(
             onPressed: _toggle,
@@ -238,6 +237,10 @@ class _FreePracticeScreenState extends State<FreePracticeScreen>
               'O app mostra o último acorde que reconheceu.',
               style: textTheme.bodySmall,
             ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(4, 4, 4, 0),
+            child: RecognitionModeBadge(),
           ),
           if (_service case final OnDeviceChordService service)
             if (service.lastInferenceMicros != null)

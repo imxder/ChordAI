@@ -4,7 +4,7 @@
 
 Esse é o app do meu TCC de Engenharia de Software. A ideia é ajudar quem tá começando no violão: você toca o acorde e o app escuta e diz se saiu certo. Também tem afinador, cifras pra tocar junto com a música e um guia pra iniciante.
 
-Fiz em Flutter, então roda no iPhone, no Android e no Windows. O modelo que reconhece os acordes eu treinei no [ChordAI-backend](https://github.com/imxder/ChordAI-backend).
+Fiz em Flutter, então roda no iPhone, no Android, no Windows e no Mac. O modelo que reconhece os acordes eu treinei no [ChordAI-backend](https://github.com/imxder/ChordAI-backend).
 
 ## Funcionalidades
 
@@ -12,7 +12,8 @@ Fiz em Flutter, então roda no iPhone, no Android e no Windows. O modelo que rec
 - **Acordes**: diagrama de cada acorde no braço do violão e modo "testar", que ouve você tocar e conta os acertos seguidos até marcar o acorde como aprendido.
 - **Reconhecer acorde**: mostra em tempo real o acorde que o app está ouvindo.
 - **Sequências**: treino de progressões de acordes com metrônomo.
-- **Tocar junto**: letra e cifra que avançam conforme você troca de acorde, com batida, andamento ajustável e resumo de acertos no fim da música.
+- **Tocar junto**: cifras só com os acordes (o desenho de cada um e as setas da batida) que avançam no andamento da música ou esperam você trocar de acorde, com andamento ajustável e um resumo no fim com os acordes que você mais errou.
+- **Minhas músicas**: dá pra montar a sua música no próprio app, com as partes, os acordes, o andamento e a batida. Ela fica só no aparelho.
 - **Guia do iniciante**: acessórios, postura, como afinar, troca de cordas e dor nos dedos.
 - **Perfil**: acordes aprendidos, último treino, cor do app e aparência (papel, branco, escuro ou igual ao celular).
 
@@ -51,12 +52,13 @@ flutter pub get
 flutter run
 ```
 
-Para instalar no iPhone em modo release:
+Para instalar no iPhone em modo release, com o iPhone no cabo ou na mesma rede:
 
 ```bash
-flutter build ios --release
-flutter install
+flutter run --release -d <id-do-iphone>
 ```
+
+O `flutter devices` mostra o id. Não use o `flutter install`: ele desinstala o app antes de instalar de novo, e isso apaga os acordes aprendidos, o perfil e as músicas.
 
 ## Testes
 

@@ -26,10 +26,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>O ChordAI se conecta ao servidor de reconhecimento de acordes na sua rede local.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>O ChordAI usa o microfone para reconhecer os acordes e afinar o violão. No modo padrão o som é analisado no celular e não é gravado nem enviado.</string>
+	<string>O ChordAI usa o microfone para reconhecer os acordes e afinar o violão. O som é analisado no próprio celular e não é gravado nem enviado.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

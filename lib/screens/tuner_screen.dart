@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/tuner_note.dart';
 import '../services/audio_input.dart';
@@ -73,11 +74,13 @@ class _TunerScreenState extends State<TunerScreen> with MicLifecycle {
 
     await _service.start((frequency) {
       if (!mounted) return;
+      final wasInTune = _inTune;
       setState(() {
         _problem = null;
         _reading = _classify(frequency);
         _inTune = _service.smoother?.updateInTune(_reading?.cents) ?? false;
       });
+      if (_inTune && !wasInTune && !isDesktop) HapticFeedback.mediumImpact();
     }, onProblem: _onMicrophoneProblem);
   }
 

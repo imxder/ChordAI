@@ -163,10 +163,16 @@ class _HomeSectionHeader extends StatelessWidget {
   }
 }
 
+/// Quantos tópicos do guia aparecem no início: os primeiros na ordem de
+/// leitura. O resto fica no "Ver tudo".
+const homeGuideCards = 8;
+
 class _GuideCards extends StatelessWidget {
   final ValueChanged<GuideTopic> onOpen;
 
   const _GuideCards({required this.onOpen});
+
+  List<GuideTopic> get _topics => guideTopics.take(homeGuideCards).toList();
 
   Widget _card(BuildContext context, GuideTopic topic) {
     final textTheme = Theme.of(context).textTheme;
@@ -219,12 +225,12 @@ class _GuideCards extends StatelessWidget {
     if (isDesktop) {
       return LayoutBuilder(
         builder: (context, constraints) {
-          final width = (constraints.maxWidth - 24) / 3;
+          final width = (constraints.maxWidth - 36) / 4;
           return Wrap(
             spacing: 12,
             runSpacing: 12,
             children: [
-              for (final topic in guideTopics)
+              for (final topic in _topics)
                 SizedBox(
                   width: width,
                   height: height.toDouble(),
@@ -245,10 +251,10 @@ class _GuideCards extends StatelessWidget {
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: EdgeInsets.symmetric(horizontal: side),
-          itemCount: guideTopics.length,
+          itemCount: _topics.length,
           separatorBuilder: (_, _) => const SizedBox(width: 12),
           itemBuilder: (context, i) =>
-              SizedBox(width: 172, child: _card(context, guideTopics[i])),
+              SizedBox(width: 172, child: _card(context, _topics[i])),
         ),
       ),
     );

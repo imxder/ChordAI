@@ -8,7 +8,6 @@ import '../theme/ph.dart';
 
 const guideTopicIcons = {
   'partes': Ph.bookOpenFill,
-  'postura': Ph.userFill,
   'afinar': Ph.gaugeFill,
   'diagrama': Ph.squaresFourFill,
   'primeiro_acorde': Ph.checkCircleFill,
@@ -27,8 +26,6 @@ class GuideListScreen extends StatelessWidget {
 
   static final _listRoutes = Expando<bool>();
 
-  /// Se [route] é uma tela com a lista do guia. O "Voltar pra lista" do
-  /// último tópico volta até ela em vez de abrir outra lista por cima.
   static bool isListRoute(Route<dynamic> route) => _listRoutes[route] ?? false;
 
   @override

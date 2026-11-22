@@ -18,8 +18,6 @@ import 'practice_session_screen.dart';
 import 'tuner_screen.dart';
 import '../theme/ph.dart';
 
-/// A batida "Comum" do app (D1 D2 U2& U3& D4 U4&, em user_song.dart) em
-/// colcheias: o mesmo desenho que aparece embaixo de cada acorde nas cifras.
 const _commonStrum = [
   StrumKind.down,
   null,

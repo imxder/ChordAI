@@ -8,8 +8,6 @@ enum GuideGroup {
   final String title;
 }
 
-/// O que o botão do fim do tópico abre. [next] vai pro próximo tópico da
-/// lista e [list] volta pra lista (no último tópico).
 enum GuideAction {
   next,
   list,
@@ -31,8 +29,6 @@ class GuideTopic {
   final String? highlight;
   final GuideAction action;
 
-  /// Quem disse o que o tópico usa de fora do app. A tabela com o link e a
-  /// data de acesso está em docs/guia_fontes.md.
   final List<String> sources;
 
   const GuideTopic({
@@ -81,27 +77,6 @@ const List<GuideTopic> guideTopics = [
       'As cordas são numeradas da mais fina pra mais grossa: a 1ª é a mais '
           'fina e a 6ª é a mais grossa. "Corda solta" é tocar a corda sem '
           'apertar nenhuma casa.',
-    ],
-    sources: ['Martin Guitar'],
-  ),
-  GuideTopic(
-    id: 'postura',
-    title: 'Como segurar o violão',
-    summary: 'Sentado, com a corda mais grossa em cima',
-    group: GuideGroup.beforePlaying,
-    action: GuideAction.next,
-    paragraphs: [
-      'Sente numa cadeira sem braço, com as costas retas, e apoie o corpo do '
-          'violão na perna.',
-      'A corda mais grossa, a 6ª, fica em cima, mais perto do teto. A mão '
-          'que você usa pra escrever fica perto da boca, pra bater nas '
-          'cordas. A outra segura o braço e aperta as casas.',
-    ],
-    steps: [
-      'Costas retas, sem se curvar por cima do violão',
-      'O braço do violão um pouco inclinado pra cima',
-      'O pulso da mão do braço não fica totalmente dobrado',
-      'Os dedos apertam as cordas com a ponta, perto do traste',
     ],
     sources: ['Martin Guitar'],
   ),

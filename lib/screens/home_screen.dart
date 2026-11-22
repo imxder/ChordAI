@@ -163,9 +163,7 @@ class _HomeSectionHeader extends StatelessWidget {
   }
 }
 
-/// Quantos tópicos do guia aparecem no início: os primeiros na ordem de
-/// leitura. O resto fica no "Ver tudo".
-const homeGuideCards = 8;
+const homeGuideCards = 4;
 
 class _GuideCards extends StatelessWidget {
   final ValueChanged<GuideTopic> onOpen;
@@ -178,7 +176,7 @@ class _GuideCards extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return Semantics(
       button: true,
-      label: '${topic.title}. ${topic.summary}',
+      label: topic.title,
       excludeSemantics: true,
       child: PressScale(
         child: Material(
@@ -203,13 +201,6 @@ class _GuideCards extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: textTheme.titleSmall,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    topic.summary,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodySmall,
-                  ),
                 ],
               ),
             ),
@@ -221,7 +212,7 @@ class _GuideCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.textScalerOf(context).scale(140).clamp(140, 230);
+    final height = MediaQuery.textScalerOf(context).scale(110).clamp(110, 190);
     if (isDesktop) {
       return LayoutBuilder(
         builder: (context, constraints) {

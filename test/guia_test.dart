@@ -18,10 +18,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'test_helpers.dart';
 
 void main() {
-  test('os 13 tópicos, na ordem dos três grupos', () {
+  test('os 12 tópicos, na ordem dos três grupos', () {
     expect(guideTopics.map((t) => t.id), [
       'partes',
-      'postura',
       'afinar',
       'diagrama',
       'primeiro_acorde',
@@ -61,7 +60,6 @@ void main() {
       'regular',
       'afinar',
       'cordas',
-      'postura',
       'dor_dedos',
     ]) {
       expect(guideTopicById(id).id, id);
@@ -157,7 +155,9 @@ void main() {
       }
     });
 
-    testWidgets('o início mostra no máximo 8 tópicos do guia', (tester) async {
+    testWidgets('o início mostra só 4 tópicos do guia, sem o resumo', (
+      tester,
+    ) async {
       setScreen(tester, const Size(390, 1400));
       await tester.pumpWidget(appUnderTest(const AppShell()));
       await settle(tester);
@@ -166,16 +166,17 @@ void main() {
           (w) => w is ListView && w.scrollDirection == Axis.horizontal,
         ),
       );
-      expect(carrossel.semanticChildCount, 8);
+      expect(carrossel.semanticChildCount, 4);
       expect(find.text(guideTopics.first.title), findsOneWidget);
+      expect(find.text(guideTopics.first.summary), findsNothing);
     });
 
-    testWidgets('no computador também são 8, em 4 colunas', (tester) async {
+    testWidgets('no computador também são 4, numa linha só', (tester) async {
       setScreen(tester, const Size(1200, 1400));
       await tester.pumpWidget(appUnderTest(const AppShell()));
       await settle(tester);
       final linhas = <double>{};
-      for (final topic in guideTopics.take(8)) {
+      for (final topic in guideTopics.take(4)) {
         final card = find
             .ancestor(
               of: find.text(topic.title),
@@ -184,8 +185,8 @@ void main() {
             .first;
         linhas.add(tester.getTopLeft(card).dy.roundToDouble());
       }
-      expect(linhas, hasLength(2));
-      expect(find.text(guideTopics[8].title), findsNothing);
+      expect(linhas, hasLength(1));
+      expect(find.text(guideTopics[4].title), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
   });
 }

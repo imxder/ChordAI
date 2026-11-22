@@ -73,7 +73,6 @@ class AppState extends ChangeNotifier {
 
   Set<String> learnedChords = {};
 
-  /// Tópicos do guia que já foram abertos (só pra mostrar o visto na lista).
   Set<String> readGuideTopics = {};
 
   String profileName = '';

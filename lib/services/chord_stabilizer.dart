@@ -8,9 +8,9 @@ import '../models/chord_prediction.dart';
 /// chord_practice_screen.dart), e uma leitura isolada ruidosa derrubaria a
 /// sequência. Por isso só repassa uma previsão "ok"/"unknown" quando o
 /// mesmo resultado aparece em pelo menos 2 das últimas 3 inferências, e no
-/// máximo uma vez a cada 1,5s — a mesma cadência e semântica do modo
-/// servidor. "silence"/"too_short" não representam uma tentativa de acorde
-/// (as telas os ignoram), então passam direto, sem essa espera.
+/// máximo uma vez a cada 1,5s. "silence"/"too_short" não representam uma
+/// tentativa de acorde (as telas os ignoram), então passam direto, sem essa
+/// espera.
 class ChordStabilizer {
   static const int voteWindow = 3;
   static const int minAgreement = 2;

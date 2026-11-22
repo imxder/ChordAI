@@ -101,9 +101,7 @@ void main() {
     await tester.runAsync(() => appState.loadProgress());
     setScreen(tester, const Size(500, 1200));
     final cifra = parseCifra('Tempo: 100\nAm  G\nletra\n', title: 'x');
-    await tester.pumpWidget(
-      appUnderTest(LyricPlayerScreen(sheet: cifra, serverUrl: 'http://x')),
-    );
+    await tester.pumpWidget(appUnderTest(LyricPlayerScreen(sheet: cifra)));
     await tester.tap(find.bySemanticsLabel('Diminuir andamento'));
     await tester.pump();
     expect(find.text('99'), findsOneWidget);
@@ -135,9 +133,7 @@ void main() {
     final cifra = parseCifra('Tempo: 100\nAm  G\n', title: 'x');
     Future<double> margem(Size tamanho) async {
       setScreen(tester, tamanho);
-      await tester.pumpWidget(
-        appUnderTest(LyricPlayerScreen(sheet: cifra, serverUrl: 'http://x')),
-      );
+      await tester.pumpWidget(appUnderTest(LyricPlayerScreen(sheet: cifra)));
       await tester.pump();
       final painel = tester.getRect(find.byType(FloatingPanel));
       return tester.getTopLeft(find.text('Primeiro acorde')).dx - painel.left;

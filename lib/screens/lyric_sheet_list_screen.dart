@@ -14,14 +14,9 @@ import 'song_editor_screen.dart';
 import '../theme/ph.dart';
 
 class LyricSheetListScreen extends StatefulWidget {
-  final String serverUrl;
   final InputDevice? inputDevice;
 
-  const LyricSheetListScreen({
-    super.key,
-    required this.serverUrl,
-    this.inputDevice,
-  });
+  const LyricSheetListScreen({super.key, this.inputDevice});
 
   @override
   State<LyricSheetListScreen> createState() => _LyricSheetListScreenState();
@@ -90,7 +85,6 @@ class _LyricSheetListScreenState extends State<LyricSheetListScreen> {
                   onTap: () => _open(
                     LyricSheetScreen(
                       sheet: song.toLyricSheet(),
-                      serverUrl: widget.serverUrl,
                       inputDevice: widget.inputDevice,
                       userSong: song,
                       store: _store,
@@ -109,7 +103,6 @@ class _LyricSheetListScreenState extends State<LyricSheetListScreen> {
                   onTap: () => _push(
                     LyricSheetScreen(
                       sheet: sheet,
-                      serverUrl: widget.serverUrl,
                       inputDevice: widget.inputDevice,
                     ),
                   ),
@@ -125,12 +118,8 @@ class _LyricSheetListScreenState extends State<LyricSheetListScreen> {
               leading: const IconBadge(Ph.metronomeFill),
               title: 'Sequências de acordes',
               subtitle: 'Treine trocas de acorde com metrônomo',
-              onTap: () => _push(
-                PracticeSessionScreen(
-                  serverUrl: widget.serverUrl,
-                  inputDevice: widget.inputDevice,
-                ),
-              ),
+              onTap: () =>
+                  _push(PracticeSessionScreen(inputDevice: widget.inputDevice)),
             ),
           ],
         ),

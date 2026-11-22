@@ -7,31 +7,23 @@ import '../services/audio_input.dart';
 import '../services/chord_recognizer.dart';
 import '../services/chord_recognizer_factory.dart';
 import '../services/on_device_chord_service.dart';
-import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../theme/glass_tokens.dart';
 import '../widgets/mic_lifecycle.dart';
 import '../widgets/guitar_neck.dart';
 import '../widgets/listening_bars.dart';
 import '../widgets/page_parts.dart';
-import '../widgets/recognition_mode_badge.dart';
 import '../theme/ph.dart';
 import '../theme/platform_style.dart';
 import '../widgets/desktop_input.dart';
 
 class FreePracticeScreen extends StatefulWidget {
-  final String serverUrl;
   final InputDevice? inputDevice;
 
   /// Só pros testes: um reconhecedor falso no lugar do microfone.
   final ChordRecognizer? recognizer;
 
-  const FreePracticeScreen({
-    super.key,
-    required this.serverUrl,
-    this.inputDevice,
-    this.recognizer,
-  });
+  const FreePracticeScreen({super.key, this.inputDevice, this.recognizer});
 
   @override
   State<FreePracticeScreen> createState() => _FreePracticeScreenState();
@@ -40,7 +32,7 @@ class FreePracticeScreen extends StatefulWidget {
 class _FreePracticeScreenState extends State<FreePracticeScreen>
     with MicLifecycle {
   late final ChordRecognizer _service =
-      widget.recognizer ?? createChordRecognizer(appState.chordRecognitionMode);
+      widget.recognizer ?? createChordRecognizer();
 
   bool _listening = false;
   String? _chord;
@@ -85,7 +77,6 @@ class _FreePracticeScreenState extends State<FreePracticeScreen>
     });
 
     _service.start(
-      serverUrl: widget.serverUrl,
       onPrediction: _handlePrediction,
       onError: (error) {
         // Microfone bloqueado ou entrada desconectada (só no computador): o
@@ -100,9 +91,7 @@ class _FreePracticeScreenState extends State<FreePracticeScreen>
           _showSnackBar(error.message);
           return;
         }
-        _showSnackBar(
-          chordRecognitionErrorMessage(appState.chordRecognitionMode),
-        );
+        _showSnackBar(chordRecognitionErrorMessage);
       },
     );
   }
@@ -246,10 +235,6 @@ class _FreePracticeScreenState extends State<FreePracticeScreen>
               'O app mostra o último acorde que reconheceu.',
               style: textTheme.bodySmall,
             ),
-          ),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(4, 4, 4, 0),
-            child: RecognitionModeBadge(),
           ),
           if (_service case final OnDeviceChordService service)
             if (service.lastInferenceMicros != null)

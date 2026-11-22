@@ -36,7 +36,6 @@ class _MicFalso implements ChordRecognizer {
 
   @override
   Future<void> start({
-    String? serverUrl,
     required void Function(ChordPrediction prediction) onPrediction,
     required void Function(Object error) onError,
   }) async {
@@ -105,9 +104,7 @@ void main() {
     final mic = _MicFalso();
     final cifra = parseCifra('Tempo: 100\nAm  G\nletra\n', title: 'x');
     await tester.pumpWidget(
-      appUnderTest(
-        LyricPlayerScreen(sheet: cifra, serverUrl: 'http://x', recognizer: mic),
-      ),
+      appUnderTest(LyricPlayerScreen(sheet: cifra, recognizer: mic)),
     );
     await tester.tap(find.text('Começar'));
     await tester.pump();
@@ -137,9 +134,7 @@ void main() {
     final mic = _MicFalso();
     final cifra = parseCifra('Tempo: 100\nAm  G\nletra\n', title: 'x');
     await tester.pumpWidget(
-      appUnderTest(
-        LyricPlayerScreen(sheet: cifra, serverUrl: 'http://x', recognizer: mic),
-      ),
+      appUnderTest(LyricPlayerScreen(sheet: cifra, recognizer: mic)),
     );
     await _esconder(tester);
     await _mostrar(tester);
@@ -200,9 +195,7 @@ void main() {
     tester,
   ) async {
     final mic = _MicFalso();
-    await tester.pumpWidget(
-      appUnderTest(FreePracticeScreen(serverUrl: 'http://x', recognizer: mic)),
-    );
+    await tester.pumpWidget(appUnderTest(FreePracticeScreen(recognizer: mic)));
     await tester.tap(find.text('Ouvir'));
     await settle(tester);
     expect(mic.isRunning, isTrue);
@@ -221,9 +214,7 @@ void main() {
   testWidgets('testar acorde para escondido', (tester) async {
     final mic = _MicFalso();
     await tester.pumpWidget(
-      appUnderTest(
-        ChordPracticeScreen(serverUrl: 'http://x', chord: 'C', recognizer: mic),
-      ),
+      appUnderTest(ChordPracticeScreen(chord: 'C', recognizer: mic)),
     );
     await tester.tap(find.text('Começar'));
     await settle(tester);
@@ -242,9 +233,7 @@ void main() {
     setScreen(tester, const Size(500, 1200));
     final mic = _MicFalso();
     await tester.pumpWidget(
-      appUnderTest(
-        PracticeSessionScreen(serverUrl: 'http://x', recognizer: mic),
-      ),
+      appUnderTest(PracticeSessionScreen(recognizer: mic)),
     );
     // As sequências vêm dos assets: espera carregar.
     await tester.runAsync(() => Future.delayed(const Duration(seconds: 1)));

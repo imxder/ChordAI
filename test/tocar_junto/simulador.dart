@@ -81,9 +81,7 @@ class ReconhecedorFalso implements ChordRecognizer {
   final ModeloFalso modelo;
   final List<Tocado> tocados;
   final DateTime Function() agora;
-  final bool servidor;
   final bool estabilizar;
-  final int redeMs;
 
   final List<Leitura> cruas = [];
   final List<Leitura> repassadas = [];
@@ -95,9 +93,7 @@ class ReconhecedorFalso implements ChordRecognizer {
     required this.modelo,
     required this.tocados,
     required this.agora,
-    this.servidor = false,
     this.estabilizar = false,
-    this.redeMs = 300,
   });
 
   int get _ms => agora().difference(_inicio!).inMilliseconds;
@@ -116,7 +112,6 @@ class ReconhecedorFalso implements ChordRecognizer {
 
   @override
   Future<void> start({
-    String? serverUrl,
     required void Function(ChordPrediction prediction) onPrediction,
     required void Function(Object error) onError,
   }) async {
@@ -124,19 +119,6 @@ class ReconhecedorFalso implements ChordRecognizer {
     _rodando = true;
     cruas.clear();
     repassadas.clear();
-    if (servidor) {
-      _timer = Timer.periodic(const Duration(milliseconds: 1500), (_) {
-        final fimDaJanela = _ms;
-        final leitura = modelo.ler(tocados, fimDaJanela);
-        cruas.add(Leitura(fimDaJanela, leitura));
-        Timer(Duration(milliseconds: redeMs), () {
-          if (!_rodando) return;
-          repassadas.add(Leitura(_ms, leitura));
-          onPrediction(leitura);
-        });
-      });
-      return;
-    }
     final estabilizador = ChordStabilizer(clock: agora);
     _timer = Timer.periodic(const Duration(milliseconds: 500), (_) {
       final ms = _ms;

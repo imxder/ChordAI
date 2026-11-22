@@ -31,7 +31,6 @@ String sheetMeta(LyricSheet sheet) {
 
 class LyricSheetScreen extends StatefulWidget {
   final LyricSheet sheet;
-  final String serverUrl;
   final InputDevice? inputDevice;
   final UserSong? userSong;
   final UserSongStore? store;
@@ -39,7 +38,6 @@ class LyricSheetScreen extends StatefulWidget {
   const LyricSheetScreen({
     super.key,
     required this.sheet,
-    required this.serverUrl,
     this.inputDevice,
     this.userSong,
     this.store,
@@ -109,11 +107,8 @@ class _LyricSheetScreenState extends State<LyricSheetScreen>
     _setAutoScroll(false);
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => LyricPlayerScreen(
-          serverUrl: widget.serverUrl,
-          inputDevice: widget.inputDevice,
-          sheet: sheet,
-        ),
+        builder: (_) =>
+            LyricPlayerScreen(inputDevice: widget.inputDevice, sheet: sheet),
       ),
     );
   }

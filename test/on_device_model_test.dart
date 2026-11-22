@@ -1,4 +1,3 @@
-import 'package:chordai/models/chord_recognition_mode.dart';
 import 'package:chordai/models/on_device_model.dart';
 import 'package:chordai/models/score.dart';
 import 'package:chordai/services/score_library.dart';
@@ -61,14 +60,6 @@ void main() {
     await state.setOnDeviceModel(OnDeviceModel.v3Meu);
     expect(state.learnedChordCount, 3);
     expect(state.isChordLearned('A'), isTrue);
-  });
-
-  test('no servidor a lista é a do v3', () async {
-    final state = AppState();
-    await state.loadProgress();
-    await state.setOnDeviceModel(OnDeviceModel.v3Meu);
-    await state.setChordRecognitionMode(ChordRecognitionMode.server);
-    expect(state.chordsInModel, isNot(contains('A')));
   });
 
   test('"Todos os acordes" pula o A quando o modelo não reconhece', () async {

@@ -13,24 +13,20 @@ import 'chord_detail_screen.dart';
 import '../theme/ph.dart';
 
 class ChordListScreen extends StatelessWidget {
-  final String serverUrl;
   final InputDevice? inputDevice;
 
-  const ChordListScreen({super.key, required this.serverUrl, this.inputDevice});
+  const ChordListScreen({super.key, this.inputDevice});
 
   @override
   Widget build(BuildContext context) {
     if (isDesktop) {
-      return _DesktopChords(serverUrl: serverUrl, inputDevice: inputDevice);
+      return _DesktopChords(inputDevice: inputDevice);
     }
     return _ChordGrid(
       onOpen: (chord) => Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => ChordDetailScreen(
-            serverUrl: serverUrl,
-            inputDevice: inputDevice,
-            chord: chord,
-          ),
+          builder: (_) =>
+              ChordDetailScreen(inputDevice: inputDevice, chord: chord),
         ),
       ),
     );
@@ -41,10 +37,9 @@ class ChordListScreen extends StatelessWidget {
 /// escolhido à direita. Clicar num acorde troca o detalhe sem abrir outra
 /// tela. "Tocar e testar" abre por cima, do lado da barra lateral.
 class _DesktopChords extends StatefulWidget {
-  final String serverUrl;
   final InputDevice? inputDevice;
 
-  const _DesktopChords({required this.serverUrl, this.inputDevice});
+  const _DesktopChords({this.inputDevice});
 
   @override
   State<_DesktopChords> createState() => _DesktopChordsState();
@@ -65,7 +60,6 @@ class _DesktopChordsState extends State<_DesktopChords> {
       ),
       right: ChordDetailScreen(
         key: ValueKey(chord),
-        serverUrl: widget.serverUrl,
         inputDevice: widget.inputDevice,
         chord: chord,
       ),

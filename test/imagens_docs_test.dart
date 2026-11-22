@@ -38,7 +38,6 @@ class _OuveDo implements ChordRecognizer {
   void selectDevice(InputDevice? device) {}
   @override
   Future<void> start({
-    String? serverUrl,
     required void Function(ChordPrediction prediction) onPrediction,
     required void Function(Object error) onError,
   }) async {
@@ -189,10 +188,7 @@ void main() {
       (tester) async {
         await _janela(
           tester,
-          _naCasca(
-            0,
-            (_) => FreePracticeScreen(serverUrl: '', recognizer: _OuveDo()),
-          ),
+          _naCasca(0, (_) => FreePracticeScreen(recognizer: _OuveDo())),
           aparencia: aparencia,
         );
         await tester.tap(find.text('Ouvir'));
@@ -223,11 +219,7 @@ void main() {
           tester,
           _naCasca(
             1,
-            (_) => LyricPlayerScreen(
-              sheet: musica,
-              serverUrl: '',
-              recognizer: _OuveDo(),
-            ),
+            (_) => LyricPlayerScreen(sheet: musica, recognizer: _OuveDo()),
           ),
           aparencia: aparencia,
         );

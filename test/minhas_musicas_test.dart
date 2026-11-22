@@ -272,9 +272,7 @@ void main() {
 
       await tester.runAsync(() => LyricSheetLibrary().loadAll());
       await tester.pumpWidget(const SizedBox());
-      await tester.pumpWidget(
-        appUnderTest(const LyricSheetListScreen(serverUrl: '')),
-      );
+      await tester.pumpWidget(appUnderTest(const LyricSheetListScreen()));
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 200)),
       );
@@ -416,9 +414,7 @@ void main() {
     ) async {
       await tester.runAsync(() => UserSongStore().save(_minha));
       await tester.runAsync(() => LyricSheetLibrary().loadAll());
-      await tester.pumpWidget(
-        appUnderTest(const LyricSheetListScreen(serverUrl: '')),
-      );
+      await tester.pumpWidget(appUnderTest(const LyricSheetListScreen()));
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 200)),
       );

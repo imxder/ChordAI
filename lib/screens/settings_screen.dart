@@ -1,16 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import '../models/chord_recognition_mode.dart';
 import '../models/on_device_model.dart';
 import '../services/audio_input.dart';
-import '../services/server_address.dart';
 import '../state/app_state.dart';
-import '../theme/app_theme.dart';
-import '../theme/platform_style.dart';
 import '../widgets/audio_input_section.dart';
 import '../widgets/page_parts.dart';
-import '../theme/ph.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -20,39 +14,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late final TextEditingController _controller;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(
-      text: appState.serverUrl.replaceFirst(RegExp(r'^https?://'), ''),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    final address = ServerAddress.parse(_controller.text);
-    if (!address.isValid) {
-      setState(() => _error = address.error);
-      return;
-    }
-    await appState.setServerUrl(address.url!);
-    if (!mounted) return;
-    Navigator.of(context).pop();
-  }
-
-  Future<void> _selectMode(ChordRecognitionMode mode) async {
-    await appState.setChordRecognitionMode(mode);
-    setState(() => _error = null);
-  }
-
   Future<void> _selectModel(OnDeviceModel model) async {
     await appState.setOnDeviceModel(model);
     setState(() {});
@@ -60,116 +21,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final error = _error;
-    final mode = appState.chordRecognitionMode;
-    final usesServer = mode == ChordRecognitionMode.server;
-    // No computador só tem o modelo no aparelho: o PC roda o modelo sem
-    // esforço, e o modo servidor só fazia sentido pra celular.
-    final chooseMode = !isDesktop;
     return IosPage(
       title: 'Reconhecimento',
-      trailing: usesServer
-          ? CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: _save,
-              child: const Text(
-                'Salvar',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            )
-          : null,
       children: [
-        if (chooseMode)
-          GroupedSection(
-            top: 8,
-            header: 'Reconhecimento de acordes',
-            children: [
-              for (final option in ChordRecognitionMode.values)
-                CheckRow(
-                  title: option.label,
-                  subtitle: option.description,
-                  selected: mode == option,
-                  onTap: () => _selectMode(option),
-                ),
-            ],
-          ),
-        if (!usesServer)
-          GroupedSection(
-            top: chooseMode ? 24 : 8,
-            header: 'Modelo no aparelho',
-            footer:
-                'O v3 + meu dataset mostra menos acorde quando não tem acorde '
-                'sendo tocado (cordas abafadas, tarraxa, fala).',
-            children: [
-              for (final option in OnDeviceModel.values)
-                CheckRow(
-                  title: option.label,
-                  subtitle: option.description,
-                  selected: appState.onDeviceModel == option,
-                  onTap: () => _selectModel(option),
-                ),
-            ],
-          ),
-        if (usesServer)
-          GroupedSection(
-            header: 'Endereço do servidor',
-            footer:
-                error ??
-                'Só funciona com um computador na mesma rede Wi-Fi do celular '
-                    'rodando o ChordAI-backend. Use o IP e a porta que aparecem no '
-                    'terminal do servidor, 5000 (ou 5001 no Mac), ou o nome do '
-                    'computador na rede (ex.: meu-mac.local:5001), que não muda '
-                    'quando o IP muda.',
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: TextField(
-                  controller: _controller,
-                  keyboardType: TextInputType.url,
-                  autocorrect: false,
-                  onChanged: (_) {
-                    if (_error != null) setState(() => _error = null);
-                  },
-                  onSubmitted: (_) => _save(),
-                  style: const TextStyle(fontFamily: fontChord, fontSize: 16),
-                  decoration: InputDecoration(
-                    hintText: '192.168.0.10:5000',
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    suffixIcon: error == null
-                        ? null
-                        : Icon(
-                            Ph.warningCircleFill,
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                  ),
-                ),
+        GroupedSection(
+          top: 8,
+          header: 'Modelo no aparelho',
+          footer:
+              'O v3 + meu dataset mostra menos acorde quando não tem acorde '
+              'sendo tocado (cordas abafadas, tarraxa, fala).',
+          children: [
+            for (final option in OnDeviceModel.values)
+              CheckRow(
+                title: option.label,
+                subtitle: option.description,
+                selected: appState.onDeviceModel == option,
+                onTap: () => _selectModel(option),
               ),
-            ],
-          ),
-        if (usesServer)
-          const GroupedSection(
-            header: 'Antes de usar',
-            children: [
-              Padding(
-                padding: EdgeInsets.all(16),
-                child: StatusLine(
-                  icon: Ph.warningCircleFill,
-                  text: serverModeWarning,
-                ),
-              ),
-            ],
-          ),
+          ],
+        ),
         if (canChooseAudioInput) const AudioInputSection(),
       ],
     );
   }
 }
-
-/// Aviso do modo servidor: o áudio sai do celular sem criptografia.
-const serverModeWarning =
-    'Nesse modo o som do microfone vai pro computador que você indicou, '
-    'sem criptografia: outra pessoa na mesma rede Wi-Fi poderia ver esse '
-    'áudio. Só use numa rede em que você confia, como a da sua casa.';

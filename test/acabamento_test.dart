@@ -1,9 +1,12 @@
+import 'package:chordai/models/on_device_model.dart';
 import 'package:chordai/screens/free_practice_screen.dart';
 import 'package:chordai/screens/lyric_player_screen.dart';
+import 'package:chordai/screens/profile_screen.dart';
+import 'package:chordai/screens/settings_screen.dart';
 import 'package:chordai/services/cifra_parser.dart';
 import 'package:chordai/services/on_device_chord_service.dart';
 import 'package:chordai/state/app_state.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,46 +21,53 @@ void main() {
     expect(micLevel(0.02), inExclusiveRange(0.3, 0.6));
   });
 
-  group('selo do reconhecimento', () {
+  group('sem modo servidor', () {
     setUp(() async {
       mockPlatform();
       SharedPreferences.setMockInitialValues({'app_on_device_model': 'v3Meu'});
       await appState.loadProgress();
     });
 
-    testWidgets('sai da barra de título e aparece inteiro no conteúdo', (
+    testWidgets('as telas de prática não mostram selo de reconhecimento', (
       tester,
     ) async {
       setScreen(tester, const Size(390, 844));
-      await tester.pumpWidget(
-        appUnderTest(const FreePracticeScreen(serverUrl: 'http://x')),
-      );
+      await tester.pumpWidget(appUnderTest(const FreePracticeScreen()));
       await tester.pump();
-      expect(
-        find.text('Reconhecendo: No aparelho · v3 + meu dataset'),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(
-          of: find.byType(CupertinoNavigationBar),
-          matching: find.textContaining('No aparelho'),
-        ),
-        findsNothing,
-      );
+      expect(find.textContaining('No aparelho'), findsNothing);
+      expect(find.textContaining('Reconhecendo'), findsNothing);
+      expect(find.textContaining('dataset'), findsNothing);
     });
 
-    testWidgets('no tocar junto vai junto do artista e do andamento', (
+    testWidgets('o tocar junto mostra só o artista e o andamento', (
       tester,
     ) async {
       final cifra = parseCifra('Tempo: 90\n[Intro]\nAm  G\n', title: 'x');
-      await tester.pumpWidget(
-        appUnderTest(LyricPlayerScreen(sheet: cifra, serverUrl: 'http://x')),
-      );
+      await tester.pumpWidget(appUnderTest(LyricPlayerScreen(sheet: cifra)));
       await tester.pump();
-      expect(
-        find.textContaining('90 BPM · No aparelho · v3 + meu dataset'),
-        findsOneWidget,
-      );
+      expect(find.text('90 BPM'), findsOneWidget);
+      expect(find.textContaining('No aparelho'), findsNothing);
     });
+
+    testWidgets(
+      'Reconhecimento no perfil mostra o modelo e só a escolha dele',
+      (tester) async {
+        setScreen(tester, const Size(390, 1600));
+        await tester.pumpWidget(appUnderTest(const ProfileScreen()));
+        await tester.pump();
+        expect(find.text('v3 + meu dataset'), findsOneWidget);
+
+        await tester.tap(find.text('Reconhecimento'));
+        await settle(tester);
+        expect(find.byType(SettingsScreen), findsOneWidget);
+        expect(find.text('Modelo no aparelho'), findsOneWidget);
+        expect(find.text('Servidor'), findsNothing);
+        expect(find.byType(TextField), findsNothing);
+
+        await tester.tap(find.text('Só v3'));
+        await settle(tester);
+        expect(appState.onDeviceModel, OnDeviceModel.v3);
+      },
+    );
   });
 }

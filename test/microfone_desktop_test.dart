@@ -33,7 +33,6 @@ class _MicFalso implements ChordRecognizer {
 
   @override
   Future<void> start({
-    String? serverUrl,
     required void Function(ChordPrediction prediction) onPrediction,
     required void Function(Object error) onError,
   }) async {
@@ -216,9 +215,7 @@ void main() {
     ) async {
       final mic = _MicFalso();
       await tester.pumpWidget(
-        appUnderTest(
-          FreePracticeScreen(serverUrl: 'http://x', recognizer: mic),
-        ),
+        appUnderTest(FreePracticeScreen(recognizer: mic)),
       );
       await tester.tap(find.text('Ouvir'));
       await settle(tester);
@@ -233,13 +230,7 @@ void main() {
     testWidgets('testar acorde para quando a entrada some', (tester) async {
       final mic = _MicFalso();
       await tester.pumpWidget(
-        appUnderTest(
-          ChordPracticeScreen(
-            serverUrl: 'http://x',
-            chord: 'C',
-            recognizer: mic,
-          ),
-        ),
+        appUnderTest(ChordPracticeScreen(chord: 'C', recognizer: mic)),
       );
       await tester.tap(find.text('Começar'));
       await settle(tester);
@@ -256,9 +247,7 @@ void main() {
       setScreen(tester, const Size(500, 1200));
       final mic = _MicFalso();
       await tester.pumpWidget(
-        appUnderTest(
-          PracticeSessionScreen(serverUrl: 'http://x', recognizer: mic),
-        ),
+        appUnderTest(PracticeSessionScreen(recognizer: mic)),
       );
       await tester.runAsync(() => Future.delayed(const Duration(seconds: 1)));
       await settle(tester);
@@ -275,9 +264,7 @@ void main() {
     testWidgets('outro erro continua com a mensagem de antes', (tester) async {
       final mic = _MicFalso();
       await tester.pumpWidget(
-        appUnderTest(
-          FreePracticeScreen(serverUrl: 'http://x', recognizer: mic),
-        ),
+        appUnderTest(FreePracticeScreen(recognizer: mic)),
       );
       await tester.tap(find.text('Ouvir'));
       await settle(tester);

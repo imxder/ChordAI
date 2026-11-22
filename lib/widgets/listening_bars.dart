@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// As seis barras do ícone do app, que sobem com o volume do microfone.
-/// Sem [level] (modo servidor, que grava em arquivo) ficam paradas.
+/// Sem [level] (nos reconhecedores falsos dos testes) ficam paradas.
 class ListeningBars extends StatelessWidget {
   final ValueListenable<double>? level;
   final Color color;

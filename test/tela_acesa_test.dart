@@ -28,9 +28,7 @@ void main() {
   testWidgets('a tela fica acesa só enquanto a cifra rola sozinha', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      appUnderTest(LyricSheetScreen(sheet: cifra, serverUrl: 'http://x')),
-    );
+    await tester.pumpWidget(appUnderTest(LyricSheetScreen(sheet: cifra)));
     await tester.tap(find.text('Rolar'));
     await tester.pump();
     expect(pedidos, [true]);
@@ -44,13 +42,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      appUnderTest(
-        LyricPlayerScreen(
-          sheet: cifra,
-          serverUrl: 'http://x',
-          recognizer: _MicFalso(),
-        ),
-      ),
+      appUnderTest(LyricPlayerScreen(sheet: cifra, recognizer: _MicFalso())),
     );
     await tester.tap(find.text('Começar'));
     await tester.pump();
@@ -76,7 +68,6 @@ class _MicFalso implements ChordRecognizer {
   void selectDevice(InputDevice? device) {}
   @override
   Future<void> start({
-    String? serverUrl,
     required void Function(ChordPrediction prediction) onPrediction,
     required void Function(Object error) onError,
   }) async => isRunning = true;

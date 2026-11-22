@@ -20,14 +20,7 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(
-      appUnderTest(
-        const LyricSheetScreen(
-          sheet: sheet,
-          serverUrl: 'http://localhost:5001',
-        ),
-      ),
-    );
+    await tester.pumpWidget(appUnderTest(const LyricSheetScreen(sheet: sheet)));
 
     final antes = tester.widgetList(find.byType(GuitarNeck)).length;
     expect(find.text('Dó maior'), findsNothing);
@@ -53,11 +46,7 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(
-      appUnderTest(
-        LyricSheetScreen(sheet: sheet, serverUrl: 'http://localhost:5001'),
-      ),
-    );
+    await tester.pumpWidget(appUnderTest(LyricSheetScreen(sheet: sheet)));
     double offset() => tester
         .state<ScrollableState>(find.byType(Scrollable).first)
         .position

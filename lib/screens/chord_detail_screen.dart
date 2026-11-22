@@ -12,16 +12,10 @@ import 'chord_practice_screen.dart';
 import '../theme/ph.dart';
 
 class ChordDetailScreen extends StatelessWidget {
-  final String serverUrl;
   final InputDevice? inputDevice;
   final String chord;
 
-  const ChordDetailScreen({
-    super.key,
-    required this.serverUrl,
-    required this.chord,
-    this.inputDevice,
-  });
+  const ChordDetailScreen({super.key, required this.chord, this.inputDevice});
 
   static const _stringLabels = [
     '6ª corda · Mi grave',
@@ -50,11 +44,8 @@ class ChordDetailScreen extends StatelessWidget {
           onPressed: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => ChordPracticeScreen(
-                  serverUrl: serverUrl,
-                  inputDevice: inputDevice,
-                  chord: chord,
-                ),
+                builder: (_) =>
+                    ChordPracticeScreen(inputDevice: inputDevice, chord: chord),
               ),
             );
           },

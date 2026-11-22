@@ -23,20 +23,16 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'test_helpers.dart';
 
-const _url = 'http://localhost:5001';
-
 final _screens = <String, Widget Function(LyricSheet sheet)>{
   'início': (_) => const AppShell(),
   'onboarding': (_) => const OnboardingScreen(),
   'afinou?': (_) => const TuningCheckScreen(),
-  'detalhe do acorde': (_) =>
-      const ChordDetailScreen(serverUrl: _url, chord: 'Bdim'),
-  'testar acorde': (_) =>
-      const ChordPracticeScreen(serverUrl: _url, chord: 'F'),
-  'cifra': (sheet) => LyricSheetScreen(sheet: sheet, serverUrl: _url),
-  'tocar junto': (sheet) => LyricPlayerScreen(sheet: sheet, serverUrl: _url),
-  'sequências': (_) => const PracticeSessionScreen(serverUrl: _url),
-  'reconhecer': (_) => const FreePracticeScreen(serverUrl: _url),
+  'detalhe do acorde': (_) => const ChordDetailScreen(chord: 'Bdim'),
+  'testar acorde': (_) => const ChordPracticeScreen(chord: 'F'),
+  'cifra': (sheet) => LyricSheetScreen(sheet: sheet),
+  'tocar junto': (sheet) => LyricPlayerScreen(sheet: sheet),
+  'sequências': (_) => const PracticeSessionScreen(),
+  'reconhecer': (_) => const FreePracticeScreen(),
   'afinador': (_) => const TunerScreen(),
   'afinação personalizada': (_) => const CustomTuningScreen(),
   'servidor': (_) => const SettingsScreen(),
@@ -126,9 +122,7 @@ void main() {
           .first;
       final (size, scale) = setup.value;
       setScreen(tester, size, textScale: scale);
-      await tester.pumpWidget(
-        appUnderTest(LyricPlayerScreen(sheet: sheet, serverUrl: _url)),
-      );
+      await tester.pumpWidget(appUnderTest(LyricPlayerScreen(sheet: sheet)));
       await tester.pump();
 
       appState.startSession(buildLyricPracticeMap(sheet).score);
@@ -181,9 +175,7 @@ void main() {
       sheet = (await tester.runAsync(() => LyricSheetLibrary().loadAll()))!
           .first;
       setScreen(tester, setup.value);
-      await tester.pumpWidget(
-        appUnderTest(LyricPlayerScreen(sheet: sheet, serverUrl: _url)),
-      );
+      await tester.pumpWidget(appUnderTest(LyricPlayerScreen(sheet: sheet)));
       await tester.pump();
       appState.startSession(buildLyricPracticeMap(sheet).score);
       await tester.pump(const Duration(seconds: 3));

@@ -2,10 +2,9 @@ import 'package:record/record.dart';
 
 import '../models/chord_prediction.dart';
 
-/// Interface comum entre o reconhecimento de acordes via servidor
-/// (ChordRecognitionService) e no aparelho (OnDeviceChordService), pra uma
-/// tela usar qualquer um dos dois sem mudar mais nada além de qual
-/// instanciar.
+/// O que uma tela precisa de quem reconhece acordes. No app quem faz isso é
+/// o OnDeviceChordService; nos testes entram reconhecedores falsos, que
+/// fingem ouvir acordes sem carregar o modelo.
 abstract class ChordRecognizer {
   bool get isRunning;
 
@@ -15,9 +14,7 @@ abstract class ChordRecognizer {
 
   void selectDevice(InputDevice? device);
 
-  /// [serverUrl] é ignorado pela implementação no aparelho.
   Future<void> start({
-    String? serverUrl,
     required void Function(ChordPrediction prediction) onPrediction,
     required void Function(Object error) onError,
   });

@@ -121,15 +121,6 @@ void main() {
       modelo: v3(),
       esperarPorMim: e,
     ),
-    'modo servidor': (t, e) => simularTela(
-      t,
-      nome: 'servidor',
-      cifra: riptide,
-      tocar: (p, bpm) => tocarPelaCifra(p, bpm: bpm),
-      modelo: v3(),
-      servidor: true,
-      esperarPorMim: e,
-    ),
   };
 
   const esperadoAcompanhando = <String, (int?, int?, int)>{
@@ -145,7 +136,6 @@ void main() {
     'silêncio do começo ao fim': (0, 88, 1),
     'trocas a cada 1,2 s': (12, 0, 1),
     'três errados de propósito': (85, 3, 1),
-    'modo servidor': (null, null, 1),
   };
   const esperadoEsperando = <String, (int?, int?, int)>{
     'certinho (Riptide)': (88, 0, 2),
@@ -160,7 +150,6 @@ void main() {
     'silêncio do começo ao fim': (0, 88, 88),
     'trocas a cada 1,2 s': (12, 0, 2),
     'três errados de propósito': (null, null, 3),
-    'modo servidor': (null, null, 3),
   };
 
   for (final esperar in [false, true]) {

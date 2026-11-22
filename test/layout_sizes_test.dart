@@ -61,6 +61,11 @@ const _desktopSetups = <String, Size>{
 
 final _windows = TargetPlatformVariant.only(TargetPlatform.windows);
 
+final _celulares = TargetPlatformVariant({
+  TargetPlatform.android,
+  TargetPlatform.iOS,
+});
+
 void main() {
   late LyricSheet sheet;
 
@@ -85,7 +90,7 @@ void main() {
         await tester.pumpWidget(appUnderTest(screen.value(sheet)));
         await tester.pump(const Duration(milliseconds: 50));
         await tester.pump(const Duration(milliseconds: 500));
-      });
+      }, variant: _celulares);
     }
 
     testWidgets(

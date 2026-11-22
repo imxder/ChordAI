@@ -635,14 +635,16 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     }
 
     return Scaffold(
-      appBar: CupertinoNavigationBar(
-        middle: Text(widget.sheet.title),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor
-            .withValues(alpha: 0.86),
-        border: null,
-        transitionBetweenRoutes: false,
-        trailing: trailing,
-      ),
+      appBar: useLiquidGlass
+          ? GlassNavBar(title: widget.sheet.title, trailing: trailing)
+          : CupertinoNavigationBar(
+              middle: Text(widget.sheet.title),
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor
+                  .withValues(alpha: 0.86),
+              border: null,
+              transitionBetweenRoutes: false,
+              trailing: trailing,
+            ),
       body: Column(children: [...sheet, _buildControls(context, running)]),
     );
   }

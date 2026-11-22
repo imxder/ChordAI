@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
@@ -46,6 +47,17 @@ class IosPage extends StatelessWidget {
       );
     }
 
+    if (useLiquidGlass) {
+      return _GlassPage(
+        title: title,
+        largeTitle: largeTitle,
+        trailing: trailing,
+        bottomBar: bottomBar,
+        controller: controller,
+        list: list,
+      );
+    }
+
     if (largeTitle) {
       return Scaffold(
         extendBody: bottomBar != null,
@@ -79,6 +91,186 @@ class IosPage extends StatelessWidget {
       ),
       body: CustomScrollView(controller: controller, slivers: [list]),
       bottomNavigationBar: bottomBar,
+    );
+  }
+}
+
+class _GlassPage extends StatefulWidget {
+  final String title;
+  final bool largeTitle;
+  final Widget? trailing;
+  final Widget? bottomBar;
+  final ScrollController? controller;
+  final Widget list;
+
+  const _GlassPage({
+    required this.title,
+    required this.largeTitle,
+    required this.trailing,
+    required this.bottomBar,
+    required this.controller,
+    required this.list,
+  });
+
+  @override
+  State<_GlassPage> createState() => _GlassPageState();
+}
+
+class _GlassPageState extends State<_GlassPage> {
+  final _collapsed = ValueNotifier(false);
+
+  bool _onScroll(ScrollNotification notification) {
+    if (notification.depth == 0) {
+      _collapsed.value = notification.metrics.pixels > 36;
+    }
+    return false;
+  }
+
+  @override
+  void dispose() {
+    _collapsed.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.paddingOf(context).top + GlassNavBar.height;
+    final side = pagePadding(context).left;
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      extendBody: widget.bottomBar != null,
+      appBar: GlassNavBar(
+        title: widget.title,
+        trailing: widget.trailing,
+        showTitle: widget.largeTitle ? _collapsed : null,
+      ),
+      body: NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        child: GlassScrollEdgeEffect(
+          topFadeHeight: top,
+          fadeBottom: false,
+          style: GlassScrollEdgeStyle.blur,
+          maxSigma: 14,
+          child: CustomScrollView(
+            controller: widget.controller,
+            slivers: [
+              SliverToBoxAdapter(child: SizedBox(height: top)),
+              if (widget.largeTitle)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(side, 6, side, 4),
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        widget.title,
+                        style: CupertinoTheme.of(context)
+                            .textTheme
+                            .navLargeTitleTextStyle,
+                      ),
+                    ),
+                  ),
+                ),
+              widget.list,
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: widget.bottomBar,
+    );
+  }
+}
+
+/// Barra de título do iPhone no jeito do iOS 26: a barra é transparente, o
+/// conteúdo passa por baixo desfocado, e o vidro fica só nos botões.
+class GlassNavBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  final Widget? trailing;
+  final ValueListenable<bool>? showTitle;
+
+  const GlassNavBar({
+    super.key,
+    required this.title,
+    this.trailing,
+    this.showTitle,
+  });
+
+  static const height = 52.0;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(height);
+
+  @override
+  Widget build(BuildContext context) {
+    final background = Theme.of(context).scaffoldBackgroundColor;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final canPop = Navigator.of(context).canPop();
+    Widget middle = Semantics(
+      header: true,
+      child: Text(
+        title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: CupertinoTheme.of(context).textTheme.navTitleTextStyle,
+      ),
+    );
+    if (showTitle != null) {
+      middle = ValueListenableBuilder<bool>(
+        valueListenable: showTitle!,
+        builder: (context, visible, child) => AnimatedOpacity(
+          opacity: visible ? 1 : 0,
+          duration: motion(context, const Duration(milliseconds: 160)),
+          child: child,
+        ),
+        child: middle,
+      );
+    }
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            background.withValues(alpha: 0.8),
+            background.withValues(alpha: 0),
+          ],
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: height,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: NavigationToolbar(
+              middleSpacing: 12,
+              leading: canPop
+                  ? GlassButton(
+                      icon: Icon(Ph.caretLeft, color: onSurface),
+                      label: 'Voltar',
+                      width: 44,
+                      height: 44,
+                      iconSize: 20,
+                      iconColor: onSurface,
+                      useOwnLayer: true,
+                      onTap: () => Navigator.of(context).maybePop(),
+                    )
+                  : null,
+              middle: middle,
+              trailing: trailing == null
+                  ? null
+                  : GlassContainer(
+                      useOwnLayer: true,
+                      shape: const LiquidRoundedSuperellipse(borderRadius: 22),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: SizedBox(
+                        height: 44,
+                        child: Center(widthFactor: 1, child: trailing),
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -84,11 +84,16 @@ jobs:
 
       # Um APK só, universal (arm, arm64 e x86_64), pra o QR Code apontar pra um
       # arquivo. A versão vem da tag e o número do build é o número da execução.
+      # Se o download de algum plugin do Gradle falhar no meio, tenta mais uma
+      # vez antes de dar erro.
       - name: APK release
         run: |
-          flutter build apk --release \
-            --build-name=${{ steps.versao.outputs.nome }} \
-            --build-number=${{ github.run_number }}
+          build() {
+            flutter build apk --release \
+              --build-name=${{ steps.versao.outputs.nome }} \
+              --build-number=${{ github.run_number }}
+          }
+          build || { echo "o build falhou, tentando de novo em 30 s"; sleep 30; build; }
 
       # Confere que o APK saiu assinado com a minha chave, não com a de debug.
       - name: Assinatura

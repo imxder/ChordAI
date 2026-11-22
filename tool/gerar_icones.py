@@ -20,7 +20,9 @@ O que gera:
     assets/icon/                 SVG, PNG de 1024, imagem social do GitHub,
                                  versões do iOS 18 (escuro e tingido) e o macOS
     ios/.../AppIcon.appiconset   todos os tamanhos do Contents.json, sem alfa
-    android/.../res              mipmaps antigos, ícone adaptativo e monocromático
+    ios/.../LaunchImage.imageset o desenho da tela de abertura (claro e escuro)
+    android/.../res              mipmaps antigos, ícone adaptativo e monocromático,
+                                 e a tela de abertura (claro e escuro)
     windows/runner/resources     app_icon.ico com 16, 24, 32, 48, 64 e 256
 """
 import json
@@ -49,6 +51,17 @@ RAIO = 50
 CONTORNO = 14  # anel escuro em volta da bolinha, pra ela não grudar na barra
 
 SUPER = 4  # desenha 4x maior e reduz: deixa as bordas lisas
+
+# Tela de abertura: o fundo é o do app (papel no claro, preto no escuro) e as
+# barras ficam da cor do texto, pra não piscar uma cor diferente ao abrir.
+PAPEL = (0xF3, 0xF0, 0xEA)
+PRETO = (0x00, 0x00, 0x00)
+ABERTURA = {
+    'claro': dict(barra=FUNDO, contorno=PAPEL, fundo_cor=PAPEL),
+    'escuro': dict(barra=CREME, contorno=PRETO, fundo_cor=PRETO),
+}
+LAUNCH = RAIZ / 'ios' / 'Runner' / 'Assets.xcassets' / 'LaunchImage.imageset'
+LAUNCH_COR = RAIZ / 'ios' / 'Runner' / 'Assets.xcassets' / 'LaunchBackground.colorset'
 
 
 def barras():
@@ -84,7 +97,7 @@ def svg():
     return '\n'.join(linhas) + '\n'
 
 
-def desenhar(px, escala=1.0, fundo=True, mono=False):
+def desenhar(px, escala=1.0, fundo=True, mono=False, barra=CREME, contorno=FUNDO):
     """Desenha o ícone num quadrado de px.
 
     escala: tamanho do desenho em relação ao quadrado (1 = igual ao SVG).
@@ -116,9 +129,9 @@ def desenhar(px, escala=1.0, fundo=True, mono=False):
     img = Image.new('RGBA', (s, s), FUNDO + (255,) if fundo else (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     for x0, y0, x1, y1 in barras():
-        d.rounded_rectangle((t(x0), t(y0), t(x1), t(y1)), radius=LARGURA_BARRA / 2 * k, fill=CREME)
+        d.rounded_rectangle((t(x0), t(y0), t(x1), t(y1)), radius=LARGURA_BARRA / 2 * k, fill=barra)
     for x, y in BOLINHAS:
-        d.ellipse((t(x) - anel, t(y) - anel, t(x) + anel, t(y) + anel), fill=FUNDO + (255,))
+        d.ellipse((t(x) - anel, t(y) - anel, t(x) + anel, t(y) + anel), fill=contorno + (255,))
         d.ellipse((t(x) - miolo, t(y) - miolo, t(x) + miolo, t(y) + miolo), fill=VERDE)
     return img.resize((px, px), Image.LANCZOS)
 
@@ -172,8 +185,39 @@ ADAPTATIVO = """<?xml version="1.0" encoding="utf-8"?>
 CORES = """<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#%02X%02X%02X</color>
+    <color name="launch_background">#%02X%02X%02X</color>
 </resources>
-""" % FUNDO
+""" % (FUNDO + PAPEL)
+
+CORES_NOITE = """<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="launch_background">#%02X%02X%02X</color>
+</resources>
+""" % PRETO
+
+FUNDO_ABERTURA = """<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/launch_background" />
+    <item>
+        <bitmap android:gravity="center" android:src="@drawable/launch_mark" />
+    </item>
+</layer-list>
+"""
+
+ESTILO_31 = """<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="LaunchTheme" parent="@android:style/Theme.%s.NoTitleBar">
+        <item name="android:windowSplashScreenBackground">@color/launch_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/launch_mark_android12</item>
+    </style>
+    <style name="NormalTheme" parent="@android:style/Theme.%s.NoTitleBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+    </style>
+</resources>
+"""
+
+# Densidades pra desenhos em dp: (pasta, px por dp)
+DPI = [('mdpi', 1), ('hdpi', 1.5), ('xhdpi', 2), ('xxhdpi', 3), ('xxxhdpi', 4)]
 
 
 def gerar_android():
@@ -197,6 +241,60 @@ def gerar_android():
     pasta.mkdir(exist_ok=True)
     (pasta / 'ic_launcher.xml').write_text(ADAPTATIVO, encoding='utf-8')
     (RES / 'values' / 'colors.xml').write_text(CORES, encoding='utf-8')
+
+
+def gerar_abertura():
+    """Tela de abertura do iPhone e do Android, no claro e no escuro.
+
+    O desenho tem 160pt (dp), sem fundo; o fundo vem da cor da tela. No
+    Android 12 ou mais novo o sistema mostra o ícone num círculo de 160dp
+    dentro de 240dp, então lá o desenho vai menor, pra caber no círculo."""
+    imagens = []
+    for nome, cores in ABERTURA.items():
+        sufixo = '' if nome == 'claro' else '-escuro'
+        for escala_tela in (1, 2, 3):
+            arquivo = f'LaunchImage{sufixo}' + ('' if escala_tela == 1 else f'@{escala_tela}x') + '.png'
+            desenhar(160 * escala_tela, fundo=False, barra=cores['barra'], contorno=cores['contorno']).save(LAUNCH / arquivo)
+            item = {'idiom': 'universal', 'filename': arquivo, 'scale': f'{escala_tela}x'}
+            if nome == 'escuro':
+                item['appearances'] = [{'appearance': 'luminosity', 'value': 'dark'}]
+            imagens.append(item)
+    (LAUNCH / 'Contents.json').write_text(
+        json.dumps({'images': imagens, 'info': {'version': 1, 'author': 'xcode'}}, indent=2) + '\n',
+        encoding='utf-8')
+
+    LAUNCH_COR.mkdir(exist_ok=True)
+
+    def cor(c):
+        return {'color-space': 'srgb', 'components': {
+            'red': '0x%02X' % c[0], 'green': '0x%02X' % c[1], 'blue': '0x%02X' % c[2], 'alpha': '1.000'}}
+    (LAUNCH_COR / 'Contents.json').write_text(json.dumps({
+        'colors': [
+            {'idiom': 'universal', 'color': cor(PAPEL)},
+            {'idiom': 'universal', 'color': cor(PRETO),
+             'appearances': [{'appearance': 'luminosity', 'value': 'dark'}]},
+        ],
+        'info': {'version': 1, 'author': 'xcode'},
+    }, indent=2) + '\n', encoding='utf-8')
+
+    escala_12 = (160 / 240) * 512 / raio_maximo() * 0.92
+    for nome, cores in ABERTURA.items():
+        noite = '' if nome == 'claro' else '-night'
+        for pasta_dpi, fator in DPI:
+            pasta = RES / f'drawable{noite}-{pasta_dpi}'
+            pasta.mkdir(exist_ok=True)
+            desenhar(round(160 * fator), fundo=False, barra=cores['barra'],
+                     contorno=cores['contorno']).save(pasta / 'launch_mark.png')
+            desenhar(round(240 * fator), escala=escala_12, fundo=False, barra=cores['barra'],
+                     contorno=cores['contorno']).save(pasta / 'launch_mark_android12.png')
+
+    for pasta in ('drawable', 'drawable-v21'):
+        (RES / pasta / 'launch_background.xml').write_text(FUNDO_ABERTURA, encoding='utf-8')
+    (RES / 'values-night').mkdir(exist_ok=True)
+    (RES / 'values-night' / 'colors.xml').write_text(CORES_NOITE, encoding='utf-8')
+    for pasta, tema in (('values-v31', 'Light'), ('values-night-v31', 'Black')):
+        (RES / pasta).mkdir(exist_ok=True)
+        (RES / pasta / 'styles.xml').write_text(ESTILO_31 % (tema, tema), encoding='utf-8')
 
 
 def gerar_windows():
@@ -242,6 +340,7 @@ if __name__ == '__main__':
     gerar_fonte()
     gerar_ios()
     gerar_android()
+    gerar_abertura()
     gerar_windows()
     gerar_macos()
     gerar_social()

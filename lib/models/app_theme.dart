@@ -29,6 +29,11 @@ const List<AppThemeOption> appThemeOptions = [
     color: Color(0xFF8C3B4A),
     darkColor: Color(0xFFE6919F),
   ),
+  AppThemeOption(
+    name: 'Grafite',
+    color: Color(0xFF1C1A17),
+    darkColor: Color(0xFFF3F0EA),
+  ),
 ];
 
 enum AppAppearance {

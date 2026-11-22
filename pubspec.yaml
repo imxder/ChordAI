@@ -17,6 +17,7 @@ dependencies:
   shared_preferences: ^2.5.6
   liquid_glass_widgets: 1.17.0
   tflite_flutter: ^0.12.1
+  wakelock_plus: ^1.8.2
 
 dev_dependencies:
   flutter_test:

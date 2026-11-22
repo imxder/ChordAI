@@ -15,6 +15,7 @@ import '../models/play_along_report.dart';
 import '../services/chord_recognizer.dart';
 import '../services/chord_recognizer_factory.dart';
 import '../services/play_along_engine.dart';
+import '../services/screen_awake.dart';
 import '../services/tocar_junto_log.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -155,6 +156,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     _engine = engine;
     _ticker?.cancel();
     _ticker = Timer.periodic(_tick, (_) => _onTick());
+    keepScreenOn(true);
 
     _startListening();
   }
@@ -202,6 +204,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     _ticker?.cancel();
     _ticker = null;
     _stopwatch.stop();
+    keepScreenOn(false);
     await _service.stop();
     appState.stopSession();
     if (mounted) setState(() {});
@@ -255,6 +258,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     _ticker?.cancel();
     _ticker = null;
     _stopwatch.stop();
+    keepScreenOn(false);
     _service.stop();
     final engine = _engine!;
     final total = engine.hits + engine.misses;
@@ -289,6 +293,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     final engine = _engine!;
     final lines = chordsByMisses(engine.perChord);
     final notCounted = engine.notCountedChords;
+    final tooShort = engine.tooShortChords;
     final notCountedSteps = engine.results
         .where((r) => r == StepResult.notCounted)
         .length;
@@ -351,6 +356,13 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
                     const SizedBox(height: 12),
                     Text(
                       'Não contaram: ${notCounted.join(', ')} (o modelo não conhece)',
+                      style: textTheme.bodySmall,
+                    ),
+                  ],
+                  if (tooShort.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Não contaram: ${tooShort.join(', ')} quando passam rápido demais pra eu ouvir',
                       style: textTheme.bodySmall,
                     ),
                   ],
@@ -438,6 +450,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
   void dispose() {
     _ticker?.cancel();
     _bpmRepeat?.cancel();
+    keepScreenOn(false);
     appState.removeListener(_onAppStateChanged);
     // Sem isso a sessão continuava "rodando" depois de sair da tela.
     if (appState.sessionStatus != SessionStatus.idle) {
@@ -471,8 +484,6 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     final trailing = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const RecognitionModeBadge(),
-        const SizedBox(width: 8),
         CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => showPracticeOptionsSheet(context),
@@ -517,14 +528,14 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
               ? const EdgeInsets.fromLTRB(32, 12, 32, 24)
               : EdgeInsets.fromLTRB(padding.left, 12, padding.right, 24),
           children: [
-            if (widget.sheet.artist != null || meta.isNotEmpty)
-              Text(
-                [
-                  if (widget.sheet.artist != null) widget.sheet.artist!,
-                  if (meta.isNotEmpty) meta,
-                ].join(' · '),
-                style: textTheme.bodySmall,
-              ),
+            Text(
+              [
+                if (widget.sheet.artist != null) widget.sheet.artist!,
+                if (meta.isNotEmpty) meta,
+                recognitionModeLabel(),
+              ].join(' · '),
+              style: textTheme.bodySmall,
+            ),
             for (var si = 0; si < widget.sheet.sections.length; si++) ...[
               if (widget.sheet.sections[si].title != null)
                 SheetSectionLabel(widget.sheet.sections[si].title!),
@@ -629,14 +640,16 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     }
 
     return Scaffold(
-      appBar: CupertinoNavigationBar(
-        middle: Text(widget.sheet.title),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor
-            .withValues(alpha: 0.86),
-        border: null,
-        transitionBetweenRoutes: false,
-        trailing: trailing,
-      ),
+      appBar: useLiquidGlass
+          ? GlassNavBar(title: widget.sheet.title, trailing: trailing)
+          : CupertinoNavigationBar(
+              middle: Text(widget.sheet.title),
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor
+                  .withValues(alpha: 0.86),
+              border: null,
+              transitionBetweenRoutes: false,
+              trailing: trailing,
+            ),
       body: Column(children: [...sheet, _buildControls(context, running)]),
     );
   }
@@ -654,6 +667,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     final padding = isDesktop
         ? const EdgeInsets.symmetric(horizontal: 22)
         : pagePadding(context);
+    final inner = isDesktop ? padding.left : 16.0;
 
     final engine = _engine;
     final judged = running ? engine?.lastJudged : null;
@@ -689,7 +703,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
         case StepResult.notCounted:
         case StepResult.pending:
           status = StatusLine(
-            text: '$judgedChord não conta: o modelo não conhece',
+            text: engine.modelChords[judged] == null
+                ? '$judgedChord não conta: o modelo não conhece'
+                : '$judgedChord não conta: passa rápido demais pra eu ouvir',
           );
       }
     }
@@ -701,7 +717,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(padding.left, 12, padding.right, 14),
+            padding: EdgeInsets.fromLTRB(inner, 12, inner, 14),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -837,9 +853,11 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
                         label: Text(running ? 'Parar' : 'Começar'),
                         style: FilledButton.styleFrom(
                           backgroundColor: running
-                              ? colorScheme.onSurface
+                              ? stopButtonColor(context)
                               : null,
-                          foregroundColor: running ? colorScheme.surface : null,
+                          foregroundColor: running
+                              ? onStopButtonColor(context)
+                              : null,
                         ),
                       ),
                     ),

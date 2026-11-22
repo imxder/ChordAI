@@ -209,7 +209,6 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen>
       onToggle: _selectedScore == null ? null : (running ? _stop : _start),
       child: IosPage(
         title: 'Sequências',
-        trailing: const RecognitionModeBadge(),
         bottomBar: BottomActionBar(
           child: FilledButton.icon(
             onPressed: _selectedScore == null
@@ -219,8 +218,8 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen>
             label: Text(running ? 'Parar' : 'Começar'),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(50),
-              backgroundColor: running ? colorScheme.onSurface : null,
-              foregroundColor: running ? colorScheme.surface : null,
+              backgroundColor: running ? stopButtonColor(context) : null,
+              foregroundColor: running ? onStopButtonColor(context) : null,
             ),
           ),
         ),
@@ -327,6 +326,10 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen>
                 ],
               ),
             ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: RecognitionModeBadge(),
           ),
         ],
       ),

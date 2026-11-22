@@ -7,6 +7,7 @@ import 'package:chordai/services/cifra_parser.dart';
 import 'package:chordai/services/play_along_engine.dart';
 import 'package:chordai/state/app_state.dart';
 import 'package:chordai/widgets/cifra_line.dart';
+import 'package:chordai/widgets/page_parts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -124,5 +125,26 @@ void main() {
           .firstWhere((t) => RegExp(r'^\d{2,3}$').hasMatch(t)),
     );
     expect(bpm, lessThan(95));
+  });
+
+  testWidgets('painel de baixo tem a mesma margem de dentro em pé e deitado', (
+    tester,
+  ) async {
+    mockPlatform();
+    await tester.runAsync(() => appState.loadProgress());
+    final cifra = parseCifra('Tempo: 100\nAm  G\n', title: 'x');
+    Future<double> margem(Size tamanho) async {
+      setScreen(tester, tamanho);
+      await tester.pumpWidget(
+        appUnderTest(LyricPlayerScreen(sheet: cifra, serverUrl: 'http://x')),
+      );
+      await tester.pump();
+      final painel = tester.getRect(find.byType(FloatingPanel));
+      return tester.getTopLeft(find.text('Primeiro acorde')).dx - painel.left;
+    }
+
+    final emPe = await margem(const Size(390, 844));
+    final deitado = await margem(const Size(740, 360));
+    expect(deitado, emPe);
   });
 }

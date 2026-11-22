@@ -20,7 +20,8 @@ C  G  Am  F
 [Pré-Refrão 1]
 
 C  G  Am
-G  F  G  Am  F
+G:1  F:3
+G:1  Am:1  F:2
 
 [Refrão]
 
@@ -47,7 +48,8 @@ C  G  Am  F
 [Pré-Refrão 2]
 
 C  G  Am
-G  F  G  Am  F
+G:1  F:3
+G:1  Am:1  F:2
 
 [Refrão 2]
 

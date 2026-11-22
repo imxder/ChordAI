@@ -9,6 +9,7 @@ import '../models/chord_names.dart';
 import '../models/lyric_practice.dart';
 import '../models/lyric_sheet.dart';
 import '../models/user_song.dart';
+import '../services/screen_awake.dart';
 import '../services/user_song_store.dart';
 import '../state/app_state.dart';
 import '../widgets/chord_sequence.dart';
@@ -81,6 +82,7 @@ class _LyricSheetScreenState extends State<LyricSheetScreen>
   void _setAutoScroll(bool on) {
     if (on == _autoScroll) return;
     setState(() => _autoScroll = on);
+    keepScreenOn(on);
     if (on) {
       _lastTick = Duration.zero;
       _ticker.start();
@@ -129,6 +131,7 @@ class _LyricSheetScreenState extends State<LyricSheetScreen>
 
   @override
   void dispose() {
+    if (_autoScroll) keepScreenOn(false);
     _ticker.dispose();
     _scroll.dispose();
     super.dispose();

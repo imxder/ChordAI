@@ -5,12 +5,14 @@ import 'package:record/record.dart';
 import '../models/chord_prediction.dart';
 import '../services/audio_input.dart';
 import '../services/chord_recognizer.dart';
+import '../services/on_device_chord_service.dart';
 import '../services/chord_recognizer_factory.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../theme/glass_tokens.dart';
 import '../widgets/mic_lifecycle.dart';
 import '../widgets/guitar_neck.dart';
+import '../widgets/listening_bars.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/recognition_mode_badge.dart';
 import '../theme/ph.dart';
@@ -166,7 +168,6 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
       onToggle: _listening ? _stop : _start,
       child: IosPage(
         title: 'Testar ${widget.chord}',
-        trailing: const RecognitionModeBadge(),
         bottomBar: BottomActionBar(
           child: FilledButton.icon(
             onPressed: _listening ? _stop : _start,
@@ -174,8 +175,8 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
             label: Text(_listening ? 'Parar' : 'Começar'),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(50),
-              backgroundColor: _listening ? colorScheme.onSurface : null,
-              foregroundColor: _listening ? colorScheme.surface : null,
+              backgroundColor: _listening ? stopButtonColor(context) : null,
+              foregroundColor: _listening ? onStopButtonColor(context) : null,
             ),
           ),
         ),
@@ -200,6 +201,15 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
                   const SizedBox(height: 18),
                   StatusLine(
                     icon: statusIcon,
+                    leading: _listening && statusIcon == null
+                        ? ListeningBars(
+                            color: colorScheme.onSurfaceVariant,
+                            level: switch (_service) {
+                              final OnDeviceChordService s => s.level,
+                              _ => null,
+                            },
+                          )
+                        : null,
                     text: _statusMessage,
                     color: statusColor,
                     textAlign: TextAlign.center,
@@ -211,7 +221,7 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
           GroupedSection(
             footer: learned
                 ? 'Você já aprendeu este acorde. Treine o quanto quiser.'
-                : 'Acerte ${AppState.chordMasteryHits} vezes seguidas para marcar como aprendido.',
+                : 'Acerte ${AppState.chordMasteryHits} vezes seguidas para marcar como aprendido.\nReconhecendo: ${recognitionModeLabel()}',
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),

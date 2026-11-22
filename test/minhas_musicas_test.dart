@@ -155,6 +155,39 @@ void main() {
       ]);
       expect(engine.notCountedChords, {'A'});
     });
+
+    test('acorde que passa rápido demais não conta', () {
+      final sheet = parseCifra(
+        'Tempo: 98\n[Pré-Refrão]\nG:1  F:3\nG:1  Am:1  F:2\n',
+        title: 'x',
+      );
+      var agora = Duration.zero;
+      final engine = PlayAlongEngine(
+        steps: buildLyricPracticeMap(sheet).score.steps,
+        knownChords: const {'Am', 'C', 'F', 'G'},
+        bpm: 98,
+        elapsed: () => agora,
+      )..start();
+      for (var ms = 0; ms <= 10000; ms += 100) {
+        agora = Duration(milliseconds: ms);
+        engine.update();
+      }
+      expect(engine.finished, isTrue);
+      expect(engine.results, [
+        StepResult.notCounted,
+        StepResult.miss,
+        StepResult.notCounted,
+        StepResult.notCounted,
+        StepResult.miss,
+      ]);
+      expect(engine.tooShortChords, {'G', 'Am'});
+      expect(engine.notCountedChords, isEmpty);
+
+      engine.setBpm(70);
+      expect(engine.isTooShort(0), isTrue);
+      engine.setBpm(50);
+      expect(engine.isTooShort(0), isFalse);
+    });
   });
 
   test('relatório põe os acordes mais errados primeiro', () {

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show ValueNotifier, kDebugMode;
 import 'package:record/record.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
@@ -20,7 +20,17 @@ import 'tocar_junto_log.dart';
 /// (ver ChordAI-backend/export/README.md): a extração de feature (chroma da
 /// STFT) já está dentro do `.tflite`, então aqui só grava áudio, monta a
 /// janela de 1,5s e lê a saída — nenhuma FFT/chroma/MFCC em Dart.
+/// Volume de 0 a 1 pra mostrar na tela: -60 dB (silêncio) até -12 dB (violão
+/// bem perto do microfone).
+double micLevel(double rms) {
+  if (rms <= 0) return 0;
+  final db = 20 * log(rms) / ln10;
+  return ((db + 60) / 48).clamp(0.0, 1.0);
+}
+
 class OnDeviceChordService implements ChordRecognizer {
+  final ValueNotifier<double> level = ValueNotifier(0);
+
   OnDeviceChordService(this._modelSource, {this.rawReadings = false});
 
   final OnDeviceModel Function() _modelSource;
@@ -112,6 +122,7 @@ class OnDeviceChordService implements ChordRecognizer {
       final amostras = _decoder.decode(chunk);
       _buffer?.addSamples(amostras);
       TocarJuntoLog.blocoDeAudio(amostras);
+      if (amostras.isNotEmpty) level.value = micLevel(_rms(amostras));
     });
 
     _inferenceTimer = Timer.periodic(
@@ -195,7 +206,7 @@ class OnDeviceChordService implements ChordRecognizer {
     return ChordPrediction(status: 'ok', chord: label, confidence: confidence);
   }
 
-  double _rms(Float32List samples) {
+  double _rms(List<double> samples) {
     var sum = 0.0;
     for (final sample in samples) {
       sum += sample * sample;
@@ -206,6 +217,7 @@ class OnDeviceChordService implements ChordRecognizer {
   @override
   Future<void> stop() async {
     _running = false;
+    level.value = 0;
     await _microphoneWatch?.cancel();
     _microphoneWatch = null;
     _inferenceTimer?.cancel();

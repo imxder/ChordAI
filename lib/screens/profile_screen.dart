@@ -284,8 +284,16 @@ class _LearnedChordTile extends StatelessWidget {
                   children: [
                     ChordName(chord, size: 16, color: foreground),
                     if (learned) ...[
-                      const SizedBox(width: 4),
-                      Icon(Ph.check, size: 14, color: foreground),
+                      const SizedBox(width: 6),
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: context.tokens.correct,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: foreground, width: 1.5),
+                        ),
+                      ),
                     ],
                   ],
                 ),

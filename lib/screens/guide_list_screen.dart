@@ -5,7 +5,7 @@ import '../widgets/page_parts.dart';
 import 'guide_detail_screen.dart';
 import '../theme/ph.dart';
 
-const _topicIcons = {
+const guideTopicIcons = {
   'acessorios': Ph.backpackFill,
   'regular': Ph.wrenchFill,
   'afinar': Ph.gaugeFill,
@@ -28,7 +28,9 @@ class GuideListScreen extends StatelessWidget {
           children: [
             for (final topic in guideTopics)
               GroupedRow(
-                leading: IconBadge(_topicIcons[topic.id] ?? Ph.bookOpenFill),
+                leading: IconBadge(
+                  guideTopicIcons[topic.id] ?? Ph.bookOpenFill,
+                ),
                 title: topic.title,
                 subtitle: topic.summary,
                 onTap: () => Navigator.of(context).push(

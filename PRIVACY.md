@@ -35,9 +35,7 @@ Versões antigas tinham um modo "Servidor", que mandava o som pra um computador 
 
 ## Compartilhamento com terceiros
 
-Hoje o app não manda dados pra nenhum terceiro: não tem Firebase, Google Analytics, anúncio ou qualquer outro serviço externo.
-
-Firebase: ainda não está no app. Quando eu colocar, esta seção vai dizer exatamente quais dados vão pra ele, pra quê e por quanto tempo.
+O app não manda dados pra nenhum terceiro: não tem Firebase, Google Analytics, anúncio ou qualquer outro serviço externo. Se um dia isso mudar, eu atualizo esta seção antes, dizendo quais dados vão, pra quê e por quanto tempo.
 
 ## Por quanto tempo os dados ficam
 
@@ -57,6 +55,7 @@ A LGPD (art. 18) garante que você pode confirmar se existe tratamento dos seus 
 
 - iPhone: o sistema pede a permissão na primeira vez que uma tela que escuta é aberta, e dá pra mudar em Ajustes, ChordAI, Microfone.
 - Android: o sistema pede a permissão na primeira vez que uma tela que escuta é aberta, e dá pra mudar em Configurações, Apps, ChordAI, Permissões.
+- Mac: o macOS pede a permissão na primeira vez que uma tela que escuta é aberta, e dá pra mudar em Ajustes do Sistema, Privacidade e Segurança, Microfone.
 - Windows: o Windows não pede permissão por app. Precisa estar ligado "Permitir que aplicativos da área de trabalho acessem o microfone" em Configurações, Privacidade e segurança, Microfone.
 
 ## Contato

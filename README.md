@@ -29,26 +29,18 @@ Quando não há acorde claro, os dois respondem "não reconheci" em vez de chuta
 
 ## Como funciona o reconhecimento
 
-O app tem dois modos, que se escolhe em **Perfil → Reconhecimento**. As telas de prática funcionam igual nos dois.
-
-### No aparelho (padrão)
-
-O modelo escolhido roda dentro do celular, em TensorFlow Lite (`assets/models/v3/chord_model.tflite` ou `assets/models/v3_meu/chord_model.tflite`), sem internet nem computador. Por que saiu do servidor está no [ADR 0001](docs/adr/0001-inferencia-no-aparelho.md).
+O modelo escolhido roda dentro do aparelho, em TensorFlow Lite (`assets/models/v3/chord_model.tflite` ou `assets/models/v3_meu/chord_model.tflite`), sem internet nem computador. O app não pede permissão de internet e o som não sai do aparelho. Por que a inferência saiu do servidor está no [ADR 0001](docs/adr/0001-inferencia-no-aparelho.md), e por que o modo servidor saiu de vez do app está no [ADR 0003](docs/adr/0003-sem-modo-servidor.md).
 
 Os dois modelos vêm das releases do backend, [`model-v3`](https://github.com/imxder/ChordAI-backend/releases/tag/model-v3) e [`model-v3-meu`](https://github.com/imxder/ChordAI-backend/releases/tag/model-v3-meu). O `model_info.json` de cada pasta guarda o limiar de confiança do modelo (0,50 no v3, 0,55 no v3_meu) e o hash do `.tflite`.
 
 1. O microfone grava PCM de 16 bits, mono, a 22.050 Hz.
 2. O app guarda sempre os últimos 1,5 s de áudio (33.075 amostras).
 3. A cada 0,5 s, se o som não for silêncio, passa essa janela pro modelo, fora da thread da interface. A extração de características (chroma) está dentro do próprio modelo, então o app só envia o áudio bruto.
-4. Um acorde só aparece na tela quando sai igual em pelo menos 2 das últimas 3 leituras, e no máximo uma vez a cada 1,5 s. Isso evita que uma leitura isolada errada conte como erro, e mantém a contagem de acertos igual à do modo servidor.
+4. Um acorde só aparece na tela quando sai igual em pelo menos 2 das últimas 3 leituras, e no máximo uma vez a cada 1,5 s. Isso evita que uma leitura isolada errada conte como erro.
 
 No iPhone 11, cada leitura leva cerca de 60 ms.
 
-### Servidor (avançado)
-
-O app grava janelas de 1,5 s e envia para a API Flask do [ChordAI-backend](https://github.com/imxder/ChordAI-backend) (`POST /predict_chord`), que devolve o acorde e a confiança. Precisa de um computador na mesma rede Wi-Fi do celular rodando o backend. O endereço é configurado na mesma tela: o IP e a porta que aparecem no terminal do servidor, ou o nome do computador na rede. A porta é a 5000 (ou 5001 no Mac, porque o AirPlay ocupa a 5000), por exemplo `192.168.0.10:5000` ou `meu-mac.local:5001`.
-
-**O modo servidor usa outro modelo.** A API Flask carrega o modelo antigo do backend (`trained_model/`, com a chroma calculada no servidor), que não é nem o v3 nem o v3_meu. Então, pro mesmo áudio, o resultado pode ser diferente do modo no aparelho. O que o teste de equivalência confere (veja abaixo) é se cada modelo no aparelho dá as mesmas probabilidades que o backend calculou pra ele.
+A API Flask do [ChordAI-backend](https://github.com/imxder/ChordAI-backend) continua lá, mas só como ferramenta pra eu testar o modelo pelo computador. Ela usa outro modelo (`trained_model/`) e o app não fala com ela.
 
 ## Como rodar
 
@@ -65,8 +57,6 @@ Para instalar no iPhone em modo release:
 flutter build ios --release
 flutter install
 ```
-
-Para usar o modo servidor, suba o backend seguindo o README do [ChordAI-backend](https://github.com/imxder/ChordAI-backend) e informe o endereço em **Perfil → Reconhecimento**.
 
 ## Testes
 
@@ -97,12 +87,12 @@ O script calcula o sha256 de cada `chord_model.tflite` e compara com o campo `sh
 lib/
   models/     dados (acordes, cifras, afinações, info do modelo)
   screens/    telas
-  services/   áudio, afinador, reconhecimento (servidor e no aparelho), parser de cifras
+  services/   áudio, afinador, reconhecimento no aparelho, parser de cifras
   state/      estado do app e preferências salvas
   widgets/    componentes visuais
 assets/       cifras, sequências, fontes e os dois modelos (assets/models/v3 e assets/models/v3_meu)
 test/         testes unitários e de layout
 integration_test/  teste de equivalência dos modelos no aparelho
 tool/         conferir_modelos.py, que confere o hash dos modelos
-docs/adr/     as decisões de arquitetura (inferência no aparelho e os dois modelos)
+docs/adr/     as decisões de arquitetura (inferência no aparelho, os dois modelos e a saída do modo servidor)
 ```

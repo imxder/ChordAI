@@ -14,6 +14,8 @@ class IosPage extends StatelessWidget {
   final String title;
   final bool largeTitle;
   final Widget? trailing;
+  final Widget? titleTrailing;
+  final Widget? titleAccessory;
   final List<Widget> children;
   final Widget? bottomBar;
   final ScrollController? controller;
@@ -24,6 +26,8 @@ class IosPage extends StatelessWidget {
     required this.children,
     this.largeTitle = false,
     this.trailing,
+    this.titleTrailing,
+    this.titleAccessory,
     this.bottomBar,
     this.controller,
   });
@@ -52,6 +56,20 @@ class IosPage extends StatelessWidget {
         title: title,
         largeTitle: largeTitle,
         trailing: trailing,
+        titleTrailing: largeTitle ? titleTrailing : null,
+        titleAccessory: largeTitle ? titleAccessory : null,
+        bottomBar: bottomBar,
+        controller: controller,
+        list: list,
+      );
+    }
+
+    if (largeTitle && titleTrailing != null) {
+      return _LargeTitleWithButtonPage(
+        title: title,
+        button: titleTrailing!,
+        accessory: titleAccessory,
+        barColor: barColor,
         bottomBar: bottomBar,
         controller: controller,
         list: list,
@@ -95,33 +113,36 @@ class IosPage extends StatelessWidget {
   }
 }
 
-class _GlassPage extends StatefulWidget {
+class _LargeTitleWithButtonPage extends StatefulWidget {
   final String title;
-  final bool largeTitle;
-  final Widget? trailing;
+  final Widget button;
+  final Widget? accessory;
+  final Color barColor;
   final Widget? bottomBar;
   final ScrollController? controller;
   final Widget list;
 
-  const _GlassPage({
+  const _LargeTitleWithButtonPage({
     required this.title,
-    required this.largeTitle,
-    required this.trailing,
+    required this.button,
+    this.accessory,
+    required this.barColor,
     required this.bottomBar,
     required this.controller,
     required this.list,
   });
 
   @override
-  State<_GlassPage> createState() => _GlassPageState();
+  State<_LargeTitleWithButtonPage> createState() =>
+      _LargeTitleWithButtonPageState();
 }
 
-class _GlassPageState extends State<_GlassPage> {
+class _LargeTitleWithButtonPageState extends State<_LargeTitleWithButtonPage> {
   final _collapsed = ValueNotifier(false);
 
   bool _onScroll(ScrollNotification notification) {
     if (notification.depth == 0) {
-      _collapsed.value = notification.metrics.pixels > 36;
+      _collapsed.value = notification.metrics.pixels > 44;
     }
     return false;
   }
@@ -134,39 +155,192 @@ class _GlassPageState extends State<_GlassPage> {
 
   @override
   Widget build(BuildContext context) {
-    final top = MediaQuery.paddingOf(context).top + GlassNavBar.height;
+    return Scaffold(
+      extendBody: widget.bottomBar != null,
+      body: NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        child: CustomScrollView(
+          controller: widget.controller,
+          slivers: [
+            CupertinoSliverNavigationBar(
+              largeTitle: Padding(
+                padding: EdgeInsets.only(right: pagePadding(context).right),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Flexible(child: Text(widget.title)),
+                          if (widget.accessory != null) ...[
+                            const SizedBox(width: 10),
+                            widget.accessory!,
+                          ],
+                        ],
+                      ),
+                    ),
+                    ValueListenableBuilder<bool>(
+                      valueListenable: _collapsed,
+                      builder: (context, collapsed, child) =>
+                          collapsed ? const SizedBox() : child!,
+                      child: widget.button,
+                    ),
+                  ],
+                ),
+              ),
+              middle: Text(widget.title),
+              alwaysShowMiddle: false,
+              trailing:
+                  MediaQuery.orientationOf(context) == Orientation.portrait
+                  ? _ShowWhen(visible: _collapsed, child: widget.button)
+                  : widget.button,
+              backgroundColor: widget.barColor,
+              border: null,
+              transitionBetweenRoutes: false,
+            ),
+            widget.list,
+          ],
+        ),
+      ),
+      bottomNavigationBar: widget.bottomBar,
+    );
+  }
+}
+
+class _ShowWhen extends StatelessWidget {
+  final ValueListenable<bool> visible;
+  final Widget child;
+
+  const _ShowWhen({required this.visible, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: visible,
+      builder: (context, value, child) => IgnorePointer(
+        ignoring: !value,
+        child: AnimatedOpacity(
+          opacity: value ? 1 : 0,
+          duration: motion(context, const Duration(milliseconds: 160)),
+          child: ExcludeSemantics(excluding: !value, child: child),
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _GlassPage extends StatefulWidget {
+  final String title;
+  final bool largeTitle;
+  final Widget? trailing;
+  final Widget? titleTrailing;
+  final Widget? titleAccessory;
+  final Widget? bottomBar;
+  final ScrollController? controller;
+  final Widget list;
+
+  const _GlassPage({
+    required this.title,
+    required this.largeTitle,
+    required this.trailing,
+    this.titleTrailing,
+    this.titleAccessory,
+    required this.bottomBar,
+    required this.controller,
+    required this.list,
+  });
+
+  @override
+  State<_GlassPage> createState() => _GlassPageState();
+}
+
+class _GlassPageState extends State<_GlassPage> {
+  final _collapsed = ValueNotifier(false);
+  final _expanded = ValueNotifier(true);
+
+  bool _onScroll(ScrollNotification notification) {
+    if (notification.depth == 0) {
+      _collapsed.value = notification.metrics.pixels > 36;
+      _expanded.value = !_collapsed.value;
+    }
+    return false;
+  }
+
+  @override
+  void dispose() {
+    _collapsed.dispose();
+    _expanded.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final statusBar = MediaQuery.paddingOf(context).top;
+    final top = statusBar + GlassNavBar.height;
+    final emptyBar = !Navigator.of(context).canPop() && widget.trailing == null;
+    final titleTop = statusBar + (emptyBar ? 12 : 40);
     final side = pagePadding(context).left;
     return Scaffold(
       extendBodyBehindAppBar: true,
       extendBody: widget.bottomBar != null,
       appBar: GlassNavBar(
         title: widget.title,
-        trailing: widget.trailing,
+        trailing: widget.titleTrailing ?? widget.trailing,
         showTitle: widget.largeTitle ? _collapsed : null,
+        showTrailing: widget.titleTrailing != null ? _collapsed : null,
       ),
       body: NotificationListener<ScrollNotification>(
         onNotification: _onScroll,
-        child: GlassScrollEdgeEffect(
-          topFadeHeight: top,
-          fadeBottom: false,
-          style: GlassScrollEdgeStyle.blur,
-          maxSigma: 14,
+        child: ValueListenableBuilder<bool>(
+          valueListenable: _collapsed,
+          builder: (context, collapsed, child) => GlassScrollEdgeEffect(
+            topFadeHeight: widget.largeTitle && !collapsed ? titleTop : top,
+            fadeBottom: false,
+            style: GlassScrollEdgeStyle.blur,
+            maxSigma: 14,
+            child: child!,
+          ),
           child: CustomScrollView(
             controller: widget.controller,
             slivers: [
-              SliverToBoxAdapter(child: SizedBox(height: top)),
+              SliverToBoxAdapter(
+                child: SizedBox(height: widget.largeTitle ? titleTop : top),
+              ),
               if (widget.largeTitle)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(side, 6, side, 4),
-                    child: Semantics(
-                      header: true,
-                      child: Text(
-                        widget.title,
-                        style: CupertinoTheme.of(context)
-                            .textTheme
-                            .navLargeTitleTextStyle,
-                      ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Semantics(
+                                  header: true,
+                                  child: Text(
+                                    widget.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: CupertinoTheme.of(context)
+                                        .textTheme
+                                        .navLargeTitleTextStyle,
+                                  ),
+                                ),
+                              ),
+                              if (widget.titleAccessory != null) ...[
+                                const SizedBox(width: 10),
+                                widget.titleAccessory!,
+                              ],
+                            ],
+                          ),
+                        ),
+                        if (widget.titleTrailing != null)
+                          _ShowWhen(
+                            visible: _expanded,
+                            child: widget.titleTrailing!,
+                          ),
+                      ],
                     ),
                   ),
                 ),
@@ -186,15 +360,37 @@ class GlassNavBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final Widget? trailing;
   final ValueListenable<bool>? showTitle;
+  final ValueListenable<bool>? showTrailing;
 
   const GlassNavBar({
     super.key,
     required this.title,
     this.trailing,
     this.showTitle,
+    this.showTrailing,
   });
 
   static const height = 52.0;
+
+  static Widget _barBackground(Color background) => DecoratedBox(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          background.withValues(alpha: 0.8),
+          background.withValues(alpha: 0),
+        ],
+      ),
+    ),
+  );
+
+  static Widget _glassCapsule(Widget child) => GlassContainer(
+    useOwnLayer: true,
+    shape: const LiquidRoundedSuperellipse(borderRadius: 22),
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    child: SizedBox(height: 44, child: Center(widthFactor: 1, child: child)),
+  );
 
   @override
   Size get preferredSize => const Size.fromHeight(height);
@@ -224,53 +420,60 @@ class GlassNavBar extends StatelessWidget implements PreferredSizeWidget {
         child: middle,
       );
     }
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            background.withValues(alpha: 0.8),
-            background.withValues(alpha: 0),
-          ],
-        ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: SizedBox(
-          height: height,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: NavigationToolbar(
-              middleSpacing: 12,
-              leading: canPop
-                  ? GlassButton(
-                      icon: Icon(Ph.caretLeft, color: onSurface),
-                      label: 'Voltar',
-                      width: 44,
-                      height: 44,
-                      iconSize: 20,
-                      iconColor: onSurface,
-                      useOwnLayer: true,
-                      onTap: () => Navigator.of(context).maybePop(),
-                    )
-                  : null,
-              middle: middle,
-              trailing: trailing == null
-                  ? null
-                  : GlassContainer(
-                      useOwnLayer: true,
-                      shape: const LiquidRoundedSuperellipse(borderRadius: 22),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: SizedBox(
-                        height: 44,
-                        child: Center(widthFactor: 1, child: trailing),
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(
+            child: showTitle == null
+                ? _barBackground(background)
+                : ValueListenableBuilder<bool>(
+                    valueListenable: showTitle!,
+                    builder: (context, collapsed, child) => AnimatedOpacity(
+                      opacity: collapsed ? 1 : 0,
+                      duration: motion(
+                        context,
+                        const Duration(milliseconds: 160),
                       ),
+                      child: child,
                     ),
+                    child: _barBackground(background),
+                  ),
+          ),
+        ),
+        SafeArea(
+          bottom: false,
+          child: SizedBox(
+            height: height,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: NavigationToolbar(
+                middleSpacing: 12,
+                leading: canPop
+                    ? GlassButton(
+                        icon: Icon(Ph.caretLeft, color: onSurface),
+                        label: 'Voltar',
+                        width: 44,
+                        height: 44,
+                        iconSize: 20,
+                        iconColor: onSurface,
+                        useOwnLayer: true,
+                        onTap: () => Navigator.of(context).maybePop(),
+                      )
+                    : null,
+                middle: middle,
+                trailing: switch ((trailing, showTrailing)) {
+                  (null, _) => null,
+                  (final child?, null) => _glassCapsule(child),
+                  (final child?, final visible?) => _ShowWhen(
+                    visible: visible,
+                    child: _glassCapsule(child),
+                  ),
+                },
+              ),
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -892,6 +1095,23 @@ Color onStopButtonColor(BuildContext context) {
       ? colorScheme.onSurface
       : colorScheme.surface;
 }
+
+Widget welcomeColumn(Widget child) {
+  if (!isDesktop) return child;
+  return Center(
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 560),
+      child: child,
+    ),
+  );
+}
+
+EdgeInsets welcomePadding(BuildContext context) => isDesktop
+    ? const EdgeInsets.symmetric(horizontal: 32)
+    : pagePadding(context, bottom: 0);
+
+ButtonStyle? get welcomeButtonStyle =>
+    isDesktop ? FilledButton.styleFrom(minimumSize: const Size(160, 40)) : null;
 
 class StatusLine extends StatelessWidget {
   final IconData? icon;

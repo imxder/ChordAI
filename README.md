@@ -16,10 +16,9 @@ Fiz em Flutter, então roda no iPhone, no Android, no Windows e no Mac. O modelo
 
 ## Telas
 
-| | Início | Acordes | Reconhecer | Afinador | Tocar junto |
-|---|---|---|---|---|---|
-| **iPhone** | ![](docs/imagens/iphone_inicio.png) | ![](docs/imagens/iphone_acordes.png) | ![](docs/imagens/iphone_reconhecer.png) | ![](docs/imagens/iphone_afinador.png) | ![](docs/imagens/iphone_tocar_junto.png) |
-| **Android** | ![](docs/imagens/android_inicio.png) | ![](docs/imagens/android_acordes.png) | ![](docs/imagens/android_reconhecer.png) | ![](docs/imagens/android_afinador.png) | ![](docs/imagens/android_tocar_junto.png) |
+| Início | Acordes | Reconhecer | Afinador | Tocar junto |
+|---|---|---|---|---|
+| ![](docs/imagens/iphone_inicio.png) | ![](docs/imagens/iphone_acordes.png) | ![](docs/imagens/iphone_reconhecer.png) | ![](docs/imagens/iphone_afinador.png) | ![](docs/imagens/iphone_tocar_junto.png) |
 
 ## Funcionalidades
 
@@ -41,10 +40,10 @@ No celular, as abas de baixo são Início, Acordes, Reconhecer e Afinador, e as 
 
 | Plataforma | Como instalar |
 |---|---|
-| **Android** | baixo o `ChordAI.apk` pela [página Baixar da Wiki](https://github.com/imxder/ChordAI/wiki/Baixar) ou direto em [`releases/latest/download/ChordAI.apk`](https://github.com/imxder/ChordAI/releases/latest/download/ChordAI.apk). O Android pede pra permitir apps desconhecidos, e o Play Protect pode avisar: o passo a passo está na Wiki. Precisa de Android 7.0 ou mais novo (página Baixar). O QR Code do pôster aponta pra essa página. |
-| **Windows** | baixo o [`ChordAI-windows.zip`](https://github.com/imxder/ChordAI/releases/latest/download/ChordAI-windows.zip), extraio a pasta `ChordAI` e abro o `ChordAI.exe`. Como o app não é assinado, o SmartScreen pode avisar: **[CONFERIR]** o texto do aviso e dos botões ("Mais informações" e "Executar assim mesmo"). |
-| **Mac** | baixo o [`ChordAI-macos.zip`](https://github.com/imxder/ChordAI/releases/latest/download/ChordAI-macos.zip) e arrasto o `ChordAI.app` pra pasta Aplicativos. O app é universal (Apple Silicon e Intel), pede macOS 12 ou mais novo e tem só a assinatura ad-hoc (`.github/workflows/release.yml`), sem conta paga da Apple. O Gatekeeper vai avisar que não consegue verificar o app: **[CONFERIR]** o caminho em Ajustes do Sistema → Privacidade e Segurança → "Abrir mesmo assim". |
-| **iPhone** | não tem pacote pra baixar. Instalo pelo Mac, com o cabo, em modo release (veja "Como rodar"). Pede iOS 15 ou mais novo. |
+| **Android** | Baixe o `ChordAI.apk` pela [página Baixar da Wiki](https://github.com/imxder/ChordAI/wiki/Baixar) ou direto em [`releases/latest/download/ChordAI.apk`](https://github.com/imxder/ChordAI/releases/latest/download/ChordAI.apk). O Android pede pra permitir apps desconhecidos, e o Play Protect pode avisar: o passo a passo está na Wiki. Precisa de Android 7.0 ou mais novo (página Baixar). O QR Code do pôster aponta pra essa página. |
+| **Windows** | Baixe o [`ChordAI-windows.zip`](https://github.com/imxder/ChordAI/releases/latest/download/ChordAI-windows.zip), extraia a pasta `ChordAI` e abra o `ChordAI.exe`. Como o app não é assinado, o SmartScreen pode avisar: **[CONFERIR]** o texto do aviso e dos botões ("Mais informações" e "Executar assim mesmo"). |
+| **Mac** | Baixe o [`ChordAI-macos.zip`](https://github.com/imxder/ChordAI/releases/latest/download/ChordAI-macos.zip) e arraste o `ChordAI.app` pra pasta Aplicativos. O app é universal (Apple Silicon e Intel), pede macOS 12 ou mais novo e tem só a assinatura ad-hoc (`.github/workflows/release.yml`), sem conta paga da Apple. O Gatekeeper vai avisar que não consegue verificar o app: **[CONFERIR]** o caminho em Ajustes do Sistema → Privacidade e Segurança → "Abrir mesmo assim". |
+| **iPhone** | Não tem pacote pra baixar. Instale pelo Mac, com o cabo, em modo release (veja "Como rodar"). Pede iOS 15 ou mais novo. |
 
 **[CONFERIR]** A release v0.2.1 só tem o `ChordAI.apk`. Os dois `.zip` são gerados pelo `release.yml` a partir da próxima tag, então os links do Windows e do Mac só funcionam depois dela.
 
@@ -65,7 +64,7 @@ flutter run --release -d <id-do-iphone>
 
 O `flutter devices` mostra o id. Não use o `flutter install`: ele desinstala o app antes de instalar de novo, e isso apaga os acordes aprendidos, as preferências e as músicas.
 
-No Mac e no Windows: `flutter run --release -d macos` e `flutter run --release -d windows`. As imagens de produto e as telas do Windows são geradas por script, e o jeito de refazer está em [`tool/gerar_produto.py`](tool/gerar_produto.py) e em [`test/imagens_docs_test.dart`](test/imagens_docs_test.dart).
+No Mac e no Windows: `flutter run --release -d macos` e `flutter run --release -d windows`.
 
 ## Como o reconhecimento funciona
 
@@ -165,6 +164,8 @@ docs/adr/     as decisões de arquitetura (inferência no aparelho, os dois mode
 docs/imagens/ as capturas de tela e as imagens de produto
 ```
 
+As imagens de produto são montadas por [`tool/gerar_produto.py`](tool/gerar_produto.py), e as telas do Windows saem de [`test/imagens_docs_test.dart`](test/imagens_docs_test.dart). O jeito de refazer cada uma está no começo desses arquivos.
+
 Como as camadas conversam, onde ficam as regras e qual arquivo é cada tela: [docs/arquitetura.md](docs/arquitetura.md).
 
 ## Links
@@ -173,3 +174,7 @@ Como as camadas conversam, onde ficam as regras e qual arquivo é cada tela: [do
 - [ChordAI-backend](https://github.com/imxder/ChordAI-backend): treino, experimentos, exportação do modelo e a API de teste
 - [ChordAI Guitar Chords](https://www.kaggle.com/datasets/imxder/chordai-guitar-chords-v1), o meu dataset no Kaggle (CC BY-SA 4.0)
 - [Guitar Chords V3](https://www.kaggle.com/datasets/fabianavinci/guitar-chords-v3), da Fabiana Vinci (CC BY-SA 4.0), que ela me autorizou a usar pra treinar e distribuir os pesos no app, com crédito e link
+
+## Autor
+
+Alexandre Salgado, Engenharia de Software, Católica SC, 2026.

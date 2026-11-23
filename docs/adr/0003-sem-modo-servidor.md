@@ -7,7 +7,7 @@
 
 ## Contexto
 
-Depois do [ADR 0001](0001-inferencia-no-aparelho.md), o reconhecimento no aparelho virou o padrão e o modo servidor (mandar o áudio pra API Flask do backend) ficou como opção avançada em Perfil → Reconhecimento. No Windows e no Mac ele nem aparecia.
+Depois do [ADR 0001](0001-inferencia-no-aparelho.md), o reconhecimento no aparelho virou o padrão e o modo servidor (mandar o áudio pra API Flask do backend) ficou como opção avançada na tela de Reconhecimento. No Windows e no Mac ele nem aparecia.
 
 Mesmo desligado, ele custava bastante pra pouca coisa:
 
@@ -24,7 +24,7 @@ A interface `ChordRecognizer` fica. No app só sobra uma implementação, o `OnD
 
 A API Flask continua no backend, como ferramenta pra testar o modelo pelo computador.
 
-Quem tinha o modo servidor salvo abre o app no aparelho, sem perder nada. Na primeira vez que o app abre, ele apaga só as três chaves desse modo (`app_server_url`, `app_chord_recognition_mode` e `app_on_device_default_migrated`). O perfil, o progresso, as músicas, as preferências e o modelo escolhido ficam como estavam (`test/recognition_mode_migration_test.dart`).
+Quem tinha o modo servidor salvo abre o app no aparelho, sem perder nada. Na primeira vez que o app abre, ele apaga só as três chaves desse modo (`app_server_url`, `app_chord_recognition_mode` e `app_on_device_default_migrated`). O progresso, as músicas, as preferências e o modelo escolhido ficam como estavam (`test/recognition_mode_migration_test.dart`).
 
 ## Alternativas
 

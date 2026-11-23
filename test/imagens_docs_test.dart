@@ -8,8 +8,8 @@ import 'dart:io';
 import 'package:chordai/models/chord_prediction.dart';
 import 'package:chordai/models/theme_options.dart';
 import 'package:chordai/screens/app_shell.dart';
-import 'package:chordai/screens/free_practice_screen.dart';
 import 'package:chordai/screens/lyric_player_screen.dart';
+import 'package:chordai/screens/recognize_screen.dart';
 import 'package:chordai/services/chord_recognizer.dart';
 import 'package:chordai/services/lyric_sheet_library.dart';
 import 'package:chordai/state/app_state.dart';
@@ -188,7 +188,7 @@ void main() {
       (tester) async {
         await _janela(
           tester,
-          _naCasca(0, (_) => FreePracticeScreen(recognizer: _OuveDo())),
+          _naCasca(0, (_) => RecognizeScreen(recognizer: _OuveDo())),
           aparencia: aparencia,
         );
         await tester.tap(find.text('Ouvir'));

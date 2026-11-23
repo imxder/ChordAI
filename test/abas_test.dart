@@ -1,7 +1,7 @@
 import 'package:chordai/screens/app_shell.dart';
 import 'package:chordai/screens/chord_list_screen.dart';
-import 'package:chordai/screens/free_practice_screen.dart';
 import 'package:chordai/screens/lyric_sheet_list_screen.dart';
+import 'package:chordai/screens/recognize_screen.dart';
 import 'package:chordai/screens/settings_screen.dart';
 import 'package:chordai/screens/tuner_screen.dart';
 import 'package:chordai/services/audio_input.dart';
@@ -81,7 +81,7 @@ void main() {
     await tester.pumpWidget(appUnderTest(const AppShell()));
     await _espera(tester);
     expect(find.byType(TunerScreen), findsNothing);
-    expect(find.byType(FreePracticeScreen), findsNothing);
+    expect(find.byType(RecognizeScreen), findsNothing);
     expect(_ligou, 0);
 
     await tester.tap(_aba('Afinador'));
@@ -97,13 +97,13 @@ void main() {
 
     await tester.tap(_aba('Reconhecer'));
     await _espera(tester);
-    expect(find.byType(FreePracticeScreen), findsOneWidget);
+    expect(find.byType(RecognizeScreen), findsOneWidget);
     expect(find.byType(TunerScreen), findsNothing);
     expect(_ligou, 1);
 
     await tester.tap(_aba('Afinador'));
     await _espera(tester);
-    expect(find.byType(FreePracticeScreen), findsNothing);
+    expect(find.byType(RecognizeScreen), findsNothing);
     expect(find.byType(TunerScreen), findsOneWidget);
     expect(_ligou, 2);
   });

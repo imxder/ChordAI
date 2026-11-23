@@ -1,12 +1,10 @@
 import 'package:chordai/models/chord_prediction.dart';
 import 'package:chordai/models/chord_repeat_gate.dart';
 import 'package:chordai/screens/chord_practice_screen.dart';
-import 'package:chordai/services/chord_recognizer.dart';
 import 'package:chordai/services/chord_recognizer_factory.dart';
 import 'package:chordai/services/on_device_chord_service.dart';
 import 'package:chordai/state/app_state.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:record/record.dart';
 
 import 'test_helpers.dart';
 
@@ -28,31 +26,6 @@ int _acertos(List<ChordPrediction> leituras) {
     }
   }
   return acertos;
-}
-
-class _MicQueOuve implements ChordRecognizer {
-  void Function(ChordPrediction)? ouvir;
-  @override
-  bool isRunning = false;
-  @override
-  Future<bool> hasPermission() async => true;
-  @override
-  Future<List<InputDevice>> listInputDevices() async => const [];
-  @override
-  void selectDevice(InputDevice? device) {}
-  @override
-  Future<void> start({
-    required void Function(ChordPrediction prediction) onPrediction,
-    required void Function(Object error) onError,
-  }) async {
-    isRunning = true;
-    ouvir = onPrediction;
-  }
-
-  @override
-  Future<void> stop() async => isRunning = false;
-  @override
-  Future<void> dispose() async {}
 }
 
 void main() {
@@ -102,8 +75,8 @@ void main() {
       await appState.loadProgress();
     });
 
-    Future<_MicQueOuve> abrir(WidgetTester tester) async {
-      final mic = _MicQueOuve();
+    Future<MicQueOuve> abrir(WidgetTester tester) async {
+      final mic = MicQueOuve();
       await tester.pumpWidget(
         appUnderTest(ChordPracticeScreen(chord: 'Em', recognizer: mic)),
       );

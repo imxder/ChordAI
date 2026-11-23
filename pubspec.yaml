@@ -17,6 +17,7 @@ dependencies:
   liquid_glass_widgets: 1.17.0
   tflite_flutter: ^0.12.1
   wakelock_plus: ^1.8.2
+  flutter_soloud: 5.3.1
 
 dev_dependencies:
   flutter_test:
@@ -32,6 +33,7 @@ flutter:
     - assets/scores/
     - assets/lyrics/
     - assets/images/
+    - assets/sounds/
     - assets/models/v3/
     - assets/models/v3_meu/
   fonts:

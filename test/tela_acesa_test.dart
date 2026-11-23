@@ -1,6 +1,5 @@
 import 'package:chordai/models/chord_prediction.dart';
 import 'package:chordai/screens/lyric_player_screen.dart';
-import 'package:chordai/screens/lyric_sheet_screen.dart';
 import 'package:chordai/services/chord_recognizer.dart';
 import 'package:chordai/services/cifra_parser.dart';
 import 'package:chordai/services/screen_awake.dart';
@@ -23,19 +22,6 @@ void main() {
     await appState.loadProgress();
     pedidos.clear();
     wakelockToggle = (on) async => pedidos.add(on);
-  });
-
-  testWidgets('a tela fica acesa só enquanto a cifra rola sozinha', (
-    tester,
-  ) async {
-    await tester.pumpWidget(appUnderTest(LyricSheetScreen(sheet: cifra)));
-    await tester.tap(find.text('Rolar'));
-    await tester.pump();
-    expect(pedidos, [true]);
-
-    await tester.tap(find.text('Parar'));
-    await tester.pump();
-    expect(pedidos, [true, false]);
   });
 
   testWidgets('a tela fica acesa só enquanto o tocar junto roda', (

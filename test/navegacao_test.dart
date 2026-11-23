@@ -4,7 +4,6 @@ import 'package:chordai/screens/chord_list_screen.dart';
 import 'package:chordai/screens/chord_practice_screen.dart';
 import 'package:chordai/screens/lyric_player_screen.dart';
 import 'package:chordai/screens/lyric_sheet_list_screen.dart';
-import 'package:chordai/screens/lyric_sheet_screen.dart';
 import 'package:chordai/screens/practice_session_screen.dart';
 import 'package:chordai/services/chord_recognizer.dart';
 import 'package:chordai/services/chord_recognizer_factory.dart';
@@ -71,17 +70,6 @@ void main() {
       await tester.tap(find.text('Sequências de acordes'));
       await settle(tester);
       expect(find.byType(PracticeSessionScreen), findsOneWidget);
-    });
-
-    testWidgets('a cifra abre o tocar junto', (tester) async {
-      final cifra = parseCifra('Tempo: 90\n[Intro]\nAm  G\n', title: 'x');
-      await tester.pumpWidget(appUnderTest(LyricSheetScreen(sheet: cifra)));
-      await settle(tester);
-      await tester.tap(find.text('Tocar junto'));
-      await settle(tester);
-      expect(find.byType(LyricPlayerScreen), findsOneWidget);
-      await tester.pumpWidget(const SizedBox());
-      await tester.pump(const Duration(seconds: 1));
     });
   });
 

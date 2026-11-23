@@ -78,16 +78,39 @@ class _PracticeOptionsSheet extends StatelessWidget {
               ),
               GroupedSection(
                 header: 'Tocar junto',
+                footer: appState.playAlongListens
+                    ? null
+                    : 'Sem o microfone, a cifra anda no tempo do metrônomo e '
+                          'o app não confere os acordes.',
                 children: [
-                  CheckRow(
-                    title: 'Acompanhar o andamento',
-                    selected: !appState.playAlongWaitsForMe,
-                    onTap: () => appState.setPlayAlongWaitsForMe(false),
+                  SwitchRow(
+                    key: const ValueKey('ouvir pelo microfone'),
+                    title: 'Ouvir pelo microfone',
+                    value: appState.playAlongListens,
+                    onChanged: appState.setPlayAlongListens,
                   ),
-                  CheckRow(
-                    title: 'Esperar por mim',
-                    selected: appState.playAlongWaitsForMe,
-                    onTap: () => appState.setPlayAlongWaitsForMe(true),
+                  if (appState.playAlongListens) ...[
+                    CheckRow(
+                      title: 'Acompanhar o andamento',
+                      selected: !appState.playAlongWaitsForMe,
+                      onTap: () => appState.setPlayAlongWaitsForMe(false),
+                    ),
+                    CheckRow(
+                      title: 'Esperar por mim',
+                      selected: appState.playAlongWaitsForMe,
+                      onTap: () => appState.setPlayAlongWaitsForMe(true),
+                    ),
+                  ],
+                ],
+              ),
+              GroupedSection(
+                header: 'Metrônomo',
+                children: [
+                  SwitchRow(
+                    key: const ValueKey('som do metrônomo'),
+                    title: 'Som do metrônomo',
+                    value: appState.metronomeSound,
+                    onChanged: appState.setMetronomeSound,
                   ),
                 ],
               ),

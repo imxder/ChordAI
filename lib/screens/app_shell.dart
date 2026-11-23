@@ -17,6 +17,13 @@ import '../widgets/desktop_shell.dart';
 
 const appTabBarKey = Key('app_tab_bar');
 
+final _chordsTabRequest = ValueNotifier<int>(0);
+
+void openChordsTab(BuildContext context) {
+  Navigator.of(context).popUntil((route) => route.isFirst);
+  _chordsTabRequest.value++;
+}
+
 /// Barra lateral do computador (Windows e Mac), no lugar da barra de abas.
 const appSideBarKey = Key('app_side_bar');
 
@@ -107,6 +114,7 @@ class _AppShellState extends State<AppShell> {
   @override
   void initState() {
     super.initState();
+    _chordsTabRequest.addListener(_openChords);
     if (desktopLook == DesktopLook.mac) {
       _macMenu.setMethodCallHandler((call) async {
         if (call.method == 'abrirAjustes' && mounted) {
@@ -118,11 +126,16 @@ class _AppShellState extends State<AppShell> {
 
   @override
   void dispose() {
+    _chordsTabRequest.removeListener(_openChords);
     if (desktopLook == DesktopLook.mac) _macMenu.setMethodCallHandler(null);
     super.dispose();
   }
 
   void _select(int index) => setState(() => _index = index);
+
+  void _openChords() {
+    if (mounted) _select(isDesktop ? _desktopChordsTab : _chordsTab);
+  }
 
   void _onTabSelected(int index) {
     if (index != _index) HapticFeedback.selectionClick();

@@ -6,6 +6,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'models/app_theme.dart';
 import 'screens/app_shell.dart';
 import 'screens/onboarding_screen.dart';
+import 'services/app_sounds.dart';
 import 'state/app_state.dart';
 import 'theme/app_theme.dart';
 import 'theme/platform_style.dart';
@@ -16,6 +17,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Sem o await, quem já passou pelo onboarding veria ele piscar ao abrir o app.
   await appState.loadProgress();
+  if (appSounds.prepareAtLaunch) appSounds.prepare();
   if (!useLiquidGlass) {
     runApp(const ChordAIApp());
     return;

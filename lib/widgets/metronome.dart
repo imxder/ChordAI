@@ -1,20 +1,22 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
+import '../services/app_sounds.dart';
 import '../theme/app_theme.dart';
 
 class Metronome extends StatefulWidget {
   final bool running;
   final int bpm;
   final VoidCallback onBeat;
+  final int beatsPerBar;
 
   const Metronome({
     super.key,
     required this.running,
     required this.bpm,
     required this.onBeat,
+    this.beatsPerBar = 4,
   });
 
   @override
@@ -24,6 +26,7 @@ class Metronome extends StatefulWidget {
 class _MetronomeState extends State<Metronome> {
   Timer? _timer;
   bool _pulse = false;
+  int _beat = 0;
 
   @override
   void initState() {
@@ -41,13 +44,15 @@ class _MetronomeState extends State<Metronome> {
 
   void _syncTimer() {
     _timer?.cancel();
+    _beat = 0;
     if (!widget.running) return;
     final interval = Duration(milliseconds: (60000 / widget.bpm).round());
     _timer = Timer.periodic(interval, (_) => _tick());
   }
 
   void _tick() {
-    SystemSound.play(SystemSoundType.click);
+    appSounds.playClick(strong: _beat % widget.beatsPerBar == 0);
+    _beat++;
     if (mounted) setState(() => _pulse = !_pulse);
     widget.onBeat();
   }

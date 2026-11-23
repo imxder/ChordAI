@@ -1,4 +1,4 @@
-import 'package:chordai/models/app_theme.dart';
+import 'package:chordai/models/theme_options.dart';
 import 'package:chordai/screens/app_shell.dart';
 import 'package:chordai/screens/chord_detail_screen.dart';
 import 'package:chordai/screens/free_practice_screen.dart';

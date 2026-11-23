@@ -5,8 +5,8 @@
 //   flutter test test/imagens_docs_test.dart --update-goldens --dart-define=IMAGENS=true
 import 'dart:io';
 
-import 'package:chordai/models/app_theme.dart';
 import 'package:chordai/models/chord_prediction.dart';
+import 'package:chordai/models/theme_options.dart';
 import 'package:chordai/screens/app_shell.dart';
 import 'package:chordai/screens/free_practice_screen.dart';
 import 'package:chordai/screens/lyric_player_screen.dart';

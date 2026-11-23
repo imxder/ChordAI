@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:chordai/models/app_theme.dart';
+import 'package:chordai/models/theme_options.dart';
 import 'package:chordai/theme/app_theme.dart';
 import 'package:chordai/widgets/page_parts.dart';
 import 'package:flutter/material.dart';

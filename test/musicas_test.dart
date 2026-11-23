@@ -107,18 +107,14 @@ void main() {
     await sair(tester);
   });
 
-  testWidgets('sem o microfone a música começa a 60% do tempo', (
-    tester,
-  ) async {
+  testWidgets('sem o microfone a música começa a 60% do tempo', (tester) async {
     await appState.setPlayAlongListens(false);
     await abrir(tester);
     expect(find.text('72'), findsOneWidget);
     await sair(tester);
   });
 
-  testWidgets('com o microfone a música começa no tempo dela', (
-    tester,
-  ) async {
+  testWidgets('com o microfone a música começa no tempo dela', (tester) async {
     await abrir(tester);
     expect(find.text('120'), findsOneWidget);
     await sair(tester);

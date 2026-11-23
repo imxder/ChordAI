@@ -36,7 +36,6 @@ class TunerScreen extends StatefulWidget {
 }
 
 class _TunerScreenState extends State<TunerScreen> with MicLifecycle {
-
   late final TunerService _service = widget.service ?? TunerService();
   bool _listening = false;
   bool _denied = false;

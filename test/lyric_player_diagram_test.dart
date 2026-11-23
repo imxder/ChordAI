@@ -20,7 +20,9 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(appUnderTest(const LyricPlayerScreen(sheet: sheet)));
+    await tester.pumpWidget(
+      appUnderTest(const LyricPlayerScreen(sheet: sheet)),
+    );
 
     await settle(tester);
     final antes = tester.widgetList(find.byType(GuitarNeck)).length;

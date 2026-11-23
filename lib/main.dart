@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
-import 'models/app_theme.dart';
+import 'models/theme_options.dart';
 import 'screens/app_shell.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/app_sounds.dart';

@@ -9,15 +9,16 @@ Fiz em Flutter, então roda no iPhone, no Android, no Windows e no Mac. O modelo
 ## Funcionalidades
 
 - **Afinador**: detecta a nota de cada corda com o algoritmo YIN, com ponteiro estável, aviso de "afinada" e afinações alternativas (Drop D, meio tom abaixo, Open G, Open D, DADGAD) ou personalizadas.
-- **Acordes**: diagrama de cada acorde no braço do violão e modo "testar", que ouve você tocar e conta os acertos seguidos até marcar o acorde como aprendido.
+- **Acordes**: diagrama de cada acorde no braço do violão e o "Tocar e testar", que ouve você tocar e marca o acorde como aprendido depois de 3 acertos seguidos. Cada acerto precisa de uma batida nova: deixar o acorde soando conta uma vez só.
 - **Reconhecer acorde**: mostra em tempo real o acorde que o app está ouvindo.
 - **Sequências**: treino de progressões de acordes com metrônomo.
 - **Tocar junto**: cifras só com os acordes (o desenho de cada um e as setas da batida) que avançam no andamento da música ou esperam você trocar de acorde, com andamento ajustável e um resumo no fim com os acordes que você mais errou.
 - **Minhas músicas**: dá pra montar a sua música no próprio app, com as partes, os acordes, o andamento e a batida. Ela fica só no aparelho.
-- **Guia do iniciante**: acessórios, postura, como afinar, troca de cordas e dor nos dedos.
-- **Perfil**: acordes aprendidos, último treino, cor do app e aparência (papel, branco, escuro ou igual ao celular).
+- **Guia do iniciante**: 12 tópicos pra quem nunca tocou, das partes do violão e como afinar até ler o diagrama, ler uma cifra, a batida, trocar de acorde e cuidar do violão. As fontes estão em [docs/guia_fontes.md](docs/guia_fontes.md).
+- **Sons**: clique do metrônomo, som de acorde aprendido e de corda afinada ([docs/sons.md](docs/sons.md)). Dá pra desligar.
+- **Ajustes** (Configurações no Android e no Windows): aparência (papel, branco, escuro ou igual ao celular), cor do app, afinação, leitura das cifras, sons, reconhecimento e privacidade. No celular, abre pela engrenagem no canto da tela inicial. Os acordes aprendidos aparecem na tela inicial, em "Seus acordes".
 
-O app traz dois modelos, e eu escolho qual usar em **Perfil → Reconhecimento → Modelo no aparelho**:
+O app traz dois modelos, e eu escolho qual usar em **Ajustes → Reconhecimento → Modelo no aparelho**:
 
 | Modelo | Na tela | Acordes | Pasta |
 |---|---|---|---|
@@ -58,7 +59,7 @@ Para instalar no iPhone em modo release, com o iPhone no cabo ou na mesma rede:
 flutter run --release -d <id-do-iphone>
 ```
 
-O `flutter devices` mostra o id. Não use o `flutter install`: ele desinstala o app antes de instalar de novo, e isso apaga os acordes aprendidos, o perfil e as músicas.
+O `flutter devices` mostra o id. Não use o `flutter install`: ele desinstala o app antes de instalar de novo, e isso apaga os acordes aprendidos, as preferências e as músicas.
 
 ## Testes
 
@@ -81,20 +82,25 @@ Pra conferir se os `.tflite` em `assets/models/` são os das releases do backend
 python3 tool/conferir_modelos.py
 ```
 
-O script calcula o sha256 de cada `chord_model.tflite` e compara com o campo `sha256` do `model_info.json` da mesma pasta. Se algum não bater, ele sai com erro. É esse script que o CI vai chamar.
+O script calcula o sha256 de cada `chord_model.tflite` e compara com o campo `sha256` do `model_info.json` da mesma pasta. Se algum não bater, ele sai com erro. O CI roda esse script em todo push.
 
 ## Estrutura
 
 ```
 lib/
-  models/     dados (acordes, cifras, afinações, info do modelo)
+  models/     dados e regras (acordes, cifras, afinações, regra do treino, info do modelo)
   screens/    telas
-  services/   áudio, afinador, reconhecimento no aparelho, parser de cifras
+  services/   áudio, afinador, reconhecimento no aparelho, sons, parser de cifras
   state/      estado do app e preferências salvas
+  theme/      cores, fontes e o jeito de cada plataforma
   widgets/    componentes visuais
-assets/       cifras, sequências, fontes e os dois modelos (assets/models/v3 e assets/models/v3_meu)
+assets/       cifras, sequências, sons, imagens, fontes e os dois modelos (assets/models/v3 e assets/models/v3_meu)
+blobs/        a biblioteca do TFLite pro Windows e pro Mac
 test/         testes unitários e de layout
 integration_test/  teste de equivalência dos modelos no aparelho
-tool/         conferir_modelos.py, que confere o hash dos modelos
+tool/         conferir_modelos.py (hash dos modelos), gerar_icones.py e gerar_sons.py
+docs/         arquitetura, computador, sons, fontes do guia, segurança e roteiro de teste no Android
 docs/adr/     as decisões de arquitetura (inferência no aparelho, os dois modelos e a saída do modo servidor)
 ```
+
+Como as camadas conversam, onde ficam as regras e qual arquivo é cada tela: [docs/arquitetura.md](docs/arquitetura.md).

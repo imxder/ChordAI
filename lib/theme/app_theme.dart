@@ -5,7 +5,7 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import '../models/app_theme.dart';
+import '../models/theme_options.dart';
 import 'mac_style.dart';
 import 'platform_style.dart';
 import 'windows_style.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../models/app_theme.dart';
+import '../models/theme_options.dart';
 import '../state/app_state.dart';
 import '../theme/platform_style.dart';
 import '../widgets/desktop_input.dart';

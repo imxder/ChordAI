@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:chordai/main.dart' show appLocalizationsDelegates;
-import 'package:chordai/models/app_theme.dart';
 import 'package:chordai/models/chord_prediction.dart';
+import 'package:chordai/models/theme_options.dart';
 import 'package:chordai/services/app_sounds.dart';
 import 'package:chordai/services/audio_input.dart';
 import 'package:chordai/services/chord_recognizer.dart';

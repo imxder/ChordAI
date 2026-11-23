@@ -1,8 +1,8 @@
 import 'package:chordai/models/chord_prediction.dart';
 import 'package:chordai/screens/chord_practice_screen.dart';
-import 'package:chordai/screens/free_practice_screen.dart';
 import 'package:chordai/screens/lyric_player_screen.dart';
 import 'package:chordai/screens/practice_session_screen.dart';
+import 'package:chordai/screens/recognize_screen.dart';
 import 'package:chordai/screens/tuner_screen.dart';
 import 'package:chordai/services/audio_input.dart';
 import 'package:chordai/services/chord_recognizer.dart';
@@ -195,7 +195,7 @@ void main() {
     tester,
   ) async {
     final mic = _MicFalso();
-    await tester.pumpWidget(appUnderTest(FreePracticeScreen(recognizer: mic)));
+    await tester.pumpWidget(appUnderTest(RecognizeScreen(recognizer: mic)));
     await tester.tap(find.text('Ouvir'));
     await settle(tester);
     expect(mic.isRunning, isTrue);

@@ -50,7 +50,6 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
   final _echo = EchoGuard();
   bool _listening = false;
   bool _justLearned = false;
-  int _hits = 0;
   ChordMatchState _matchState = ChordMatchState.neutral;
   String _statusMessage = 'Toque em Começar e faça o acorde';
 
@@ -74,7 +73,6 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
     setState(() {
       _listening = true;
       _justLearned = false;
-      _hits = 0;
       _matchState = ChordMatchState.neutral;
       _statusMessage = 'Ouvindo';
     });
@@ -124,12 +122,11 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
     switch (_gate.process(prediction)) {
       case ChordRepeatEvent.hit:
         setState(() {
-          _hits++;
           _matchState = ChordMatchState.correct;
           _statusMessage = 'Certo! Abafe as cordas e toque de novo';
         });
         HapticFeedback.lightImpact();
-        if (appState.registerChordHits(widget.chord, _hits)) {
+        if (appState.registerChordHits(widget.chord, _gate.hits)) {
           HapticFeedback.mediumImpact();
           appSounds.playChordLearned();
           _echo.hold(learnedSoundEcho);
@@ -144,7 +141,6 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
         });
       case ChordRepeatEvent.miss:
         setState(() {
-          _hits = 0;
           _matchState = ChordMatchState.incorrect;
           _statusMessage = 'Ouvi ${prediction.chord}. Tente de novo';
         });
@@ -279,7 +275,7 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Acertos seguidos: $_hits de ${AppState.chordMasteryHits}',
+                      'Acertos seguidos: ${_gate.hits} de ${AppState.chordMasteryHits}',
                       style: textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 12),
@@ -300,7 +296,7 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
                                 ),
                                 height: 6,
                                 decoration: BoxDecoration(
-                                  color: i < _hits
+                                  color: i < _gate.hits
                                       ? context.tokens.correct
                                       : context.tokens.fill,
                                   borderRadius: BorderRadius.circular(3),

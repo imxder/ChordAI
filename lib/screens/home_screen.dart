@@ -13,9 +13,9 @@ import '../widgets/guitar_neck.dart';
 import '../widgets/listening_bars.dart';
 import '../widgets/page_parts.dart';
 import 'chord_detail_screen.dart';
-import 'free_practice_screen.dart';
 import 'guide_detail_screen.dart';
 import 'guide_list_screen.dart';
+import 'recognize_screen.dart';
 import 'settings_screen.dart';
 import 'tuner_screen.dart';
 import '../theme/ph.dart';
@@ -59,7 +59,7 @@ class HomeScreen extends StatelessWidget {
         icon: Ph.earDuotone,
         title: 'Reconhecer acorde',
         detail: 'O app diz qual acorde ouviu',
-        onTap: () => _push(context, FreePracticeScreen()),
+        onTap: () => _push(context, RecognizeScreen()),
       ),
     ];
 

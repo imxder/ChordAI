@@ -4,10 +4,10 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import '../state/app_state.dart';
 import 'chord_list_screen.dart';
-import 'free_practice_screen.dart';
 import 'guide_list_screen.dart';
 import 'home_screen.dart';
 import 'lyric_sheet_list_screen.dart';
+import 'recognize_screen.dart';
 import 'settings_screen.dart';
 import 'tuner_screen.dart';
 import '../theme/ph.dart';
@@ -162,7 +162,7 @@ class _AppShellState extends State<AppShell> {
       onOpenSongs: _openSongs,
     ),
     ChordListScreen(),
-    if (_index == _recognizeTab) FreePracticeScreen() else const SizedBox(),
+    if (_index == _recognizeTab) RecognizeScreen() else const SizedBox(),
     if (_index == _tunerTab) const TunerScreen() else const SizedBox(),
   ];
 
@@ -185,7 +185,7 @@ class _AppShellState extends State<AppShell> {
           (_) => _pages()[0],
           (_) => const TunerScreen(),
           (_) => _pages()[2],
-          (_) => FreePracticeScreen(),
+          (_) => RecognizeScreen(),
           (_) => const GuideListScreen(),
           (_) => _pages()[1],
           (_) => const SettingsScreen(),

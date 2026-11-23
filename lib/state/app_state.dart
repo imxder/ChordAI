@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../models/app_theme.dart';
 import '../models/chord_difficulty.dart';
 import '../models/chord_model_info.dart';
 import '../models/chord_prediction.dart';
 import '../models/on_device_model.dart';
 import '../models/score.dart';
+import '../models/theme_options.dart';
 import '../models/tuner_note.dart';
 import '../models/tuning_preset.dart';
 

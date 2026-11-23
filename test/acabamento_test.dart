@@ -1,7 +1,7 @@
 import 'package:chordai/models/on_device_model.dart';
-import 'package:chordai/screens/free_practice_screen.dart';
 import 'package:chordai/screens/lyric_player_screen.dart';
 import 'package:chordai/screens/recognition_settings_screen.dart';
+import 'package:chordai/screens/recognize_screen.dart';
 import 'package:chordai/screens/settings_screen.dart';
 import 'package:chordai/services/cifra_parser.dart';
 import 'package:chordai/services/on_device_chord_service.dart';
@@ -32,7 +32,7 @@ void main() {
       tester,
     ) async {
       setScreen(tester, const Size(390, 844));
-      await tester.pumpWidget(appUnderTest(const FreePracticeScreen()));
+      await tester.pumpWidget(appUnderTest(const RecognizeScreen()));
       await tester.pump();
       expect(find.textContaining('No aparelho'), findsNothing);
       expect(find.textContaining('Reconhecendo'), findsNothing);

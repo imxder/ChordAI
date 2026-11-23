@@ -1,4 +1,4 @@
-import 'package:chordai/models/app_theme.dart';
+import 'package:chordai/models/theme_options.dart';
 import 'package:chordai/screens/app_shell.dart';
 import 'package:chordai/screens/settings_screen.dart';
 import 'package:chordai/services/user_song_store.dart';

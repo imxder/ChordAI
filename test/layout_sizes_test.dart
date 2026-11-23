@@ -5,7 +5,6 @@ import 'package:chordai/screens/app_shell.dart';
 import 'package:chordai/screens/chord_detail_screen.dart';
 import 'package:chordai/screens/chord_practice_screen.dart';
 import 'package:chordai/screens/custom_tuning_screen.dart';
-import 'package:chordai/screens/free_practice_screen.dart';
 import 'package:chordai/screens/guide_detail_screen.dart';
 import 'package:chordai/screens/guide_list_screen.dart';
 import 'package:chordai/screens/lyric_player_screen.dart';
@@ -13,6 +12,7 @@ import 'package:chordai/screens/onboarding_screen.dart';
 import 'package:chordai/screens/practice_session_screen.dart';
 import 'package:chordai/screens/privacy_screen.dart';
 import 'package:chordai/screens/recognition_settings_screen.dart';
+import 'package:chordai/screens/recognize_screen.dart';
 import 'package:chordai/screens/settings_screen.dart';
 import 'package:chordai/screens/tuner_screen.dart';
 import 'package:chordai/screens/tuning_check_screen.dart';
@@ -31,7 +31,7 @@ final _screens = <String, Widget Function(LyricSheet sheet)>{
   'testar acorde': (_) => const ChordPracticeScreen(chord: 'F'),
   'tocar junto': (sheet) => LyricPlayerScreen(sheet: sheet),
   'sequências': (_) => const PracticeSessionScreen(),
-  'reconhecer': (_) => const FreePracticeScreen(),
+  'reconhecer': (_) => const RecognizeScreen(),
   'afinador': (_) => const TunerScreen(),
   'afinação personalizada': (_) => const CustomTuningScreen(),
   'reconhecimento': (_) => const RecognitionSettingsScreen(),

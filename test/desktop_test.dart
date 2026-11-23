@@ -1,8 +1,8 @@
-import 'package:chordai/models/app_theme.dart';
+import 'package:chordai/models/theme_options.dart';
 import 'package:chordai/screens/app_shell.dart';
 import 'package:chordai/screens/chord_detail_screen.dart';
-import 'package:chordai/screens/free_practice_screen.dart';
 import 'package:chordai/screens/home_screen.dart';
+import 'package:chordai/screens/recognize_screen.dart';
 import 'package:chordai/screens/tuner_screen.dart';
 import 'package:chordai/screens/guide_list_screen.dart';
 import 'package:chordai/screens/settings_screen.dart';
@@ -133,12 +133,12 @@ void main() {
       await _abrir(tester);
       await tester.tap(_noInicio('Reconhecer acorde'));
       await settle(tester);
-      expect(find.byType(FreePracticeScreen), findsOneWidget);
+      expect(find.byType(RecognizeScreen), findsOneWidget);
       expect(find.byKey(appSideBarKey), findsOneWidget);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await settle(tester);
-      expect(find.byType(FreePracticeScreen), findsNothing);
+      expect(find.byType(RecognizeScreen), findsNothing);
 
       // Na primeira tela da aba, Esc não faz nada.
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -152,7 +152,7 @@ void main() {
       await settle(tester);
       await tester.tap(find.byTooltip('Voltar'));
       await settle(tester);
-      expect(find.byType(FreePracticeScreen), findsNothing);
+      expect(find.byType(RecognizeScreen), findsNothing);
     }, variant: _windows);
 
     testWidgets('clicar de novo na aba aberta volta pra primeira tela dela', (
@@ -163,7 +163,7 @@ void main() {
       await settle(tester);
       await tester.tap(_aba('Início'));
       await settle(tester);
-      expect(find.byType(FreePracticeScreen), findsNothing);
+      expect(find.byType(RecognizeScreen), findsNothing);
     }, variant: _windows);
 
     testWidgets('as abas se refazem quando o app muda', (tester) async {
@@ -371,7 +371,7 @@ void main() {
       // No meio da troca a tela nova está aparecendo por cima.
       expect(find.byType(FadeTransition), findsWidgets);
       await settle(tester);
-      expect(find.byType(FreePracticeScreen), findsOneWidget);
+      expect(find.byType(RecognizeScreen), findsOneWidget);
     }, variant: _windows);
   });
 
@@ -474,11 +474,11 @@ void main() {
         }
         await tester.tap(_aba('Reconhecer acorde'));
         await settle(tester);
-        expect(find.byType(FreePracticeScreen), findsOneWidget);
+        expect(find.byType(RecognizeScreen), findsOneWidget);
         await tester.tap(_aba('Guia do iniciante'));
         await settle(tester);
         expect(find.byType(GuideListScreen), findsOneWidget);
-        expect(find.byType(FreePracticeScreen), findsNothing);
+        expect(find.byType(RecognizeScreen), findsNothing);
       }, variant: variante);
     }
 

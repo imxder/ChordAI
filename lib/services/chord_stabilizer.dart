@@ -2,11 +2,10 @@ import '../models/chord_prediction.dart';
 
 /// Estabiliza as previsões do modelo no aparelho antes de chegarem na tela.
 ///
-/// O modelo roda a cada ~0,5s, bem mais rápido que a API (~1,5s + rede). Sem
-/// isso, o mesmo acorde tocado uma vez contaria várias vezes nas telas que
-/// somam "acertos seguidos" por previsão recebida (ver
-/// chord_practice_screen.dart), e uma leitura isolada ruidosa derrubaria a
-/// sequência. Por isso só repassa uma previsão "ok"/"unknown" quando o
+/// O modelo roda a cada ~0,5s, olhando o último 1,5s de áudio. Sem isso, uma
+/// leitura isolada ruidosa apareceria na tela como outro acorde e derrubaria
+/// a sequência no treino (ver chord_practice_screen.dart e o
+/// ChordRepeatGate). Por isso só repassa uma previsão "ok"/"unknown" quando o
 /// mesmo resultado aparece em pelo menos 2 das últimas 3 inferências, e no
 /// máximo uma vez a cada 1,5s. "silence"/"too_short" não representam uma
 /// tentativa de acorde (as telas os ignoram), então passam direto, sem essa

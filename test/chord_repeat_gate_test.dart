@@ -69,6 +69,69 @@ void main() {
     });
   });
 
+  group('contagem de acertos seguidos', () {
+    int contar(List<ChordPrediction> leituras) {
+      final gate = ChordRepeatGate('Em');
+      for (final leitura in leituras) {
+        gate.process(leitura);
+      }
+      return gate.hits;
+    }
+
+    test('três acertos com batida nova somam 3', () {
+      expect(contar([_em, _silencio, _em, _naoReconheci, _em]), 3);
+    });
+
+    test('o mesmo acorde soando sem parar conta 1', () {
+      expect(contar([_em, _em, _em, _em, _em, _em]), 1);
+    });
+
+    test('silêncio e não reconheci não contam como acerto', () {
+      expect(contar([_silencio, _naoReconheci, _silencio]), 0);
+      expect(contar([_em, _silencio, _silencio, _naoReconheci]), 1);
+    });
+
+    test('um acorde errado zera a contagem', () {
+      expect(contar([_em, _silencio, _em, _am]), 0);
+      expect(contar([_em, _silencio, _em, _am, _silencio, _em]), 1);
+    });
+
+    test('reset zera a contagem e a espera pela batida nova', () {
+      final gate = ChordRepeatGate('Em');
+      gate.process(_em);
+      expect(gate.hits, 1);
+      expect(gate.waitingForRelease, isTrue);
+      gate.reset();
+      expect(gate.hits, 0);
+      expect(gate.waitingForRelease, isFalse);
+      expect(gate.process(_em), ChordRepeatEvent.hit);
+      expect(gate.hits, 1);
+    });
+
+    test('o nome do acorde não diferencia maiúscula de minúscula', () {
+      const minusculo = ChordPrediction(status: 'ok', chord: 'em');
+      expect(contar([minusculo, _silencio, _em]), 2);
+    });
+
+    testWidgets('três acertos seguidos marcam o acorde como aprendido', (
+      tester,
+    ) async {
+      mockPlatform();
+      await appState.loadProgress();
+      final gate = ChordRepeatGate('Em');
+      final aprendeuCom = <int>[];
+      final leituras = [_em, _silencio, _em, _silencio, _em];
+      for (final leitura in leituras) {
+        if (gate.process(leitura) == ChordRepeatEvent.hit &&
+            appState.registerChordHits('Em', gate.hits)) {
+          aprendeuCom.add(gate.hits);
+        }
+      }
+      expect(aprendeuCom, [AppState.chordMasteryHits]);
+      expect(appState.isChordLearned('Em'), isTrue);
+    });
+  });
+
   group('tela de treino', () {
     setUp(() async {
       mockPlatform();

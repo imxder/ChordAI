@@ -17,20 +17,19 @@ import '../theme/ph.dart';
 import '../theme/platform_style.dart';
 import '../widgets/desktop_input.dart';
 
-class FreePracticeScreen extends StatefulWidget {
+class RecognizeScreen extends StatefulWidget {
   final InputDevice? inputDevice;
 
   /// Só pros testes: um reconhecedor falso no lugar do microfone.
   final ChordRecognizer? recognizer;
 
-  const FreePracticeScreen({super.key, this.inputDevice, this.recognizer});
+  const RecognizeScreen({super.key, this.inputDevice, this.recognizer});
 
   @override
-  State<FreePracticeScreen> createState() => _FreePracticeScreenState();
+  State<RecognizeScreen> createState() => _RecognizeScreenState();
 }
 
-class _FreePracticeScreenState extends State<FreePracticeScreen>
-    with MicLifecycle {
+class _RecognizeScreenState extends State<RecognizeScreen> with MicLifecycle {
   late final ChordRecognizer _service =
       widget.recognizer ?? createChordRecognizer();
 

@@ -1,3 +1,5 @@
+/// Um acorde de uma sequência e quantos tempos ele dura. O tocar junto também
+/// usa, pra cada acorde da música.
 class ChordStep {
   final String chord;
   final int beats;
@@ -12,6 +14,9 @@ class ChordStep {
   }
 }
 
+/// Uma sequência de acordes pra treinar trocas com metrônomo (a tela
+/// "Sequências de acordes", com os arquivos de assets/scores/). As músicas do
+/// tocar junto são outra coisa: o LyricSheet e o UserSong.
 class Score {
   final String title;
   final List<ChordStep> steps;

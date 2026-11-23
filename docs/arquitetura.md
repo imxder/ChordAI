@@ -36,7 +36,7 @@ Onde a regra não é seguida (conferi pelos `import` de cada pasta):
 
 - `models/user_song.dart` importa `services/cifra_parser.dart`, pra montar a música a partir do texto da cifra. O certo seria o parser morar em `models/`, porque ele não fala com nada de fora.
 - Três services leem o `appState`: `chord_recognizer_factory.dart` (qual modelo usar), `app_sounds.dart` (se os sons estão ligados) e `audio_input.dart` (qual entrada de áudio foi escolhida). Funciona, mas prende esses services ao estado global.
-- Dois arquivos de `models/` importam o Flutter: `app_theme.dart` (usa `Color`) e `chord_model_info.dart` (lê o arquivo do modelo pelos assets).
+- Dois arquivos de `models/` importam o Flutter: `theme_options.dart` (usa `Color`) e `chord_model_info.dart` (lê o arquivo do modelo pelos assets).
 - `widgets/metronome.dart` chama o `AppSounds` direto, e `audio_input_section.dart` e `practice_options_sheet.dart` leem o `appState`.
 - As telas importam outras telas pra navegar (a `AppShell` importa as abas, a `HomeScreen` abre o afinador). Isso é normal no Flutter.
 
@@ -90,7 +90,7 @@ Com uma arquitetura em camadas simples. Lembra o MVVM só em parte: o `appState`
 |---|---|---|
 | Aba Início | `screens/home_screen.dart` | `HomeScreen` |
 | Aba Acordes (e o acorde aberto) | `screens/chord_list_screen.dart` e `screens/chord_detail_screen.dart` | `ChordListScreen`, `ChordDetailScreen` |
-| Aba Reconhecer | `screens/free_practice_screen.dart` | `FreePracticeScreen` |
+| Aba Reconhecer | `screens/recognize_screen.dart` | `RecognizeScreen` |
 | Aba Afinador | `screens/tuner_screen.dart` | `TunerScreen` |
 | Escolher a afinação | `screens/tuning_select_sheet.dart` | `showTuningSelectSheet` |
 | Afinação personalizada | `screens/custom_tuning_screen.dart` | `CustomTuningScreen` |
@@ -108,14 +108,17 @@ Com uma arquitetura em camadas simples. Lembra o MVVM só em parte: o `appState`
 | Primeira abertura | `screens/onboarding_screen.dart` | `OnboardingScreen` |
 | Abas do celular e barra lateral | `screens/app_shell.dart` e `widgets/desktop_shell.dart` | `AppShell`, `DesktopShell` |
 
-## Nomes que confundem (pra depois da entrega)
+## Nomes que confundem
 
-Não renomeei nada agora: a poucos dias da entrega, mexer em nome de arquivo só traz risco. Fica a lista:
+Na sessão 13 eu já arrumei os mais baratos, só trocando o nome (sem mudar nada do que o app faz):
 
-| Hoje | O problema | Sugestão | Quanto mexeria |
+- `models/app_theme.dart` virou `models/theme_options.dart`. Antes tinha dois `app_theme.dart`, um em `models/` (as opções de cor e aparência) e outro em `theme/` (o tema montado).
+- `free_practice_screen.dart` virou `recognize_screen.dart`, e a `FreePracticeScreen` virou `RecognizeScreen`, que é o nome da aba.
+- O `Score` ganhou um comentário dizendo que é uma sequência de acordes pra treinar trocas, e não uma música.
+
+Ficou pra depois da entrega:
+
+| Hoje | O problema | Sugestão | Por que não agora |
 |---|---|---|---|
-| `lyric_*` (`LyricSheet`, `LyricPlayerScreen`, `LyricSheetListScreen`, `LyricSheetLibrary`, `LyricPracticeMap`) | "lyric" é letra, e o app não tem mais letra | `song_*` (`SongSheet`, `PlayAlongScreen`, `SongListScreen`...) | uns 30 arquivos entre `lib/` e `test/`, mais os assets em `assets/lyrics/`. Vale fazer depois |
-| `free_practice_screen.dart` | é a aba Reconhecer | `recognize_screen.dart` (`RecognizeScreen`) | uns 10 arquivos. Vale fazer depois |
-| `models/app_theme.dart` e `theme/app_theme.dart` | o mesmo nome em duas pastas | `models/theme_options.dart` pro primeiro | uns 5 arquivos. Vale fazer depois, é o mais barato |
-| `Score` e `ScoreLibrary` | são as Sequências de acordes, e "score" parece "song" | `ChordDrill` e `DrillLibrary`, ou só um comentário no topo | uns 10 arquivos. Talvez só o comentário |
-| `widgets/page_parts.dart` | 24 classes num arquivo só (`IosPage`, `GroupedSection`, `BottomActionBar`...) | separar em `page.dart`, `grouped_section.dart` e `buttons.dart` | 26 arquivos importam ele. Só se for mexer nas telas de novo |
+| `lyric_*` (`LyricSheet`, `LyricPlayerScreen`, `LyricSheetListScreen`, `LyricSheetLibrary`, `LyricPracticeMap`) | "lyric" é letra, e o app não tem mais letra | `song_*` (`SongSheet`, `PlayAlongScreen`, `SongListScreen`...) | não é só o nome dos arquivos: o "lyric" está no leitor de cifras (`LyricLine`, `LyricSection`, `lyricText`), em uns 30 arquivos entre `lib/` e `test/`, nos assets (`assets/lyrics/`) e numa preferência salva no aparelho (`app_lyric_font_scale`), que não pode mudar de nome sem migrar |
+| `widgets/page_parts.dart` | 24 classes num arquivo só (`IosPage`, `GroupedSection`, `BottomActionBar`...) | separar em `page.dart`, `grouped_section.dart` e `buttons.dart` | 26 arquivos importam ele, e não ajuda a achar nada que a tabela de cima não ache |

@@ -9,7 +9,6 @@ import 'package:chordai/screens/free_practice_screen.dart';
 import 'package:chordai/screens/guide_detail_screen.dart';
 import 'package:chordai/screens/guide_list_screen.dart';
 import 'package:chordai/screens/lyric_player_screen.dart';
-import 'package:chordai/screens/lyric_sheet_screen.dart';
 import 'package:chordai/screens/onboarding_screen.dart';
 import 'package:chordai/screens/practice_session_screen.dart';
 import 'package:chordai/screens/privacy_screen.dart';
@@ -30,7 +29,6 @@ final _screens = <String, Widget Function(LyricSheet sheet)>{
   'afinou?': (_) => const TuningCheckScreen(),
   'detalhe do acorde': (_) => const ChordDetailScreen(chord: 'Bdim'),
   'testar acorde': (_) => const ChordPracticeScreen(chord: 'F'),
-  'cifra': (sheet) => LyricSheetScreen(sheet: sheet),
   'tocar junto': (sheet) => LyricPlayerScreen(sheet: sheet),
   'sequências': (_) => const PracticeSessionScreen(),
   'reconhecer': (_) => const FreePracticeScreen(),

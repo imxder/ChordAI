@@ -80,15 +80,22 @@ conhece o A. Os nomes vêm de `assets/models/*/labels.json`.
 
 - [ ] Na tela inicial, toco em Tocar músicas e abro Sequências de acordes.
 - [ ] Escolho uma sequência, ajusto o andamento e toco em Começar.
-- [ ] O metrônomo marca o tempo e os acertos aparecem enquanto eu toco.
+- [ ] O metrônomo marca o tempo com o clique (o tempo 1 mais agudo) e os acertos aparecem enquanto eu toco.
 - [ ] No fim aparece "Treino concluído" com o número de acertos.
 
 ## 8. Tocar junto
 
-- [ ] Na tela inicial, toco em Tocar músicas e abro Riptide ou All Too Well.
-- [ ] A cifra rola sozinha. Os botões de velocidade mudam a rolagem.
-- [ ] Toco em Tocar junto e depois em Começar: aparece a contagem e depois o acorde a tocar.
+- [ ] Na tela inicial, toco em Tocar músicas e abro Riptide ou All Too Well: abre direto o tocar junto.
+- [ ] Toco em Começar: aparece a contagem com o clique e depois o acorde a tocar.
 - [ ] Os acertos aparecem enquanto eu toco. No fim aparece o "Resumo da música".
+- [ ] No Aa, desligo "Ouvir pelo microfone" e toco em Começar: a cifra anda no tempo, o aviso de microfone não aparece e no fim não tem resumo.
+- [ ] No Aa, desligo "Som do metrônomo": o clique some aqui e nas Sequências.
+
+## 8b. Sons
+
+- [ ] No afinador, quando a corda fica afinada, toca o "di-ding" uma vez e o ponteiro não pula.
+- [ ] Em Tocar e testar, quando o acorde vira aprendido, toca o som, o microfone desliga e aparece "Ver meus acordes".
+- [ ] Em Configurações, desligo Sons: nenhum dos três sons toca.
 
 ## 9. Segundo plano e tela bloqueada
 

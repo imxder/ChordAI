@@ -8,7 +8,7 @@ import '../services/lyric_sheet_library.dart';
 import '../services/user_song_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/page_parts.dart';
-import 'lyric_sheet_screen.dart';
+import 'lyric_player_screen.dart';
 import 'practice_session_screen.dart';
 import 'song_editor_screen.dart';
 import '../theme/ph.dart';
@@ -83,7 +83,7 @@ class _LyricSheetListScreenState extends State<LyricSheetListScreen> {
                 _SheetRow(
                   sheet: song.toLyricSheet(),
                   onTap: () => _open(
-                    LyricSheetScreen(
+                    LyricPlayerScreen(
                       sheet: song.toLyricSheet(),
                       inputDevice: widget.inputDevice,
                       userSong: song,
@@ -101,7 +101,7 @@ class _LyricSheetListScreenState extends State<LyricSheetListScreen> {
                 _SheetRow(
                   sheet: sheet,
                   onTap: () => _push(
-                    LyricSheetScreen(
+                    LyricPlayerScreen(
                       sheet: sheet,
                       inputDevice: widget.inputDevice,
                     ),

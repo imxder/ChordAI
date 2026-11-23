@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:record/record.dart';
 
 import '../models/chord_for_model.dart';
@@ -10,12 +9,15 @@ import '../models/chord_names.dart';
 import '../models/chord_prediction.dart';
 import '../models/lyric_practice.dart';
 import '../models/lyric_sheet.dart';
+import '../models/user_song.dart';
 import '../models/play_along_report.dart';
+import '../services/app_sounds.dart';
 import '../services/chord_recognizer.dart';
 import '../services/chord_recognizer_factory.dart';
 import '../services/play_along_engine.dart';
 import '../services/screen_awake.dart';
 import '../services/tocar_junto_log.dart';
+import '../services/user_song_store.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/mic_lifecycle.dart';
@@ -25,17 +27,31 @@ import '../widgets/guitar_neck.dart';
 import '../widgets/page_parts.dart';
 import '../widgets/practice_options_sheet.dart';
 import 'chord_practice_screen.dart';
-import 'lyric_sheet_screen.dart';
+import 'song_editor_screen.dart';
 import '../theme/ph.dart';
 import '../widgets/desktop_shell.dart';
 import '../theme/platform_style.dart';
 import '../widgets/desktop_input.dart';
+
+const playAlongMinBpm = 40;
+const playAlongMaxBpm = 160;
+const slowStartWithoutMic = 0.6;
+
+int startBpm(LyricSheet sheet, {required bool listens}) {
+  final saved = appState.songBpm[sheet.title];
+  if (saved != null) return saved.clamp(playAlongMinBpm, playAlongMaxBpm);
+  final tempo = sheet.tempo ?? 80;
+  final start = listens ? tempo : (tempo * slowStartWithoutMic).round();
+  return start.clamp(playAlongMinBpm, playAlongMaxBpm);
+}
 
 class LyricPlayerScreen extends StatefulWidget {
   final InputDevice? inputDevice;
   final LyricSheet sheet;
   final ChordRecognizer? recognizer;
   final Duration Function()? elapsed;
+  final UserSong? userSong;
+  final UserSongStore? store;
 
   const LyricPlayerScreen({
     super.key,
@@ -43,6 +59,8 @@ class LyricPlayerScreen extends StatefulWidget {
     this.inputDevice,
     this.recognizer,
     this.elapsed,
+    this.userSong,
+    this.store,
   });
 
   @override
@@ -51,9 +69,9 @@ class LyricPlayerScreen extends StatefulWidget {
 
 class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     with MicLifecycle {
-  static const _minBpm = 40;
-  static const _maxBpm = 160;
-  static const _tick = Duration(milliseconds: 30);
+  static const _minBpm = playAlongMinBpm;
+  static const _maxBpm = playAlongMaxBpm;
+  static const _tick = Duration(milliseconds: 10);
 
   late final ChordRecognizer _service =
       widget.recognizer ?? createChordRecognizer(rawReadings: true);
@@ -74,12 +92,13 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
   Timer? _bpmRepeat;
   final Set<int> _reported = {};
   String? _hearing;
+  bool _withMic = true;
 
   @override
   void initState() {
     super.initState();
     _practiceMap = buildLyricPracticeMap(widget.sheet);
-    _bpm = widget.sheet.tempo?.clamp(_minBpm, _maxBpm) ?? 80;
+    _bpm = startBpm(widget.sheet, listens: appState.playAlongListens);
     if (widget.inputDevice != null) {
       _service.selectDevice(widget.inputDevice);
     }
@@ -120,11 +139,14 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
   }
 
   Future<void> _start() async {
-    final hasPermission = await _service.hasPermission();
-    if (!hasPermission) {
+    _withMic = appState.playAlongListens;
+    if (_withMic && !await _service.hasPermission()) {
       _showSnackBar('O app precisa de acesso ao microfone');
       return;
     }
+    if (_withMic) await _startListening();
+    await appSounds.prepare();
+    if (!mounted) return;
 
     appState.startSession(_practiceMap.score);
     TocarJuntoLog.evento(
@@ -142,7 +164,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
       knownChords: appState.chordsInModel.toSet(),
       bpm: _bpm,
       elapsed: widget.elapsed ?? () => _stopwatch.elapsed,
-      mode: appState.playAlongWaitsForMe
+      mode: _withMic && appState.playAlongWaitsForMe
           ? PlayAlongMode.waitForMe
           : PlayAlongMode.followTempo,
     )..start();
@@ -150,12 +172,10 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     _ticker?.cancel();
     _ticker = Timer.periodic(_tick, (_) => _onTick());
     keepScreenOn(true);
-
-    _startListening();
   }
 
-  void _startListening() {
-    _service.start(
+  Future<void> _startListening() {
+    return _service.start(
       onPrediction: _onPrediction,
       onError: (_) => _showSnackBar(chordRecognitionErrorMessage),
     );
@@ -186,7 +206,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     TocarJuntoLog.evento('continuou: app voltou');
     _stopwatch.start();
     _ticker = Timer.periodic(_tick, (_) => _onTick());
-    _startListening();
+    if (_withMic) _startListening();
   }
 
   Future<void> _stop() async {
@@ -208,9 +228,9 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     final beat = engine.update();
     if (beat) {
       TocarJuntoLog.evento('batida');
-      SystemSound.play(SystemSoundType.click);
+      appSounds.playClick(strong: engine.position.floor() % 4 == 0);
     }
-    for (var i = 0; i < engine.results.length; i++) {
+    for (var i = 0; _withMic && i < engine.results.length; i++) {
       final result = engine.results[i];
       if (_reported.contains(i)) continue;
       if (result == StepResult.hit || result == StepResult.miss) {
@@ -253,6 +273,10 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     final engine = _engine!;
     final total = engine.hits + engine.misses;
     appState.stopSession();
+    if (!_withMic) {
+      setState(() => _finishedMessage = 'Música concluída');
+      return;
+    }
     setState(
       () => _finishedMessage =
           'Música concluída: ${engine.hits} de $total acordes certos',
@@ -263,6 +287,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
   void _changeBpm(int delta) {
     setState(() => _bpm = (_bpm + delta).clamp(_minBpm, _maxBpm));
     _engine?.setBpm(_bpm);
+    appState.setSongBpm(widget.sheet.title, _bpm);
   }
 
   void _startBpmRepeat(int delta) {
@@ -393,7 +418,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
 
   Map<int, bool> _stepResults() {
     final engine = _engine;
-    if (engine == null) return const {};
+    if (engine == null || !_withMic) return const {};
     return {
       for (var i = 0; i < engine.results.length; i++)
         if (engine.results[i] == StepResult.hit ||
@@ -405,7 +430,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
   Map<int, Map<int, bool>> _tokenResults() {
     final engine = _engine;
     final out = <int, Map<int, bool>>{};
-    if (engine == null) return out;
+    if (engine == null || !_withMic) return out;
     for (var i = 0; i < engine.results.length; i++) {
       final result = engine.results[i];
       if (result != StepResult.hit && result != StepResult.miss) continue;
@@ -428,6 +453,43 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     final nextIndex = appState.currentStepIndex + 1;
     if (nextIndex >= steps.length) return null;
     return steps[nextIndex].chord;
+  }
+
+  void _showChordDialog(String chord) {
+    showGlassSheet(
+      context,
+      builder: (sheetContext) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          child: GlassEnter(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ChordName(chord, size: 36),
+                Text(
+                  chordFullName(chord),
+                  style: Theme.of(sheetContext).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 16),
+                SizedBox(height: 220, child: GuitarNeck(chord: chord)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _edit() async {
+    if (appState.sessionStatus == SessionStatus.running) await _stop();
+    if (!mounted) return;
+    final result = await Navigator.of(context).push<SongEditorResult>(
+      MaterialPageRoute(
+        builder: (_) =>
+            SongEditorScreen(song: widget.userSong, store: widget.store),
+      ),
+    );
+    if (result != null && mounted) Navigator.of(context).pop(result);
   }
 
   void _showSnackBar(String message) {
@@ -473,6 +535,13 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
     final trailing = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (widget.userSong != null)
+          CupertinoButton(
+            key: const ValueKey('editar música'),
+            padding: EdgeInsets.zero,
+            onPressed: _edit,
+            child: const Icon(Ph.pencilSimple, semanticLabel: 'Editar música'),
+          ),
         CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () => showPracticeOptionsSheet(context),
@@ -562,6 +631,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
                       ? (_engine!.beatInStep * 2).floor()
                       : null,
                   activeLineKey: _activeRowKey,
+                  onChordTap: running ? null : _showChordDialog,
                 )
               else
                 for (
@@ -585,6 +655,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
                           ? activeLoc.tokenIndex
                           : null,
                       tokenResults: results[_lineKeyId(si, li)] ?? const {},
+                      onChordTap: running ? null : _showChordDialog,
                     ),
                   ),
             ],
@@ -669,7 +740,7 @@ class _LyricPlayerScreenState extends State<LyricPlayerScreen>
       );
     } else if (engine != null && engine.countingIn) {
       status = StatusLine(text: 'Prepare-se… ${engine.countInLeft}');
-    } else if (engine == null || judged == null) {
+    } else if (engine == null || judged == null || !_withMic) {
       status = const StatusLine(text: 'Toque este acorde');
     } else {
       final judgedChord = steps[judged].chord;
@@ -955,6 +1026,35 @@ class _BeatDots extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+String sheetMeta(LyricSheet sheet) {
+  return [
+    if (sheet.key != null) 'Tom ${sheet.key}',
+    if (sheet.tempo != null) '${sheet.tempo} BPM',
+    if (sheet.capo != null) 'Capo na ${sheet.capo}ª casa',
+  ].join(' · ');
+}
+
+class SheetSectionLabel extends StatelessWidget {
+  final String title;
+
+  const SheetSectionLabel(this.title, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20, bottom: 4),
+      child: Semantics(
+        header: true,
+        child: Text(
+          title,
+          style: Theme.of(context).textTheme.titleSmall
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+        ),
       ),
     );
   }

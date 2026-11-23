@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:chordai/main.dart' show appLocalizationsDelegates;
 import 'package:chordai/models/app_theme.dart';
+import 'package:chordai/services/app_sounds.dart';
 import 'package:chordai/state/app_state.dart';
 import 'package:chordai/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -128,4 +129,21 @@ void setScreen(WidgetTester tester, Size size, {double textScale = 1.0}) {
     tester.view.resetDevicePixelRatio();
     tester.platformDispatcher.clearTextScaleFactorTestValue();
   });
+}
+
+class FakeSoundOutput implements SoundOutput {
+  final played = <AppSound>[];
+  int prepared = 0;
+
+  @override
+  Future<void> prepare() async => prepared++;
+
+  @override
+  void play(AppSound sound) => played.add(sound);
+}
+
+FakeSoundOutput useFakeSounds() {
+  final output = FakeSoundOutput();
+  appSounds = AppSounds(output: output);
+  return output;
 }

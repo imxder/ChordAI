@@ -25,6 +25,7 @@ class AppState extends ChangeNotifier {
   static const _autoScrollKey = 'app_auto_scroll';
   static const _appearanceKey = 'app_appearance';
   static const _guideReadKey = 'app_guide_read';
+  static const _soundsKey = 'app_sounds';
   // Chaves do modo servidor, que saiu do app. Só servem pra apagar o que
   // ficou salvo de versões antigas (o endereço era o IP do computador).
   static const _oldServerKeys = [
@@ -34,6 +35,9 @@ class AppState extends ChangeNotifier {
   ];
   static const _onDeviceModelKey = 'app_on_device_model';
   static const _playAlongWaitsKey = 'app_play_along_waits_for_me';
+  static const _playAlongListensKey = 'app_play_along_listens';
+  static const _metronomeSoundKey = 'app_metronome_sound';
+  static const _songBpmKey = 'app_song_bpm';
   static const _inputDeviceIdKey = 'app_input_device_id';
 
   // Quem instalou uma versão antiga ainda tem esses dados salvos no aparelho.
@@ -76,6 +80,7 @@ class AppState extends ChangeNotifier {
   Set<String>? _modelChords;
   bool hasCompletedOnboarding = false;
   bool alwaysShowOnboarding = false;
+  bool soundsEnabled = true;
   bool showOnboardingAtLaunch = true;
   String tuningId = 'padrao';
   List<String>? customTuningNotes;
@@ -145,6 +150,9 @@ class AppState extends ChangeNotifier {
   bool showGuitarNeckInPlayer = true;
   bool autoScrollInPlayer = true;
   bool playAlongWaitsForMe = false;
+  bool playAlongListens = true;
+  bool metronomeSound = true;
+  Map<String, int> songBpm = {};
 
   /// Entrada de áudio escolhida no Windows ou no Mac (ver
   /// services/audio_input.dart). `null` é a entrada padrão do sistema, e no
@@ -184,6 +192,13 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_appearanceKey, value.name);
+  }
+
+  Future<void> setSoundsEnabled(bool value) async {
+    soundsEnabled = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_soundsKey, value);
   }
 
   Future<void> setAlwaysShowOnboarding(bool value) async {
@@ -254,6 +269,7 @@ class AppState extends ChangeNotifier {
     await _refreshModelChords();
     hasCompletedOnboarding = prefs.getBool(_hasOnboardedKey) ?? false;
     alwaysShowOnboarding = prefs.getBool(_alwaysOnboardingKey) ?? false;
+    soundsEnabled = prefs.getBool(_soundsKey) ?? true;
     showOnboardingAtLaunch = !hasCompletedOnboarding || alwaysShowOnboarding;
     tuningId = prefs.getString(_tuningIdKey) ?? 'padrao';
     customTuningNotes = prefs.getStringList(_customTuningKey);
@@ -262,6 +278,14 @@ class AppState extends ChangeNotifier {
     showGuitarNeckInPlayer = prefs.getBool(_showGuitarNeckKey) ?? true;
     autoScrollInPlayer = prefs.getBool(_autoScrollKey) ?? true;
     playAlongWaitsForMe = prefs.getBool(_playAlongWaitsKey) ?? false;
+    playAlongListens = prefs.getBool(_playAlongListensKey) ?? true;
+    metronomeSound = prefs.getBool(_metronomeSoundKey) ?? true;
+    songBpm = {};
+    for (final entry in prefs.getStringList(_songBpmKey) ?? const <String>[]) {
+      final i = entry.lastIndexOf('=');
+      final bpm = i > 0 ? int.tryParse(entry.substring(i + 1)) : null;
+      if (bpm != null) songBpm[entry.substring(0, i)] = bpm;
+    }
     inputDeviceId = prefs.getString(_inputDeviceIdKey);
     final savedAppearance = prefs.getString(_appearanceKey);
     appearance = AppAppearance.values.firstWhere(
@@ -317,6 +341,28 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_playAlongWaitsKey, value);
+  }
+
+  Future<void> setPlayAlongListens(bool value) async {
+    playAlongListens = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_playAlongListensKey, value);
+  }
+
+  Future<void> setSongBpm(String song, int bpm) async {
+    songBpm[song] = bpm;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_songBpmKey, [
+      for (final entry in songBpm.entries) '${entry.key}=${entry.value}',
+    ]);
+  }
+
+  Future<void> setMetronomeSound(bool value) async {
+    metronomeSound = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_metronomeSoundKey, value);
   }
 
   /// `null` volta pra entrada padrão do sistema.

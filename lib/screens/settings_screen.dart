@@ -44,6 +44,20 @@ class PreferencesSection extends StatelessWidget {
       children: [
         _preferences(context),
         GroupedSection(
+          header: 'Sons',
+          footer:
+              'O clique do metrônomo, o som de acorde aprendido e o da corda '
+              'afinada no afinador.',
+          children: [
+            SwitchRow(
+              key: const ValueKey('sons'),
+              title: 'Sons',
+              value: appState.soundsEnabled,
+              onChanged: appState.setSoundsEnabled,
+            ),
+          ],
+        ),
+        GroupedSection(
           header: 'Apresentação',
           footer:
               'Ligado, a apresentação do app aparece toda vez que ele abre. '

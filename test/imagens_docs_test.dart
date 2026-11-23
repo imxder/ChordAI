@@ -91,21 +91,40 @@ const _abas = [
     label: 'Início',
   ),
   DesktopDestination(
+    icon: Ph.gauge,
+    selectedIcon: Ph.gaugeFill,
+    label: 'Afinador',
+  ),
+  DesktopDestination(
+    icon: Ph.squaresFour,
+    selectedIcon: Ph.squaresFourFill,
+    label: 'Aprender acordes',
+  ),
+  DesktopDestination(
+    icon: Ph.ear,
+    selectedIcon: Ph.earFill,
+    label: 'Reconhecer acorde',
+  ),
+  DesktopDestination(
+    icon: Ph.bookOpen,
+    selectedIcon: Ph.bookOpenFill,
+    label: 'Guia do iniciante',
+  ),
+  DesktopDestination(
     icon: Ph.musicNotes,
     selectedIcon: Ph.musicNotesFill,
     label: 'Músicas',
   ),
   DesktopDestination(
-    icon: Ph.squaresFour,
-    selectedIcon: Ph.squaresFourFill,
-    label: 'Acordes',
-  ),
-  DesktopDestination(
-    icon: Ph.userCircle,
-    selectedIcon: Ph.userCircleFill,
-    label: 'Perfil',
+    icon: Ph.gearSix,
+    selectedIcon: Ph.gearSixFill,
+    label: 'Configurações',
+    bottom: true,
   ),
 ];
+
+const _abaReconhecer = 3;
+const _abaMusicas = 5;
 
 /// Uma tela dentro da casca do computador, com a aba [aba] marcada.
 Widget _naCasca(int aba, WidgetBuilder tela) => DesktopShell(
@@ -176,7 +195,7 @@ void main() {
       'acordes$sufixo',
       (tester) async {
         await _janela(tester, const AppShell(), aparencia: aparencia);
-        await tester.tap(find.byKey(const ValueKey('aba Acordes')));
+        await tester.tap(find.byKey(const ValueKey('aba Aprender acordes')));
         await _salvar(tester, 'acordes$sufixo');
       },
       variant: _windows,
@@ -188,7 +207,10 @@ void main() {
       (tester) async {
         await _janela(
           tester,
-          _naCasca(0, (_) => RecognizeScreen(recognizer: _OuveDo())),
+          _naCasca(
+            _abaReconhecer,
+            (_) => RecognizeScreen(recognizer: _OuveDo()),
+          ),
           aparencia: aparencia,
         );
         await tester.tap(find.text('Ouvir'));
@@ -214,11 +236,11 @@ void main() {
       (tester) async {
         final musica = (await tester.runAsync(
           () => LyricSheetLibrary().loadAll(),
-        ))!.first;
+        ))!.firstWhere((m) => m.title == 'Riptide');
         await _janela(
           tester,
           _naCasca(
-            1,
+            _abaMusicas,
             (_) => LyricPlayerScreen(sheet: musica, recognizer: _OuveDo()),
           ),
           aparencia: aparencia,

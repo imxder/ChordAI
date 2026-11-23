@@ -9,7 +9,7 @@ no iPhone nem no Android: tudo passa por `isDesktop`, em `lib/theme/platform_sty
 ## O que muda no computador
 
 - **Barra lateral** no lugar das abas de baixo (`lib/widgets/desktop_shell.dart`), com as mesmas
-  quatro abas. Cada aba tem a própria pilha de telas: abrindo um acorde ou uma música, a barra
+  telas. Cada item tem a própria pilha de telas: abrindo um acorde ou uma música, a barra
   continua do lado. Abaixo de 1000 px de largura a barra recolhe pra só os ícones, e o ☰ abre e
   fecha.
 - **Ordem da barra:** Início, Afinador, Aprender acordes, Reconhecer acorde, Guia do iniciante e

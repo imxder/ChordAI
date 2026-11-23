@@ -20,6 +20,7 @@ import 'package:chordai/services/tuner_service.dart';
 import 'package:chordai/state/app_state.dart';
 import 'package:chordai/theme/app_theme.dart';
 import 'package:chordai/theme/ph.dart';
+import 'package:chordai/widgets/audio_input_section.dart';
 import 'package:chordai/widgets/desktop_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -149,9 +150,18 @@ const _abaAfinador = 1;
 const _abaReconhecer = 3;
 const _abaMusicas = 5;
 
-/// Uma tela dentro da casca do computador, com a aba [aba] marcada.
+/// Uma tela dentro da casca do computador, com a aba [aba] marcada. Com a
+/// mesma Entrada de áudio da barra lateral do AppShell, pra todas as imagens
+/// mostrarem a barra igual.
 Widget _naCasca(int aba, WidgetBuilder tela) => DesktopShell(
   destinations: _abas,
+  actions: const [
+    DesktopPaneAction(
+      icon: Ph.microphoneFill,
+      label: 'Entrada de áudio',
+      onTap: showAudioInputDialog,
+    ),
+  ],
   pages: [for (var i = 0; i < _abas.length; i++) tela],
   rebuildOn: appState,
   selectedIndex: aba,

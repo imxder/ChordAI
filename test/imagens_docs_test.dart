@@ -6,12 +6,17 @@
 import 'dart:io';
 
 import 'package:chordai/models/chord_prediction.dart';
+import 'package:chordai/models/lyric_sheet.dart';
 import 'package:chordai/models/theme_options.dart';
 import 'package:chordai/screens/app_shell.dart';
 import 'package:chordai/screens/lyric_player_screen.dart';
 import 'package:chordai/screens/recognize_screen.dart';
+import 'package:chordai/screens/tuner_screen.dart';
+import 'package:chordai/services/app_sounds.dart';
+import 'package:chordai/services/audio_input.dart';
 import 'package:chordai/services/chord_recognizer.dart';
 import 'package:chordai/services/lyric_sheet_library.dart';
+import 'package:chordai/services/tuner_service.dart';
 import 'package:chordai/state/app_state.dart';
 import 'package:chordai/theme/app_theme.dart';
 import 'package:chordai/theme/ph.dart';
@@ -21,7 +26,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:record/record.dart';
 
-import 'test_helpers.dart' show appUnderTest, mockPlatform;
+import 'test_helpers.dart'
+    show FakeSoundOutput, appUnderTest, mockPlatform, useFakeSounds;
 
 const _gerar = bool.fromEnvironment('IMAGENS');
 
@@ -46,6 +52,22 @@ class _OuveDo implements ChordRecognizer {
     );
   }
 
+  @override
+  Future<void> stop() async {}
+  @override
+  Future<void> dispose() async {}
+}
+
+/// Afinador falso que "ouve" a 5ª corda (Lá, 110 Hz) um pouco grave, pra a
+/// imagem do Afinador mostrar o ponteiro fora do centro.
+class _OuveLaGrave extends TunerService {
+  @override
+  Future<bool> hasPermission() async => true;
+  @override
+  Future<void> start(
+    void Function(double? frequency) onPitch, {
+    void Function(MicrophoneProblem problem)? onProblem,
+  }) async => onPitch(108.5);
   @override
   Future<void> stop() async {}
   @override
@@ -123,6 +145,7 @@ const _abas = [
   ),
 ];
 
+const _abaAfinador = 1;
 const _abaReconhecer = 3;
 const _abaMusicas = 5;
 
@@ -167,15 +190,28 @@ Future<void> _salvar(WidgetTester tester, String nome) async {
 }
 
 void main() {
+  late LyricSheet riptide;
+
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     if (_gerar) await _fontes();
+    // Carrega aqui, fora do relógio falso dos testes: as telas dos testes
+    // anteriores também leem as letras, e o rootBundle guarda essa leitura
+    // feita no relógio falso, que nunca termina dentro do runAsync.
+    riptide = (await LyricSheetLibrary().loadAll()).firstWhere(
+      (m) => m.title == 'Riptide',
+    );
   });
 
   setUp(() async {
     mockPlatform();
     await appState.loadProgress();
+    // O afinador e o tocar junto preparam os sons; sem os falsos, o
+    // flutter_soloud de verdade tenta iniciar dentro do teste.
+    useFakeSounds();
   });
+
+  tearDown(() => appSounds = AppSounds(output: FakeSoundOutput()));
 
   for (final (aparencia, sufixo) in [
     (AppAppearance.paper, ''),
@@ -223,8 +259,11 @@ void main() {
     testWidgets(
       'afinador$sufixo',
       (tester) async {
-        await _janela(tester, const AppShell(), aparencia: aparencia);
-        await tester.tap(find.text('Afinador'));
+        await _janela(
+          tester,
+          _naCasca(_abaAfinador, (_) => TunerScreen(service: _OuveLaGrave())),
+          aparencia: aparencia,
+        );
         await _salvar(tester, 'afinador$sufixo');
       },
       variant: _windows,
@@ -234,14 +273,11 @@ void main() {
     testWidgets(
       'tocar junto$sufixo',
       (tester) async {
-        final musica = (await tester.runAsync(
-          () => LyricSheetLibrary().loadAll(),
-        ))!.firstWhere((m) => m.title == 'Riptide');
         await _janela(
           tester,
           _naCasca(
             _abaMusicas,
-            (_) => LyricPlayerScreen(sheet: musica, recognizer: _OuveDo()),
+            (_) => LyricPlayerScreen(sheet: riptide, recognizer: _OuveDo()),
           ),
           aparencia: aparencia,
         );

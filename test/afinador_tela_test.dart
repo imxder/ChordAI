@@ -142,6 +142,7 @@ void main() {
     await tester.pump();
     expect(vibracoes, hasLength(1));
 
+    await tester.pump(const Duration(milliseconds: 600));
     afinador.ouvir(104.0);
     afinador.ouvir(110.0);
     await tester.pump();

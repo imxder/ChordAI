@@ -4,7 +4,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../models/echo_guard.dart';
 import '../models/tuner_note.dart';
+import '../services/app_sounds.dart';
 import '../services/audio_input.dart';
 import '../services/tuner_service.dart';
 import '../state/app_state.dart';
@@ -21,6 +23,8 @@ import '../theme/ph.dart';
 import '../theme/platform_style.dart';
 import '../widgets/desktop_input.dart';
 
+const inTuneSoundEcho = Duration(milliseconds: 500);
+
 class TunerScreen extends StatefulWidget {
   /// Só pros testes: um afinador falso no lugar do microfone.
   final TunerService? service;
@@ -32,11 +36,13 @@ class TunerScreen extends StatefulWidget {
 }
 
 class _TunerScreenState extends State<TunerScreen> with MicLifecycle {
+
   late final TunerService _service = widget.service ?? TunerService();
   bool _listening = false;
   bool _denied = false;
   TunerReading? _reading;
   bool _inTune = false;
+  final _echo = EchoGuard();
 
   /// Microfone bloqueado ou entrada desconectada (só no computador). Fica na
   /// tela até o áudio voltar a chegar.
@@ -73,15 +79,20 @@ class _TunerScreenState extends State<TunerScreen> with MicLifecycle {
     });
 
     await _service.start((frequency) {
-      if (!mounted) return;
+      if (!mounted || _echo.active) return;
       final wasInTune = _inTune;
       setState(() {
         _problem = null;
         _reading = _classify(frequency);
         _inTune = _service.smoother?.updateInTune(_reading?.cents) ?? false;
       });
-      if (_inTune && !wasInTune && !isDesktop) HapticFeedback.mediumImpact();
+      if (_inTune && !wasInTune) {
+        if (!isDesktop) HapticFeedback.mediumImpact();
+        appSounds.playInTune();
+        _echo.hold(inTuneSoundEcho);
+      }
     }, onProblem: _onMicrophoneProblem);
+    appSounds.prepare();
   }
 
   // O afinador não tem botão de começar, então tenta de novo sozinho a cada
@@ -161,6 +172,7 @@ class _TunerScreenState extends State<TunerScreen> with MicLifecycle {
   void dispose() {
     appState.removeListener(_onAppStateChanged);
     _retry?.cancel();
+    _echo.dispose();
     _service.dispose();
     super.dispose();
   }

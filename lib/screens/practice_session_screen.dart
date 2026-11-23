@@ -4,6 +4,7 @@ import 'package:record/record.dart';
 
 import '../models/score.dart';
 import '../services/audio_input.dart';
+import '../services/app_sounds.dart';
 import '../services/chord_recognizer.dart';
 import '../services/chord_recognizer_factory.dart';
 import '../services/score_library.dart';
@@ -79,7 +80,7 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen>
     appState.startSession(score);
     _beatsInStep = 0;
 
-    _service.start(
+    await _service.start(
       onPrediction: (p) => appState.updatePrediction(p),
       onError: (error) {
         // Microfone bloqueado ou entrada desconectada (só no computador).
@@ -91,6 +92,7 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen>
         _showSnackBar(chordRecognitionErrorMessage);
       },
     );
+    appSounds.prepare();
 
     setState(() => _statusMessage = 'Ouvindo');
   }

@@ -4,6 +4,8 @@ import 'package:record/record.dart';
 
 import '../models/chord_prediction.dart';
 import '../models/chord_repeat_gate.dart';
+import '../models/echo_guard.dart';
+import '../services/app_sounds.dart';
 import '../services/audio_input.dart';
 import '../services/chord_recognizer.dart';
 import '../services/on_device_chord_service.dart';
@@ -17,6 +19,9 @@ import '../widgets/listening_bars.dart';
 import '../widgets/page_parts.dart';
 import '../theme/ph.dart';
 import '../widgets/desktop_input.dart';
+import 'app_shell.dart';
+
+const learnedSoundEcho = Duration(seconds: 2);
 
 class ChordPracticeScreen extends StatefulWidget {
   final InputDevice? inputDevice;
@@ -42,7 +47,9 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
       widget.recognizer ?? createChordRecognizer();
 
   late final _gate = ChordRepeatGate(widget.chord);
+  final _echo = EchoGuard();
   bool _listening = false;
+  bool _justLearned = false;
   int _hits = 0;
   ChordMatchState _matchState = ChordMatchState.neutral;
   String _statusMessage = 'Toque em Começar e faça o acorde';
@@ -63,14 +70,16 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
     }
 
     _gate.reset();
+    _echo.release();
     setState(() {
       _listening = true;
+      _justLearned = false;
       _hits = 0;
       _matchState = ChordMatchState.neutral;
       _statusMessage = 'Ouvindo';
     });
 
-    _service.start(
+    await _service.start(
       onPrediction: _handlePrediction,
       onError: (error) {
         // Microfone bloqueado ou entrada desconectada (só no computador).
@@ -82,6 +91,7 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
         _showSnackBar(chordRecognitionErrorMessage);
       },
     );
+    appSounds.prepare();
   }
 
   // Escondendo o app, para de ouvir como se a pessoa tivesse apertado Parar.
@@ -99,8 +109,17 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
     });
   }
 
+  Future<void> _onLearned() async {
+    setState(() {
+      _listening = false;
+      _justLearned = true;
+      _statusMessage = '${widget.chord} entrou nos seus acordes aprendidos';
+    });
+    await _service.stop();
+  }
+
   void _handlePrediction(ChordPrediction prediction) {
-    if (!mounted) return;
+    if (!mounted || _echo.active) return;
 
     switch (_gate.process(prediction)) {
       case ChordRepeatEvent.hit:
@@ -112,7 +131,9 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
         HapticFeedback.lightImpact();
         if (appState.registerChordHits(widget.chord, _hits)) {
           HapticFeedback.mediumImpact();
-          _showSnackBar('${widget.chord} entrou nos seus acordes aprendidos');
+          appSounds.playChordLearned();
+          _echo.hold(learnedSoundEcho);
+          _onLearned();
         }
       case ChordRepeatEvent.stillRinging:
         return;
@@ -146,6 +167,7 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
 
   @override
   void dispose() {
+    _echo.dispose();
     _service.dispose();
     super.dispose();
   }
@@ -171,16 +193,33 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
       child: IosPage(
         title: 'Testar ${widget.chord}',
         bottomBar: BottomActionBar(
-          child: FilledButton.icon(
-            onPressed: _listening ? _stop : _start,
-            icon: Icon(_listening ? Ph.stopFill : Ph.microphoneFill, size: 20),
-            label: Text(_listening ? 'Parar' : 'Começar'),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(50),
-              backgroundColor: _listening ? stopButtonColor(context) : null,
-              foregroundColor: _listening ? onStopButtonColor(context) : null,
-            ),
-          ),
+          child: _justLearned
+              ? FilledButton.icon(
+                  key: const ValueKey('ver meus acordes'),
+                  onPressed: () => openChordsTab(context),
+                  icon: const Icon(Ph.squaresFourFill, size: 20),
+                  label: const Text('Ver meus acordes'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                  ),
+                )
+              : FilledButton.icon(
+                  onPressed: _listening ? _stop : _start,
+                  icon: Icon(
+                    _listening ? Ph.stopFill : Ph.microphoneFill,
+                    size: 20,
+                  ),
+                  label: Text(_listening ? 'Parar' : 'Começar'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                    backgroundColor: _listening
+                        ? stopButtonColor(context)
+                        : null,
+                    foregroundColor: _listening
+                        ? onStopButtonColor(context)
+                        : null,
+                  ),
+                ),
         ),
         children: [
           Material(
@@ -216,6 +255,15 @@ class _ChordPracticeScreenState extends State<ChordPracticeScreen>
                     color: statusColor,
                     textAlign: TextAlign.center,
                   ),
+                  if (_justLearned)
+                    TextButton(
+                      key: const ValueKey('treinar de novo'),
+                      onPressed: _start,
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(44, 44),
+                      ),
+                      child: const Text('Treinar de novo'),
+                    ),
                 ],
               ),
             ),

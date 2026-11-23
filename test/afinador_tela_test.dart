@@ -1,9 +1,6 @@
 import 'package:chordai/models/guide_content.dart';
 import 'package:chordai/screens/guide_detail_screen.dart';
 import 'package:chordai/screens/tuner_screen.dart';
-import 'package:chordai/services/audio_input.dart';
-import 'package:chordai/services/pitch_smoother.dart';
-import 'package:chordai/services/tuner_service.dart';
 import 'package:chordai/state/app_state.dart';
 import 'package:chordai/widgets/strings_illustration.dart';
 import 'package:flutter/cupertino.dart';
@@ -117,7 +114,7 @@ void main() {
   });
 
   testWidgets('vibra uma vez quando a corda fica afinada', (tester) async {
-    final afinador = _AfinadorQueOuve();
+    final afinador = AfinadorQueOuve();
     final vibracoes = <String>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       SystemChannels.platform,
@@ -148,31 +145,4 @@ void main() {
     await tester.pump();
     expect(vibracoes, hasLength(2));
   });
-}
-
-class _AfinadorQueOuve extends TunerService {
-  final _suave = PitchSmoother();
-  void Function(double? frequency)? _cb;
-
-  @override
-  PitchSmoother? get smoother => _suave;
-
-  void ouvir(double frequencia) => _cb?.call(frequencia);
-
-  @override
-  Future<bool> hasPermission() async => true;
-
-  @override
-  Future<void> start(
-    void Function(double? frequency) onPitch, {
-    void Function(MicrophoneProblem problem)? onProblem,
-  }) async {
-    _cb = onPitch;
-  }
-
-  @override
-  Future<void> stop() async {}
-
-  @override
-  Future<void> dispose() async {}
 }

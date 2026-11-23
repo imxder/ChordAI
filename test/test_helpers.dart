@@ -2,12 +2,18 @@ import 'dart:io';
 
 import 'package:chordai/main.dart' show appLocalizationsDelegates;
 import 'package:chordai/models/app_theme.dart';
+import 'package:chordai/models/chord_prediction.dart';
 import 'package:chordai/services/app_sounds.dart';
+import 'package:chordai/services/audio_input.dart';
+import 'package:chordai/services/chord_recognizer.dart';
+import 'package:chordai/services/pitch_smoother.dart';
+import 'package:chordai/services/tuner_service.dart';
 import 'package:chordai/state/app_state.dart';
 import 'package:chordai/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _chordFonts = ['IBMPlexMono-Regular.ttf', 'IBMPlexMono-SemiBold.ttf'];
@@ -146,4 +152,56 @@ FakeSoundOutput useFakeSounds() {
   final output = FakeSoundOutput();
   appSounds = AppSounds(output: output);
   return output;
+}
+
+class MicQueOuve implements ChordRecognizer {
+  void Function(ChordPrediction)? ouvir;
+  @override
+  bool isRunning = false;
+  @override
+  Future<bool> hasPermission() async => true;
+  @override
+  Future<List<InputDevice>> listInputDevices() async => const [];
+  @override
+  void selectDevice(InputDevice? device) {}
+  @override
+  Future<void> start({
+    required void Function(ChordPrediction prediction) onPrediction,
+    required void Function(Object error) onError,
+  }) async {
+    isRunning = true;
+    ouvir = onPrediction;
+  }
+
+  @override
+  Future<void> stop() async => isRunning = false;
+  @override
+  Future<void> dispose() async {}
+}
+
+class AfinadorQueOuve extends TunerService {
+  final _suave = PitchSmoother();
+  void Function(double? frequency)? _cb;
+
+  @override
+  PitchSmoother? get smoother => _suave;
+
+  void ouvir(double frequencia) => _cb?.call(frequencia);
+
+  @override
+  Future<bool> hasPermission() async => true;
+
+  @override
+  Future<void> start(
+    void Function(double? frequency) onPitch, {
+    void Function(MicrophoneProblem problem)? onProblem,
+  }) async {
+    _cb = onPitch;
+  }
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  Future<void> dispose() async {}
 }

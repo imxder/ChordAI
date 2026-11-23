@@ -5,16 +5,11 @@ import 'package:chordai/screens/chord_practice_screen.dart';
 import 'package:chordai/screens/settings_screen.dart';
 import 'package:chordai/screens/tuner_screen.dart';
 import 'package:chordai/services/app_sounds.dart';
-import 'package:chordai/services/audio_input.dart';
-import 'package:chordai/services/chord_recognizer.dart';
-import 'package:chordai/services/pitch_smoother.dart';
-import 'package:chordai/services/tuner_service.dart';
 import 'package:chordai/state/app_state.dart';
 import 'package:chordai/widgets/metronome.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:record/record.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'test_helpers.dart';
@@ -81,8 +76,8 @@ void main() {
   });
 
   group('treino do acorde', () {
-    Future<_MicQueOuve> abrir(WidgetTester tester) async {
-      final mic = _MicQueOuve();
+    Future<MicQueOuve> abrir(WidgetTester tester) async {
+      final mic = MicQueOuve();
       await tester.pumpWidget(
         appUnderTest(ChordPracticeScreen(chord: 'Em', recognizer: mic)),
       );
@@ -93,7 +88,7 @@ void main() {
 
     Future<void> ouvir(
       WidgetTester tester,
-      _MicQueOuve mic,
+      MicQueOuve mic,
       List<ChordPrediction> leituras,
     ) async {
       for (final leitura in leituras) {
@@ -165,7 +160,7 @@ void main() {
     testWidgets('Ver meus acordes volta pra aba Acordes', (tester) async {
       await tester.pumpWidget(appUnderTest(const AppShell()));
       await settle(tester);
-      final mic = _MicQueOuve();
+      final mic = MicQueOuve();
       final navegador = tester.state<NavigatorState>(
         find.byType(Navigator).first,
       );
@@ -201,8 +196,8 @@ void main() {
   });
 
   group('afinador', () {
-    Future<_AfinadorQueOuve> abrir(WidgetTester tester) async {
-      final afinador = _AfinadorQueOuve();
+    Future<AfinadorQueOuve> abrir(WidgetTester tester) async {
+      final afinador = AfinadorQueOuve();
       await tester.pumpWidget(appUnderTest(TunerScreen(service: afinador)));
       await settle(tester);
       return afinador;
@@ -288,61 +283,9 @@ void main() {
   });
 
   testWidgets('o som é preparado quando o microfone liga', (tester) async {
-    final afinador = _AfinadorQueOuve();
+    final afinador = AfinadorQueOuve();
     await tester.pumpWidget(appUnderTest(TunerScreen(service: afinador)));
     await settle(tester);
     expect(sons.prepared, 1);
   });
-}
-
-class _MicQueOuve implements ChordRecognizer {
-  void Function(ChordPrediction)? ouvir;
-  @override
-  bool isRunning = false;
-  @override
-  Future<bool> hasPermission() async => true;
-  @override
-  Future<List<InputDevice>> listInputDevices() async => const [];
-  @override
-  void selectDevice(InputDevice? device) {}
-  @override
-  Future<void> start({
-    required void Function(ChordPrediction prediction) onPrediction,
-    required void Function(Object error) onError,
-  }) async {
-    isRunning = true;
-    ouvir = onPrediction;
-  }
-
-  @override
-  Future<void> stop() async => isRunning = false;
-  @override
-  Future<void> dispose() async {}
-}
-
-class _AfinadorQueOuve extends TunerService {
-  final _suave = PitchSmoother();
-  void Function(double? frequency)? _cb;
-
-  @override
-  PitchSmoother? get smoother => _suave;
-
-  void ouvir(double frequencia) => _cb?.call(frequencia);
-
-  @override
-  Future<bool> hasPermission() async => true;
-
-  @override
-  Future<void> start(
-    void Function(double? frequency) onPitch, {
-    void Function(MicrophoneProblem problem)? onProblem,
-  }) async {
-    _cb = onPitch;
-  }
-
-  @override
-  Future<void> stop() async {}
-
-  @override
-  Future<void> dispose() async {}
 }

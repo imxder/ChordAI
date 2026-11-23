@@ -26,3 +26,6 @@ Thumbs.db
 .fvm/
 # Cobertura dos testes (gerada no CI pro SonarCloud)
 coverage/
+
+# Sons pra eu ouvir e escolher (gerados por tool/gerar_sons.py ou baixados)
+tool/sons_candidatos/

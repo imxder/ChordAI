@@ -1,6 +1,6 @@
 # Arquitetura do app
 
-Um resumo de como o código do ChordAI está montado, pra eu (e quem for ler) achar qualquer coisa rápido. Tudo aqui foi conferido no código de `lib/` em 23/11.
+Um resumo de como o código do ChordAI está montado, pra achar qualquer coisa rápido.
 
 ## As camadas
 
@@ -32,7 +32,7 @@ flowchart TD
     models -. "1 exceção" .-> services
 ```
 
-Onde a regra não é seguida (conferi pelos `import` de cada pasta):
+Onde a regra não é seguida:
 
 - `models/user_song.dart` importa `services/cifra_parser.dart`, pra montar a música a partir do texto da cifra. O certo seria o parser morar em `models/`, porque ele não fala com nada de fora.
 - Três services leem o `appState`: `chord_recognizer_factory.dart` (qual modelo usar), `app_sounds.dart` (se os sons estão ligados) e `audio_input.dart` (qual entrada de áudio foi escolhida). Funciona, mas prende esses services ao estado global.
@@ -48,7 +48,7 @@ As telas não conhecem o modelo. Elas só conhecem a interface `ChordRecognizer`
 - As telas pegam o reconhecedor pelo `createChordRecognizer()` (`chord_recognizer_factory.dart`), que usa o modelo escolhido em Reconhecimento (v3 ou v3_meu).
 - Nos testes entram reconhecedores falsos (`MicQueOuve` em `test/test_helpers.dart`, `ReconhecedorFalso` em `test/tocar_junto/simulador.dart` e outros), que fingem ouvir um acorde sem carregar o modelo. Toda tela que usa o microfone recebe o `recognizer` pelo construtor só por isso.
 
-Isso ainda é o padrão Strategy? Antes da sessão 11e era: o app trocava entre o modelo no aparelho e o servidor. Depois que o modo servidor saiu ([ADR 0003](adr/0003-sem-modo-servidor.md)), só existe um reconhecedor de verdade, e a interface ficou como uma porta pros testes (injeção de dependência). Os dois modelos (v3 e v3_meu) não são duas estratégias: é o mesmo `OnDeviceChordService` carregando outro arquivo.
+Isso ainda é o padrão Strategy? Era, enquanto o app tinha o modo servidor: ele trocava entre o modelo no aparelho e o servidor. Depois que o modo servidor saiu ([ADR 0003](adr/0003-sem-modo-servidor.md)), só existe um reconhecedor de verdade, e a interface ficou como uma porta pros testes (injeção de dependência). Os dois modelos (v3 e v3_meu) não são duas estratégias: é o mesmo `OnDeviceChordService` carregando outro arquivo.
 
 ## Onde ficam as regras
 
@@ -108,15 +108,9 @@ Com uma arquitetura em camadas simples. Lembra o MVVM só em parte: o `appState`
 | Primeira abertura | `screens/onboarding_screen.dart` | `OnboardingScreen` |
 | Abas do celular e barra lateral | `screens/app_shell.dart` e `widgets/desktop_shell.dart` | `AppShell`, `DesktopShell` |
 
-## Nomes que confundem
+## O que eu arrumaria depois da entrega
 
-Na sessão 13 eu já arrumei os mais baratos, só trocando o nome (sem mudar nada do que o app faz):
-
-- `models/app_theme.dart` virou `models/theme_options.dart`. Antes tinha dois `app_theme.dart`, um em `models/` (as opções de cor e aparência) e outro em `theme/` (o tema montado).
-- `free_practice_screen.dart` virou `recognize_screen.dart`, e a `FreePracticeScreen` virou `RecognizeScreen`, que é o nome da aba.
-- O `Score` ganhou um comentário dizendo que é uma sequência de acordes pra treinar trocas, e não uma música.
-
-Ficou pra depois da entrega:
+O nome `lyric_*` não bate mais com o que o código faz, e o `page_parts.dart` ficou grande demais:
 
 | Hoje | O problema | Sugestão | Por que não agora |
 |---|---|---|---|

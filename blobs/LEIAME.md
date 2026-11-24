@@ -78,5 +78,7 @@ https://docs.flutter.dev/platform-integration/macos/c-interop#compiled-dynamic-l
 
 No Windows o motor é o 2.21.0. No iPhone é o TensorFlowLiteC 2.12.0 (`ios/Podfile.lock`) e no
 Android é o LiteRT 1.4.0 (do `tflite_flutter`). Os números do celular continuam valendo: a acurácia
-do `docs/adr/0002-dois-modelos-no-app.md` e os cerca de 60 ms do README. Eles são do celular, e
-nada que o celular usa mudou. Para o desktop, o que existe é o teste de equivalência.
+do `docs/adr/0002-dois-modelos-no-app.md`. O tempo de cada leitura no celular ainda não foi medido, e o
+único tempo salvo é o do computador de desenvolvimento: 8,78 ms por janela, com 1 thread
+(`export_report.json` do backend). Nada que o celular usa mudou. Para o desktop, o que existe é o
+teste de equivalência.

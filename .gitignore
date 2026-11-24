@@ -29,3 +29,6 @@ coverage/
 
 # Sons pra eu ouvir e escolher (gerados por tool/gerar_sons.py ou baixados)
 tool/sons_candidatos/
+
+# Molduras de aparelho (as da Apple não podem ser redistribuídas): tool/gerar_produto.py
+tool/molduras/

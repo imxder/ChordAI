@@ -6,22 +6,29 @@
 import 'dart:io';
 
 import 'package:chordai/models/chord_prediction.dart';
+import 'package:chordai/models/lyric_sheet.dart';
 import 'package:chordai/models/theme_options.dart';
 import 'package:chordai/screens/app_shell.dart';
 import 'package:chordai/screens/lyric_player_screen.dart';
 import 'package:chordai/screens/recognize_screen.dart';
+import 'package:chordai/screens/tuner_screen.dart';
+import 'package:chordai/services/app_sounds.dart';
+import 'package:chordai/services/audio_input.dart';
 import 'package:chordai/services/chord_recognizer.dart';
 import 'package:chordai/services/lyric_sheet_library.dart';
+import 'package:chordai/services/tuner_service.dart';
 import 'package:chordai/state/app_state.dart';
 import 'package:chordai/theme/app_theme.dart';
 import 'package:chordai/theme/ph.dart';
+import 'package:chordai/widgets/audio_input_section.dart';
 import 'package:chordai/widgets/desktop_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:record/record.dart';
 
-import 'test_helpers.dart' show appUnderTest, mockPlatform;
+import 'test_helpers.dart'
+    show FakeSoundOutput, appUnderTest, mockPlatform, useFakeSounds;
 
 const _gerar = bool.fromEnvironment('IMAGENS');
 
@@ -46,6 +53,22 @@ class _OuveDo implements ChordRecognizer {
     );
   }
 
+  @override
+  Future<void> stop() async {}
+  @override
+  Future<void> dispose() async {}
+}
+
+/// Afinador falso que "ouve" a 5ª corda (Lá, 110 Hz) um pouco grave, pra a
+/// imagem do Afinador mostrar o ponteiro fora do centro.
+class _OuveLaGrave extends TunerService {
+  @override
+  Future<bool> hasPermission() async => true;
+  @override
+  Future<void> start(
+    void Function(double? frequency) onPitch, {
+    void Function(MicrophoneProblem problem)? onProblem,
+  }) async => onPitch(108.5);
   @override
   Future<void> stop() async {}
   @override
@@ -91,25 +114,54 @@ const _abas = [
     label: 'Início',
   ),
   DesktopDestination(
+    icon: Ph.gauge,
+    selectedIcon: Ph.gaugeFill,
+    label: 'Afinador',
+  ),
+  DesktopDestination(
+    icon: Ph.squaresFour,
+    selectedIcon: Ph.squaresFourFill,
+    label: 'Aprender acordes',
+  ),
+  DesktopDestination(
+    icon: Ph.ear,
+    selectedIcon: Ph.earFill,
+    label: 'Reconhecer acorde',
+  ),
+  DesktopDestination(
+    icon: Ph.bookOpen,
+    selectedIcon: Ph.bookOpenFill,
+    label: 'Guia do iniciante',
+  ),
+  DesktopDestination(
     icon: Ph.musicNotes,
     selectedIcon: Ph.musicNotesFill,
     label: 'Músicas',
   ),
   DesktopDestination(
-    icon: Ph.squaresFour,
-    selectedIcon: Ph.squaresFourFill,
-    label: 'Acordes',
-  ),
-  DesktopDestination(
-    icon: Ph.userCircle,
-    selectedIcon: Ph.userCircleFill,
-    label: 'Perfil',
+    icon: Ph.gearSix,
+    selectedIcon: Ph.gearSixFill,
+    label: 'Configurações',
+    bottom: true,
   ),
 ];
 
-/// Uma tela dentro da casca do computador, com a aba [aba] marcada.
+const _abaAfinador = 1;
+const _abaReconhecer = 3;
+const _abaMusicas = 5;
+
+/// Uma tela dentro da casca do computador, com a aba [aba] marcada. Com a
+/// mesma Entrada de áudio da barra lateral do AppShell, pra todas as imagens
+/// mostrarem a barra igual.
 Widget _naCasca(int aba, WidgetBuilder tela) => DesktopShell(
   destinations: _abas,
+  actions: const [
+    DesktopPaneAction(
+      icon: Ph.microphoneFill,
+      label: 'Entrada de áudio',
+      onTap: showAudioInputDialog,
+    ),
+  ],
   pages: [for (var i = 0; i < _abas.length; i++) tela],
   rebuildOn: appState,
   selectedIndex: aba,
@@ -148,15 +200,28 @@ Future<void> _salvar(WidgetTester tester, String nome) async {
 }
 
 void main() {
+  late LyricSheet riptide;
+
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     if (_gerar) await _fontes();
+    // Carrega aqui, fora do relógio falso dos testes: as telas dos testes
+    // anteriores também leem as letras, e o rootBundle guarda essa leitura
+    // feita no relógio falso, que nunca termina dentro do runAsync.
+    riptide = (await LyricSheetLibrary().loadAll()).firstWhere(
+      (m) => m.title == 'Riptide',
+    );
   });
 
   setUp(() async {
     mockPlatform();
     await appState.loadProgress();
+    // O afinador e o tocar junto preparam os sons; sem os falsos, o
+    // flutter_soloud de verdade tenta iniciar dentro do teste.
+    useFakeSounds();
   });
+
+  tearDown(() => appSounds = AppSounds(output: FakeSoundOutput()));
 
   for (final (aparencia, sufixo) in [
     (AppAppearance.paper, ''),
@@ -176,7 +241,7 @@ void main() {
       'acordes$sufixo',
       (tester) async {
         await _janela(tester, const AppShell(), aparencia: aparencia);
-        await tester.tap(find.byKey(const ValueKey('aba Acordes')));
+        await tester.tap(find.byKey(const ValueKey('aba Aprender acordes')));
         await _salvar(tester, 'acordes$sufixo');
       },
       variant: _windows,
@@ -188,7 +253,10 @@ void main() {
       (tester) async {
         await _janela(
           tester,
-          _naCasca(0, (_) => RecognizeScreen(recognizer: _OuveDo())),
+          _naCasca(
+            _abaReconhecer,
+            (_) => RecognizeScreen(recognizer: _OuveDo()),
+          ),
           aparencia: aparencia,
         );
         await tester.tap(find.text('Ouvir'));
@@ -201,8 +269,11 @@ void main() {
     testWidgets(
       'afinador$sufixo',
       (tester) async {
-        await _janela(tester, const AppShell(), aparencia: aparencia);
-        await tester.tap(find.text('Afinador'));
+        await _janela(
+          tester,
+          _naCasca(_abaAfinador, (_) => TunerScreen(service: _OuveLaGrave())),
+          aparencia: aparencia,
+        );
         await _salvar(tester, 'afinador$sufixo');
       },
       variant: _windows,
@@ -212,14 +283,11 @@ void main() {
     testWidgets(
       'tocar junto$sufixo',
       (tester) async {
-        final musica = (await tester.runAsync(
-          () => LyricSheetLibrary().loadAll(),
-        ))!.first;
         await _janela(
           tester,
           _naCasca(
-            1,
-            (_) => LyricPlayerScreen(sheet: musica, recognizer: _OuveDo()),
+            _abaMusicas,
+            (_) => LyricPlayerScreen(sheet: riptide, recognizer: _OuveDo()),
           ),
           aparencia: aparencia,
         );

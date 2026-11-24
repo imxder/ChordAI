@@ -41,11 +41,9 @@ No celular, as abas de baixo são Início, Acordes, Reconhecer e Afinador, e as 
 | Plataforma | Como instalar |
 |---|---|
 | **Android** | Baixe o `ChordAI.apk` pela [página Baixar da Wiki](https://github.com/imxder/ChordAI/wiki/Baixar) ou direto em [`releases/latest/download/ChordAI.apk`](https://github.com/imxder/ChordAI/releases/latest/download/ChordAI.apk). O Android pede pra permitir apps desconhecidos, e o Play Protect pode avisar: o passo a passo está na Wiki. Precisa de Android 7.0 ou mais novo (página Baixar). O QR Code do pôster aponta pra essa página. |
-| **Windows** | Baixe o [`ChordAI-windows.zip`](https://github.com/imxder/ChordAI/releases/latest/download/ChordAI-windows.zip), extraia a pasta `ChordAI` e abra o `ChordAI.exe`. Como o app não é assinado, o SmartScreen pode avisar: **[CONFERIR]** o texto do aviso e dos botões ("Mais informações" e "Executar assim mesmo"). |
+| **Windows** | Baixe o [`ChordAI-windows.zip`](https://github.com/imxder/ChordAI/releases/latest/download/ChordAI-windows.zip), extraia a pasta `ChordAI` e abra o `chordai.exe`. Como o app não é assinado, o SmartScreen pode avisar: **[CONFERIR]** o texto do aviso e dos botões ("Mais informações" e "Executar assim mesmo"). |
 | **Mac** | Baixe o [`ChordAI-macos.zip`](https://github.com/imxder/ChordAI/releases/latest/download/ChordAI-macos.zip) e arraste o `ChordAI.app` pra pasta Aplicativos. O app é universal (Apple Silicon e Intel), pede macOS 12 ou mais novo e tem só a assinatura ad-hoc (`.github/workflows/release.yml`), sem conta paga da Apple. O Gatekeeper vai avisar que não consegue verificar o app: **[CONFERIR]** o caminho em Ajustes do Sistema → Privacidade e Segurança → "Abrir mesmo assim". |
 | **iPhone** | Não tem pacote pra baixar. Instale pelo Mac, com o cabo, em modo release (veja "Como rodar"). Pede iOS 15 ou mais novo. |
-
-**[CONFERIR]** A release v0.2.1 só tem o `ChordAI.apk`. Os dois `.zip` são gerados pelo `release.yml` a partir da próxima tag, então os links do Windows e do Mac só funcionam depois dela.
 
 ## Como rodar
 

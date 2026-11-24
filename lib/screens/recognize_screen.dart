@@ -235,15 +235,6 @@ class _RecognizeScreenState extends State<RecognizeScreen> with MicLifecycle {
               style: textTheme.bodySmall,
             ),
           ),
-          if (_service case final OnDeviceChordService service)
-            if (service.lastInferenceMicros != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
-                child: Text(
-                  'Inferência: ${(service.lastInferenceMicros! / 1000).toStringAsFixed(1)} ms',
-                  style: textTheme.bodySmall,
-                ),
-              ),
         ],
       ),
     );

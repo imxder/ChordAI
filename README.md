@@ -8,11 +8,9 @@
 
 ![ChordAI no MacBook e no iPhone](docs/imagens/produto-apple.png)
 
-Esse é o app do meu TCC de Engenharia de Software. A ideia é ajudar quem tá começando no violão: você toca o acorde e o app escuta e diz se saiu certo. Também tem afinador, cifras pra tocar junto com a música e um guia pra iniciante.
+O ChordAI é um app para quem está começando no violão, feito como TCC de Engenharia de Software. A pessoa toca um acorde, o app escuta e diz se saiu certo. Ele também tem afinador, cifras para tocar junto com a música e um guia para iniciantes.
 
-Fiz em Flutter, então roda no iPhone, no Android, no Windows e no Mac. O modelo que reconhece os acordes eu treinei no [ChordAI-backend](https://github.com/imxder/ChordAI-backend).
-
-<!-- [CONFERIR] GIF de até 10 s reconhecendo um acorde, da sessão do vídeo de prova (16b): ![Reconhecendo um acorde](docs/imagens/reconhecer.gif) -->
+O app é feito em Flutter e roda no iPhone, no Android, no Windows e no Mac. O modelo que reconhece os acordes é treinado no [ChordAI-backend](https://github.com/imxder/ChordAI-backend).
 
 ## Telas
 
@@ -23,13 +21,13 @@ Fiz em Flutter, então roda no iPhone, no Android, no Windows e no Mac. O modelo
 ## Funcionalidades
 
 - **Reconhecer acorde**: mostra em tempo real o acorde que o app está ouvindo. É a função principal. O treino de acorde, as sequências e o tocar junto usam a mesma leitura.
-- **Acordes**: diagrama de cada acorde no braço do violão e o "Tocar e testar", que ouve você tocar e marca o acorde como aprendido depois de 3 acertos seguidos. Cada acerto precisa de uma batida nova: deixar o acorde soando conta uma vez só. Quando o acorde vira aprendido, o app toca um som e o botão leva pra lista de acordes.
+- **Acordes**: diagrama de cada acorde no braço do violão e o "Tocar e testar", que escuta o acorde tocado e marca o acorde como aprendido depois de 3 acertos seguidos. Cada acerto precisa de uma batida nova: deixar o acorde soando conta uma vez só. Quando o acorde vira aprendido, o app toca um som e o botão leva para a lista de acordes.
 - **Afinador**: detecta a nota de cada corda com o algoritmo YIN, com ponteiro estável, aviso de "afinada" e afinações alternativas (Drop D, meio tom abaixo, Open G, Open D, DADGAD) ou personalizadas.
 - **Sequências**: treino de progressões de acordes com metrônomo.
-- **Tocar junto**: cifras só com os acordes (o desenho de cada um e as setas da batida) que avançam no andamento da música ou esperam você trocar de acorde, com andamento ajustável e um resumo no fim com os acordes que você mais errou. Dá pra desligar o microfone e tocar só com o metrônomo. O modelo decide em janelas de 1,5 s, então acorde que dura menos de 1 s não conta.
-- **Minhas músicas**: dá pra montar a sua música no próprio app, com as partes, os acordes, o andamento e a batida. Ela fica só no aparelho.
-- **Guia do iniciante**: 12 tópicos pra quem nunca tocou, das partes do violão e como afinar até ler o diagrama, ler uma cifra, a batida, trocar de acorde e cuidar do violão. As fontes estão em [docs/guia_fontes.md](docs/guia_fontes.md).
-- **Sons**: clique do metrônomo, som de acorde aprendido e de corda afinada ([docs/sons.md](docs/sons.md)). Dá pra desligar.
+- **Tocar junto**: cifras só com os acordes (o desenho de cada um e as setas da batida) que avançam no andamento da música ou esperam a troca de acorde, com andamento ajustável e um resumo no fim com os acordes mais errados. Dá para desligar o microfone e tocar só com o metrônomo. O modelo decide em janelas de 1,5 s, então acorde que dura menos de 1 s não conta.
+- **Minhas músicas**: dá para montar uma música no próprio app, com as partes, os acordes, o andamento e a batida. Ela fica só no aparelho.
+- **Guia do iniciante**: 12 tópicos para quem nunca tocou, das partes do violão e como afinar até ler o diagrama, ler uma cifra, a batida, trocar de acorde e cuidar do violão. As fontes estão em [docs/guia_fontes.md](docs/guia_fontes.md).
+- **Sons**: clique do metrônomo, som de acorde aprendido e de corda afinada ([docs/sons.md](docs/sons.md)). Dá para desligar.
 - **Ajustes** (Configurações no Android e no Windows): aparência (papel, branco, escuro ou igual ao celular), cor do app, afinação, leitura das cifras, sons, reconhecimento e privacidade. No celular, abre pela engrenagem no canto da tela inicial. Os acordes aprendidos aparecem na tela inicial, em "Seus acordes".
 
 No celular, as abas de baixo são Início, Acordes, Reconhecer e Afinador, e as músicas abrem pelo card "Tocar músicas". No Windows e no Mac, as mesmas telas ficam numa barra lateral ([docs/desktop.md](docs/desktop.md)).
@@ -40,10 +38,10 @@ No celular, as abas de baixo são Início, Acordes, Reconhecer e Afinador, e as 
 
 | Plataforma | Como instalar |
 |---|---|
-| **Android** | Baixe o `ChordAI.apk` pela [página Baixar da Wiki](https://github.com/imxder/ChordAI/wiki/Baixar) ou direto em [`releases/latest/download/ChordAI.apk`](https://github.com/imxder/ChordAI/releases/latest/download/ChordAI.apk). O Android pede pra permitir apps desconhecidos, e o Play Protect pode avisar: o passo a passo está na Wiki. Precisa de Android 7.0 ou mais novo (página Baixar). O QR Code do pôster aponta pra essa página. |
+| **Android** | Baixe o `ChordAI.apk` pela [página Baixar da Wiki](https://github.com/imxder/ChordAI/wiki/Baixar) ou direto em [`releases/latest/download/ChordAI.apk`](https://github.com/imxder/ChordAI/releases/latest/download/ChordAI.apk). O Android pede para permitir apps desconhecidos, e o Play Protect pode avisar: o passo a passo está na Wiki. Precisa de Android 7.0 ou mais novo (página Baixar). O QR Code do pôster aponta para essa página. |
 | **Windows** | Baixe o [`ChordAI-windows.zip`](https://github.com/imxder/ChordAI/releases/latest/download/ChordAI-windows.zip), extraia a pasta `ChordAI` e abra o `chordai.exe`. Como o app não é assinado, o SmartScreen avisa: a janela diz *O Windows protegeu o computador* e *O Microsoft defender SmartScreen impediu que um aplicativo não reconhecido fosse iniciado*. Clique em **Mais informações**: aparecem o aplicativo (`chordai.exe`) e o fornecedor ("Fornecedor desconhecido"). Aí clique em **Executar assim mesmo**. |
-| **Mac** | Baixe o [`ChordAI-macos.zip`](https://github.com/imxder/ChordAI/releases/latest/download/ChordAI-macos.zip) e arraste o `ChordAI.app` pra pasta Aplicativos. O app é universal (Apple Silicon e Intel), pede macOS 12 ou mais novo e tem só a assinatura ad-hoc (`.github/workflows/release.yml`), sem conta paga da Apple. Na primeira vez, o Gatekeeper não deixa abrir e avisa que não consegue verificar o app. Meu Mac está em inglês, então os nomes abaixo são os que aparecem na tela dele: a janela diz *"ChordAI" Not Opened* e *Apple could not verify "ChordAI" is free of malware that may harm your Mac or compromise your privacy*. Clique em **Done**, abra Ajustes do Sistema → Privacidade e Segurança (*Privacy & Security*) e role até *Security*. Ao lado de *"ChordAI" was blocked to protect your Mac*, clique em **Open Anyway**. Na janela *Open "ChordAI"?*, clique de novo em **Open Anyway**. |
-| **iPhone** | Não tem pacote pra baixar. Instale pelo Mac, com o cabo, em modo release (veja "Como rodar"). Pede iOS 15 ou mais novo. |
+| **Mac** | Baixe o [`ChordAI-macos.zip`](https://github.com/imxder/ChordAI/releases/latest/download/ChordAI-macos.zip) e arraste o `ChordAI.app` para a pasta Aplicativos. O app é universal (Apple Silicon e Intel), pede macOS 12 ou mais novo e tem só a assinatura ad-hoc (`.github/workflows/release.yml`), sem conta paga da Apple. Na primeira vez, o Gatekeeper não deixa abrir e avisa que não consegue verificar o app. Os nomes abaixo são os de um macOS em inglês: a janela diz *"ChordAI" Not Opened* e *Apple could not verify "ChordAI" is free of malware that may harm your Mac or compromise your privacy*. Clique em **Done**, abra Ajustes do Sistema → Privacidade e Segurança (*Privacy & Security*) e role até *Security*. Ao lado de *"ChordAI" was blocked to protect your Mac*, clique em **Open Anyway**. Na janela *Open "ChordAI"?*, clique de novo em **Open Anyway**. |
+| **iPhone** | Não tem pacote para baixar. Instale pelo Mac, com o cabo, em modo release (veja "Como rodar"). Pede iOS 15 ou mais novo. |
 
 ## Como rodar
 
@@ -69,14 +67,14 @@ No Mac e no Windows: `flutter run --release -d macos` e `flutter run --release -
 O modelo escolhido roda dentro do aparelho, em TensorFlow Lite, sem internet nem computador. O app não pede permissão de internet e o som não sai do aparelho ([ADR 0001](docs/adr/0001-inferencia-no-aparelho.md) e [ADR 0003](docs/adr/0003-sem-modo-servidor.md)).
 
 1. O microfone grava 22.050 Hz, mono, e o app guarda sempre os últimos 1,5 s (33.075 amostras).
-2. A cada 0,5 s, se não for silêncio, essa janela vai pro modelo, fora da thread da interface. A chroma (quanto de cada nota há na janela) está dentro do modelo, então o app só manda o áudio bruto.
+2. A cada 0,5 s, se não for silêncio, essa janela vai para o modelo, fora da thread da interface. A chroma (quanto de cada nota há na janela) está dentro do modelo, então o app só manda o áudio bruto.
 3. O modelo devolve uma probabilidade por acorde, mais a classe "nenhum acorde". Abaixo do limiar de confiança do modelo, o app diz "não reconheci" em vez de chutar.
 4. Um acorde só aparece na tela quando sai igual em pelo menos 2 das últimas 3 leituras, e no máximo uma vez a cada 1,5 s.
 5. Os dois modelos vêm das releases do backend, e o `model_info.json` de cada pasta guarda o limiar e o hash do `.tflite`.
 
 O caminho completo, com o arquivo e o teste de cada passo, o afinador, o tocar junto e o que fica salvo no aparelho estão em [docs/como-funciona.md](docs/como-funciona.md).
 
-O app traz dois modelos, e eu escolho qual usar em **Ajustes → Reconhecimento → Modelo no aparelho**:
+O app traz dois modelos, e a escolha fica em **Ajustes → Reconhecimento → Modelo no aparelho**:
 
 | Modelo | Na tela | Acordes | Limiar | Pasta |
 |---|---|---|---|---|
@@ -85,7 +83,7 @@ O app traz dois modelos, e eu escolho qual usar em **Ajustes → Reconhecimento 
 
 Fonte do limiar e dos acordes: o `model_info.json` e o `labels.json` de cada pasta.
 
-**Os números.** Cada um é de um teste diferente, e eu digo qual:
+**Os números.** Cada linha vem de um teste diferente:
 
 | Teste | v3 | v3_meu |
 |---|---:|---:|
@@ -94,9 +92,9 @@ Fonte do limiar e dos acordes: o `model_info.json` e o `labels.json` de cada pas
 
 Fonte: [`experiments/results_duas_fontes/comparativo.md`](https://github.com/imxder/ChordAI-backend/blob/main/experiments/results_duas_fontes/comparativo.md), no backend. O acerto é sem limiar e só nos 8 acordes do v3. O v3 é o padrão porque acertou mais com pessoas e violões que ele nunca ouviu. O v3_meu reconhece o Lá maior e mostra bem menos acorde quando não tem acorde sendo tocado. O teste de sem acorde é pequeno, e as limitações estão no [ADR 0002](docs/adr/0002-dois-modelos-no-app.md). O A só aparece no app quando o v3_meu está escolhido.
 
-Ainda não medi no celular o tempo de cada leitura nem a demora entre tocar o acorde e ele aparecer na tela. O método está em [docs/como-funciona.md](docs/como-funciona.md), seção 7, como trabalho futuro. No meu computador, o `.tflite` leva 8,78 ms por janela com 1 thread (`export_report.json` do backend).
+O tempo de cada leitura no celular e a demora entre tocar o acorde e ele aparecer na tela ainda não foram medidos. O método está em [docs/como-funciona.md](docs/como-funciona.md), seção 7, como trabalho futuro. No computador de desenvolvimento, o `.tflite` leva 8,78 ms por janela com 1 thread (`export_report.json` do backend).
 
-A API Flask do [ChordAI-backend](https://github.com/imxder/ChordAI-backend) continua lá, mas só como ferramenta pra eu testar um modelo pelo computador. Ela usa outro modelo (`trained_model/`) e o app não fala com ela.
+A API Flask do [ChordAI-backend](https://github.com/imxder/ChordAI-backend) continua lá, mas só como ferramenta para testar um modelo pelo computador. Ela usa outro modelo (`trained_model/`) e o app não fala com ela.
 
 ## Testes
 
@@ -126,7 +124,7 @@ A lista de cada arquivo, o que ele garante e como contei está em [docs/testes.m
 flutter test integration_test/chord_model_equivalence_test.dart -d <id-do-aparelho>
 ```
 
-Pra conferir se os `.tflite` em `assets/models/` são os das releases do backend, sem trocar nenhum arquivo por engano:
+Para conferir se os `.tflite` em `assets/models/` são os das releases do backend, sem trocar nenhum arquivo por engano:
 
 ```bash
 python3 tool/conferir_modelos.py
@@ -138,7 +136,7 @@ O script calcula o sha256 de cada `chord_model.tflite` e compara com o campo `sh
 
 - **CI** (`.github/workflows/ci.yml`): em todo push e PR, confere a formatação, roda o `flutter analyze` e o `flutter test`, confere o hash dos modelos e compila o APK e o app do Mac.
 - **SonarCloud**: análise e cobertura dos testes, com o Quality Gate no PR. Os PRs do Dependabot não rodam a análise. Os badges de qualidade e de cobertura do topo são dele.
-- **Dependabot** (`.github/dependabot.yml`): toda segunda, confere se tem versão nova dos pacotes. O `tflite_flutter` fica de fora: ele roda os modelos congelados, e só troco de versão testando no iPhone e no Android.
+- **Dependabot** (`.github/dependabot.yml`): toda segunda, confere se tem versão nova dos pacotes. O `tflite_flutter` fica de fora: ele roda os modelos congelados, e só muda de versão depois de testado no iPhone e no Android.
 - **Release** (`.github/workflows/release.yml`): numa tag `v*`, gera o APK assinado e os `.zip` do Windows e do Mac.
 - **Privacidade**: o app não tem conta, anúncio nem analytics e não pede internet. O que ele guarda fica no aparelho. A política está em [PRIVACY.md](PRIVACY.md) e a segurança em [docs/seguranca.md](docs/seguranca.md).
 
@@ -153,7 +151,7 @@ lib/
   theme/      cores, fontes e o jeito de cada plataforma
   widgets/    componentes visuais
 assets/       cifras, sequências, sons, imagens, ícone, fontes e os dois modelos (assets/models/v3 e assets/models/v3_meu)
-blobs/        a biblioteca do TFLite pro Windows e pro Mac
+blobs/        a biblioteca do TFLite para o Windows e o Mac
 test/         testes unitários, de tela e de layout
 integration_test/  teste de equivalência dos modelos no aparelho
 tool/         conferir_modelos.py (hash dos modelos), gerar_icones.py, gerar_sons.py e gerar_produto.py
@@ -170,8 +168,8 @@ Como as camadas conversam, onde ficam as regras e qual arquivo é cada tela: [do
 
 - [Wiki](https://github.com/imxder/ChordAI/wiki) e a página [Baixar](https://github.com/imxder/ChordAI/wiki/Baixar)
 - [ChordAI-backend](https://github.com/imxder/ChordAI-backend): treino, experimentos, exportação do modelo e a API de teste
-- [ChordAI Guitar Chords](https://www.kaggle.com/datasets/imxder/chordai-guitar-chords-v1), o meu dataset no Kaggle (CC BY-SA 4.0)
-- [Guitar Chords V3](https://www.kaggle.com/datasets/fabianavinci/guitar-chords-v3), da Fabiana Vinci (CC BY-SA 4.0), que ela me autorizou a usar pra treinar e distribuir os pesos no app, com crédito e link
+- [ChordAI Guitar Chords](https://www.kaggle.com/datasets/imxder/chordai-guitar-chords-v1), dataset próprio no Kaggle (CC BY-SA 4.0)
+- [Guitar Chords V3](https://www.kaggle.com/datasets/fabianavinci/guitar-chords-v3), da Fabiana Vinci (CC BY-SA 4.0), com autorização da autora para treinar e distribuir os pesos no app, com crédito e link
 
 ## Autor
 

@@ -1,11 +1,11 @@
-# Biblioteca do TensorFlow Lite pro Windows e pro Mac
+# Biblioteca do TensorFlow Lite para o Windows e para o Mac
 
 No iPhone e no Android, o `tflite_flutter` (0.12.1) já traz o motor do TensorFlow Lite junto. No
 desktop, o próprio README do pacote manda o projeto trazer a biblioteca nativa:
 
-- **Windows:** `blobs/libtensorflowlite_c-win.dll`, copiada pra uma pasta `blobs/` do lado do
+- Windows: `blobs/libtensorflowlite_c-win.dll`, copiada para uma pasta `blobs/` do lado do
   `.exe` pela regra no fim do `windows/CMakeLists.txt`.
-- **Mac:** o pacote procura em `ChordAI.app/Contents/Resources/libtensorflowlite_c-mac.dylib`.
+- Mac: o pacote procura em `ChordAI.app/Contents/Resources/libtensorflowlite_c-mac.dylib`.
 
 Nada aqui é usado no build do iPhone nem do Android.
 
@@ -14,29 +14,29 @@ Nada aqui é usado no build do iPhone nem do Android.
 Os dois binários vêm do repositório
 [google-ai-edge/flutter_litert](https://github.com/google-ai-edge/flutter_litert), mantido pela
 organização do Google que cuida do LiteRT. Eles foram compilados pelo CI desse repositório a partir
-da tag v2.21.0 do TensorFlow. É a mesma versão do TensorFlow que exportou os meus modelos
+da tag v2.21.0 do TensorFlow. É a mesma versão do TensorFlow que exportou os modelos
 (`tensorflow==2.21.0` no `requirements.lock.txt` do ChordAI-backend).
 
-Usei só os arquivos, não o pacote `flutter_litert`. Se eu trocasse de pacote, o celular também
-trocaria de motor.
+Só os arquivos foram usados, e não o pacote `flutter_litert`. Se o pacote fosse trocado, o celular
+também trocaria de motor.
 
 | Arquivo | Commit de origem | Tamanho | sha256 |
 |---|---|---|---|
 | `libtensorflowlite_c-win.dll` | [`daa3258`](https://github.com/google-ai-edge/flutter_litert/commit/daa3258ca23858bcde159d3371088d0e162a6fe1) (`windows/libtensorflowlite_c-win.dll`) | 4.883.968 bytes | `44d5d07fef8a4d5b7c58b8e8b283ec1e900081eb60464ee7ed96a18b662c1476` |
 | `libtensorflowlite_c-mac.dylib` | [`f3cf827`](https://github.com/google-ai-edge/flutter_litert/commit/f3cf827ff5857692b8d4f39890cde59d021d1394) (`macos/flutter_litert/Sources/flutter_litert/Resources/libtensorflowlite_c-mac.dylib`) | 12.069.472 bytes | `f20948d053355d72abd74a76567eb0ca407a9cc9b23dc69c7f80ae2e567e72a7` |
 
-Os hashes batem com os que estão na mensagem de cada commit. Pra conferir:
+Os hashes batem com os que estão na mensagem de cada commit. Para conferir:
 
 ```
 sha256sum blobs/libtensorflowlite_c-win.dll blobs/libtensorflowlite_c-mac.dylib
 ```
 
-O que eu conferi antes de usar:
+O que foi conferido antes de usar:
 
-- **Windows:** a DLL é x64. Ela só depende da `KERNEL32.dll` (foi compilada com o runtime do C++
+- Windows: a DLL é x64. Ela só depende da `KERNEL32.dll` (foi compilada com o runtime do C++
   embutido), então não precisa instalar nada a mais no PC.
-- **Mac:** a dylib é universal, com x86_64 e arm64, e roda em Mac Intel e Apple Silicon.
-- **As duas:**
+- Mac: a dylib é universal, com x86_64 e arm64, e roda em Mac Intel e Apple Silicon.
+- As duas:
   - Exportam todas as funções `TfLite*` que o `tflite_flutter` 0.12.1 chama (a lista está em
     `lib/src/bindings/` do pacote).
   - Têm os nomes das operações do modelo (`ops_float32` em `export/export_report.json` do backend),
@@ -65,7 +65,7 @@ uma cópia da licença. A cópia está em `LICENSE-TensorFlow.txt`, tirada da ta
 
 1. `flutter create --platforms=macos .`
 2. Abrir `macos/Runner.xcworkspace` no Xcode.
-3. Arrastar `blobs/libtensorflowlite_c-mac.dylib` pro grupo Runner, sem marcar "Copy items if
+3. Arrastar `blobs/libtensorflowlite_c-mac.dylib` para o grupo Runner, sem marcar "Copy items if
    needed".
 4. Em Runner → Build Phases → Copy Bundle Resources, conferir que a dylib está na lista. É isso que
    coloca ela em `Contents/Resources/`, onde o `tflite_flutter` procura.
@@ -79,4 +79,4 @@ https://docs.flutter.dev/platform-integration/macos/c-interop#compiled-dynamic-l
 No Windows o motor é o 2.21.0. No iPhone é o TensorFlowLiteC 2.12.0 (`ios/Podfile.lock`) e no
 Android é o LiteRT 1.4.0 (do `tflite_flutter`). Os números do celular continuam valendo: a acurácia
 do `docs/adr/0002-dois-modelos-no-app.md` e os cerca de 60 ms do README. Eles são do celular, e
-nada que o celular usa mudou. Pro desktop, o que eu tenho é o teste de equivalência.
+nada que o celular usa mudou. Para o desktop, o que existe é o teste de equivalência.

@@ -116,7 +116,7 @@ São **571 testes** em `test/` (`flutter test`, 23/11/2026, num Mac): **561 pass
 | Privacidade, sons e segundo plano (`sons_test`, `segundo_plano_test`, `privacy_policy_test`) | 29 |
 | **Total** | **571** |
 
-A lista de cada arquivo, o que ele garante e como contei está em [docs/testes.md](docs/testes.md).
+A lista de cada arquivo, o que ele garante e como foi feita a contagem está em [docs/testes.md](docs/testes.md).
 
 **Por que o teste de equivalência roda no aparelho e não no computador.** Ele carrega o `.tflite` pela biblioteca nativa do TensorFlow Lite, e o `flutter test` comum roda na máquina de desenvolvimento, sem essa biblioteca. No celular, no simulador ou no Windows e no Mac (com as bibliotecas de `blobs/`), ela existe, e é onde o app de verdade roda o modelo.
 

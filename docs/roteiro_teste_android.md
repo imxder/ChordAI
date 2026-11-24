@@ -1,127 +1,123 @@
 # Roteiro de teste no Android
 
-O roteiro que eu sigo pra testar o ChordAI num Android de verdade antes de mostrar o app. Vale pra
-um celular que nunca teve o app e pra quem atualiza de uma versão anterior.
+Roteiro para testar o ChordAI num Android de verdade antes de mostrar o app. Vale para um celular que nunca teve o app e para quem atualiza de uma versão anterior.
 
-Preciso de:
+Material necessário:
 
 - um Android 7.0 ou mais novo (o `minSdk` do app é 24);
 - um violão;
 - um lugar sem muito barulho;
 - o QR Code impresso, ou o link da Wiki: https://github.com/imxder/ChordAI/wiki/Baixar.
 
-Em cada passo eu marco o que aconteceu. Se algo der errado, anoto o modelo do celular, a versão do
-Android, a tela e o que eu fiz logo antes.
+Em cada passo, marque o que aconteceu. Se algo der errado, anote o modelo do celular, a versão do Android, a tela e o que foi feito logo antes.
 
 ## 1. Instalação pelo QR Code
 
-- [ ] Leio o QR Code com a câmera e abre a página Baixar da Wiki.
-- [ ] O selo da página mostra a versão mais nova.
-- [ ] Toco no link e o download do `ChordAI.apk` começa.
-- [ ] Abro o arquivo. Se o Android pedir, libero "instalar apps desconhecidos" pro navegador ou pro
+- [ ] Leia o QR Code com a câmera e confira que abre a página Baixar da Wiki.
+- [ ] Confira que o selo da página mostra a versão mais nova.
+- [ ] Toque no link e confira que o download do `ChordAI.apk` começa.
+- [ ] Abra o arquivo. Se o Android pedir, libere "instalar apps desconhecidos" para o navegador ou para o
       gerenciador de arquivos.
-- [ ] Se o Play Protect avisar, vou em "Mais detalhes" e depois "Instalar assim mesmo".
-- [ ] O ChordAI aparece na lista de apps, com o ícone certo.
+- [ ] Se o Play Protect avisar, vá em "Mais detalhes" e depois "Instalar assim mesmo".
+- [ ] Confira que o ChordAI aparece na lista de apps, com o ícone certo.
 
-Se o celular já tinha um ChordAI instalado por cabo (`flutter run` ou `adb`), o Android recusa a
-atualização, porque a chave é outra. Nesse caso desinstalo o antigo antes. Os dados desse aparelho
-se perdem.
+Se o celular já tinha um ChordAI instalado por cabo (`flutter run` ou `adb`), o Android recusa a atualização, porque a chave é outra. Nesse caso, desinstale o antigo antes. Os dados desse aparelho se perdem.
 
 ## 2. Primeiro uso
 
-- [ ] Abro o app e aparecem as páginas de apresentação. "Pular" e "Certo" funcionam.
-- [ ] No fim aparece "Seu violão está afinado?".
-- [ ] "Afinar agora" abre o afinador. "Já está afinado" vai pro Início.
-- [ ] Fecho o app e abro de novo: ele vai direto pro Início, sem repetir a apresentação.
+- [ ] Abra o app e confira que aparecem as páginas de apresentação. "Pular" e "Certo" têm que funcionar.
+- [ ] Confira que no fim aparece "Seu violão está afinado?".
+- [ ] "Afinar agora" tem que abrir o afinador, e "Já está afinado" tem que ir para o Início.
+- [ ] Feche o app e abra de novo: ele tem que ir direto para o Início, sem repetir a apresentação.
 
 ## 3. Permissão do microfone
 
-- [ ] Na primeira tela que usa o microfone, o Android pergunta se pode gravar áudio.
-- [ ] Se eu nego, a tela mostra "O app precisa de acesso ao microfone" e não trava.
-- [ ] Libero nas Configurações do Android, volto pro app e o afinador já funciona, sem precisar
+- [ ] Na primeira tela que usa o microfone, confira que o Android pergunta se pode gravar áudio.
+- [ ] Negue a permissão e confira que a tela mostra "O app precisa de acesso ao microfone" e não trava.
+- [ ] Libere nas Configurações do Android, volte para o app e confira que o afinador já funciona, sem precisar
       fechar o app.
 
 ## 4. Afinador
 
-No Início, toco em Afinador.
+No Início, toque em Afinador.
 
-- [ ] Com "Reconhecer a corda sozinho" ligado, toco cada corda solta. A casinha certa acende e o
-      ponteiro aparece logo, sem atraso.
-- [ ] Apertando ou afrouxando a tarraxa, o ponteiro acompanha. Fica verde e mostra "Afinada" quando
+- [ ] Com "Reconhecer a corda sozinho" ligado, toque cada corda solta. A casinha certa tem que acender e o
+      ponteiro aparecer logo, sem atraso.
+- [ ] Aperte ou afrouxe a tarraxa e confira que o ponteiro acompanha. Ele fica verde e mostra "Afinada" quando
       chega na nota.
-- [ ] Deixo a corda soar até sumir: o ponteiro continua na corda por uns segundos e não pula pra
+- [ ] Deixe a corda soar até sumir: o ponteiro tem que continuar na corda por uns segundos e não pular para
       outra.
-- [ ] Toco uma corda e logo depois outra: o afinador troca pra corda nova.
-- [ ] Desligo "Reconhecer a corda sozinho" e toco numa casinha. O ponteiro só mede aquela corda,
-      mesmo se eu tocar outra.
-- [ ] Os números embaixo das casinhas vão de 6ª (a mais grossa) a 1ª (a mais fina).
-- [ ] "Primeira vez?" abre o guia com o desenho das cordas.
-- [ ] Troco a afinação em "Afinação" e as casinhas mudam de nota.
+- [ ] Toque uma corda e logo depois outra: o afinador tem que trocar para a corda nova.
+- [ ] Desligue "Reconhecer a corda sozinho" e toque numa casinha. O ponteiro só mede aquela corda,
+      mesmo se outra for tocada.
+- [ ] Confira que os números embaixo das casinhas vão de 6ª (a mais grossa) a 1ª (a mais fina).
+- [ ] Confira que "Primeira vez?" abre o guia com o desenho das cordas.
+- [ ] Troque a afinação em "Afinação" e confira que as casinhas mudam de nota.
 
 ## 5. Reconhecer acorde
 
 O modelo conhece estes acordes: C, Dm, Em, F, G, Am, Bb e Bdim. O modelo "v3 + meu dataset" também
 conhece o A. Os nomes vêm de `assets/models/*/labels.json`.
 
-- [ ] No Início, toco em Reconhecer acorde e depois em Ouvir.
-- [ ] Faço cada acorde da lista e deixo soar. O nome que aparece é o que eu toquei.
-- [ ] Abafando as cordas ou falando, ele não inventa acorde.
-- [ ] Parar desliga o microfone (no Android 12 ou mais novo, o aviso verde de microfone some).
-- [ ] Ligo o modo avião e repito: continua reconhecendo, porque o modelo roda no celular.
+- [ ] No Início, toque em Reconhecer acorde e depois em Ouvir.
+- [ ] Faça cada acorde da lista e deixe soar. O nome que aparece tem que ser o acorde tocado.
+- [ ] Abafe as cordas ou fale: o app não pode inventar acorde.
+- [ ] Toque em Parar e confira que o microfone desliga (no Android 12 ou mais novo, o aviso verde de microfone some).
+- [ ] Ligue o modo avião e repita: o app continua reconhecendo, porque o modelo roda no celular.
 
 ## 6. Aprender acordes
 
-- [ ] Na aba Acordes, abro um acorde e toco em "Tocar e testar".
-- [ ] Toco em Começar e faço o acorde: o contador de acertos seguidos sobe.
-- [ ] Com 3 acertos seguidos o acorde fica marcado como aprendido, na lista e em "Seus acordes", na tela inicial.
-- [ ] Fazendo outro acorde, aparece "Ouvi X. Tente de novo" e o contador zera.
+- [ ] Na aba Acordes, abra um acorde e toque em "Tocar e testar".
+- [ ] Toque em Começar e faça o acorde: o contador de acertos seguidos tem que subir.
+- [ ] Com 3 acertos seguidos, o acorde tem que ficar marcado como aprendido, na lista e em "Seus acordes", na tela inicial.
+- [ ] Faça outro acorde: tem que aparecer "Ouvi X. Tente de novo" e o contador zerar.
 
 ## 7. Sequências
 
-- [ ] Na tela inicial, toco em Tocar músicas e abro Sequências de acordes.
-- [ ] Escolho uma sequência, ajusto o andamento e toco em Começar.
-- [ ] O metrônomo marca o tempo com o clique (o tempo 1 mais agudo) e os acertos aparecem enquanto eu toco.
-- [ ] No fim aparece "Treino concluído" com o número de acertos.
+- [ ] Na tela inicial, toque em Tocar músicas e abra Sequências de acordes.
+- [ ] Escolha uma sequência, ajuste o andamento e toque em Começar.
+- [ ] Confira que o metrônomo marca o tempo com o clique (o tempo 1 mais agudo) e que os acertos aparecem enquanto o acorde é tocado.
+- [ ] Confira que no fim aparece "Treino concluído" com o número de acertos.
 
 ## 8. Tocar junto
 
-- [ ] Na tela inicial, toco em Tocar músicas e abro Riptide ou All Too Well: abre direto o tocar junto.
-- [ ] Toco em Começar: aparece a contagem com o clique e depois o acorde a tocar.
-- [ ] Os acertos aparecem enquanto eu toco. No fim aparece o "Resumo da música".
-- [ ] No Aa, desligo "Ouvir pelo microfone" e toco em Começar: a cifra anda no tempo, o aviso de microfone não aparece e no fim não tem resumo.
-- [ ] No Aa, desligo "Som do metrônomo": o clique some aqui e nas Sequências.
+- [ ] Na tela inicial, toque em Tocar músicas e abra Riptide ou All Too Well: tem que abrir direto o tocar junto.
+- [ ] Toque em Começar: tem que aparecer a contagem com o clique e depois o acorde a tocar.
+- [ ] Confira que os acertos aparecem enquanto o acorde é tocado e que no fim aparece o "Resumo da música".
+- [ ] No Aa, desligue "Ouvir pelo microfone" e toque em Começar: a cifra tem que andar no tempo, o aviso de microfone não pode aparecer e no fim não pode ter resumo.
+- [ ] No Aa, desligue "Som do metrônomo": o clique tem que sumir aqui e nas Sequências.
 
 ## 8b. Sons
 
-- [ ] No afinador, quando a corda fica afinada, toca o "di-ding" uma vez e o ponteiro não pula.
-- [ ] Em Tocar e testar, quando o acorde vira aprendido, toca o som, o microfone desliga e aparece "Ver meus acordes".
-- [ ] Em Configurações, desligo Sons: nenhum dos três sons toca.
+- [ ] No afinador, quando a corda ficar afinada, confira que toca o "di-ding" uma vez e que o ponteiro não pula.
+- [ ] Em Tocar e testar, quando o acorde virar aprendido, confira que toca o som, o microfone desliga e aparece "Ver meus acordes".
+- [ ] Em Configurações, desligue Sons: nenhum dos três sons pode tocar.
 
 ## 9. Segundo plano e tela bloqueada
 
 Em cada tela com microfone (afinador, Reconhecer acorde, Tocar e testar, Sequências e Tocar junto):
 
-- [ ] Com o microfone ligado, vou pra tela inicial do Android: no Android 12 ou mais novo, o aviso de microfone some da barra de
+- [ ] Com o microfone ligado, vá para a tela inicial do Android: no Android 12 ou mais novo, o aviso de microfone some da barra de
       cima.
-- [ ] Bloqueio o celular e desbloqueio: o app não trava.
-- [ ] O afinador volta a ouvir sozinho. Reconhecer acorde, Tocar e testar e Sequências voltam parados,
-      esperando eu tocar em Ouvir ou Começar.
-- [ ] No Tocar junto, bloqueio no meio da música. Quando volto, a música continua de onde parou.
+- [ ] Bloqueie o celular e desbloqueie: o app não pode travar.
+- [ ] Confira que o afinador volta a ouvir sozinho, e que Reconhecer acorde, Tocar e testar e Sequências voltam parados,
+      esperando o toque em Ouvir ou Começar.
+- [ ] No Tocar junto, bloqueie no meio da música. Quando voltar, a música tem que continuar de onde parou.
 
 ## 10. Configurações e dados guardados
 
-- [ ] Na tela inicial, a engrenagem no canto do título abre as Configurações.
-- [ ] Troco a cor do app e a aparência (claro e escuro): todas as telas mudam.
-- [ ] Fecho o app pelos recentes e abro de novo: a cor, a aparência, os acordes aprendidos e as
-      músicas que eu criei continuam lá.
-- [ ] "Privacidade" abre o texto da política.
+- [ ] Na tela inicial, confira que a engrenagem no canto do título abre as Configurações.
+- [ ] Troque a cor do app e a aparência (claro e escuro): todas as telas têm que mudar.
+- [ ] Feche o app pelos recentes e abra de novo: a cor, a aparência, os acordes aprendidos e as
+      músicas criadas têm que continuar lá.
+- [ ] Confira que "Privacidade" abre o texto da política.
 
 ## 11. Atualização
 
 Num celular que já tem uma versão instalada pelo QR Code:
 
-- [ ] Instalo a versão nova pelo mesmo link, por cima da antiga, sem desinstalar.
-- [ ] Os acordes aprendidos, as músicas e as preferências continuam lá.
+- [ ] Instale a versão nova pelo mesmo link, por cima da antiga, sem desinstalar.
+- [ ] Confira que os acordes aprendidos, as músicas e as preferências continuam lá.
 
 ## Pronto quando
 

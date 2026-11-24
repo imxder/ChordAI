@@ -1,10 +1,10 @@
 # Testes
 
-O app tem **571 testes em 41 arquivos** de `test/`, e mais **2** em `integration_test/` que precisam de um aparelho. Dos 571, **561 passam e 10 são pulados de propósito** (os do `imagens_docs_test.dart`, que só rodam num Windows). Nenhum falha.
+O app tem 571 testes em 41 arquivos de `test/`, e mais 2 em `integration_test/` que precisam de um aparelho. Dos 571, 561 passam e 10 são pulados de propósito (os do `imagens_docs_test.dart`, que só rodam num Windows). Nenhum falha.
 
-## Como contei
+## Como foi contado
 
-Contei rodando os testes, sem estimar. Em 23/11/2026, num Mac, no código da `master` depois do PR #40 (a branch `docs/final`, que só muda documentação e o `imagens_docs_test.dart`, que é pulado):
+A contagem vem da execução dos testes, sem estimativa. Em 23/11/2026, num Mac, no código da `master` depois do PR #40 (a branch `docs/final`, que só muda documentação e o `imagens_docs_test.dart`, que é pulado):
 
 ```bash
 flutter test --reporter json $(git ls-files 'test/*_test.dart' 'test/**/*_test.dart')
@@ -12,32 +12,32 @@ flutter test --reporter json $(git ls-files 'test/*_test.dart' 'test/**/*_test.d
 
 Cada teste que começa (`testStart`) e termina (`testDone`) conta uma vez, agrupado pelo arquivo (`suite`). Um teste que roda em vários casos, como o `layout_sizes_test.dart` (um por tela e por tamanho de janela), conta uma vez por caso. Os 10 pulados vêm marcados como `skipped`.
 
-Pra rodar:
+Para rodar:
 
 ```bash
 flutter test                                           # todos
 flutter test test/pitch_smoother_test.dart             # um arquivo só
-flutter test --coverage                                # com a cobertura, que o CI manda pro SonarCloud
+flutter test --coverage                                # com a cobertura, que o CI manda para o SonarCloud
 ```
 
 ## O que fica de fora
 
-- **`test/imagens_docs_test.dart`** (10 pulados): gera as imagens do Windows de `docs/imagens/`. Precisa da fonte Segoe UI de verdade, então só roda num Windows, com `--update-goldens --dart-define=IMAGENS=true`.
-- **`integration_test/chord_model_equivalence_test.dart`** (2): confere a saída de cada modelo contra a esperada pelo backend (`example_expected.json`). Carrega o `.tflite` pela biblioteca nativa do TensorFlow Lite, que o `flutter test` comum não tem, então roda num aparelho:
+- `test/imagens_docs_test.dart` (10 pulados): gera as imagens do Windows de `docs/imagens/`. Precisa da fonte Segoe UI de verdade, então só roda num Windows, com `--update-goldens --dart-define=IMAGENS=true`.
+- `integration_test/chord_model_equivalence_test.dart` (2): confere a saída de cada modelo contra a esperada pelo backend (`example_expected.json`). Carrega o `.tflite` pela biblioteca nativa do TensorFlow Lite, que o `flutter test` comum não tem, então roda num aparelho:
 
 ```bash
 flutter test integration_test/chord_model_equivalence_test.dart -d <id-do-aparelho>
 ```
 
-- **O `OnDeviceChordService` por dentro** (o modelo rodando de verdade) só é coberto por esse teste de equivalência. Os outros testes usam um reconhecedor falso no lugar.
+- O `OnDeviceChordService` por dentro (o modelo rodando de verdade) só é coberto por esse teste de equivalência. Os outros testes usam um reconhecedor falso no lugar.
 
 ## Como os testes funcionam
 
-- **Reconhecedor falso.** Toda tela que usa o microfone recebe o `ChordRecognizer` pelo construtor, e os testes passam um que finge ouvir um acorde (`MicQueOuve` em `test/test_helpers.dart`, `ReconhecedorFalso` em `test/tocar_junto/simulador.dart`). Assim nenhum teste precisa de microfone nem do modelo.
-- **Tocar junto simulado.** O `tocar_junto_test.dart` toca as cifras do app com um modelo falso (`ModeloFalso`) e confere o placar de 12 cenários, nos dois jeitos de tocar junto. Os números são de simulação, não de um violão de verdade.
-- **Sons falsos.** O `test/flutter_test_config.dart` troca o `AppSounds` por um que só anota o que tocou, e o `sons_test.dart` e o `musicas_test.dart` conferem essa lista.
-- **Preferências.** Os testes usam o `shared_preferences` de mentira, e o `appState.loadProgress()` recarrega o estado a cada teste.
-- **Gravações reais.** O afinador é testado com as 6 cordas gravadas de verdade, em `test/fixtures/strings/`.
+- Reconhecedor falso. Toda tela que usa o microfone recebe o `ChordRecognizer` pelo construtor, e os testes passam um que finge ouvir um acorde (`MicQueOuve` em `test/test_helpers.dart`, `ReconhecedorFalso` em `test/tocar_junto/simulador.dart`). Assim nenhum teste precisa de microfone nem do modelo.
+- Tocar junto simulado. O `tocar_junto_test.dart` toca as cifras do app com um modelo falso (`ModeloFalso`) e confere o placar de 12 cenários, nos dois jeitos de tocar junto. Os números são de simulação, não de um violão de verdade.
+- Sons falsos. O `test/flutter_test_config.dart` troca o `AppSounds` por um que só anota o que tocou, e o `sons_test.dart` e o `musicas_test.dart` conferem essa lista.
+- Preferências. Os testes usam o `shared_preferences` de mentira, e o `appState.loadProgress()` recarrega o estado a cada teste.
+- Gravações reais. O afinador é testado com as 6 cordas gravadas de verdade, em `test/fixtures/strings/`.
 
 ## Onde está cada teste
 
@@ -53,7 +53,7 @@ Cobre a leitura do microfone até o acorde, os dois modelos e a entrada de áudi
 | `on_device_model_test.dart` | o modelo padrão é o v3, e o A só aparece com o v3_meu | 5 |
 | `chord_catalog_test.dart` | cada modelo tem os 5 arquivos, a lista de dificuldade bate com os acordes dos modelos e os diagramas têm 6 cordas | 8 |
 | `chord_for_model_test.dart` | o acorde da cifra vira o acorde que o modelo conhece (tira o baixo, reduz extensão, troca enarmonia) | 9 |
-| `entrada_audio_test.dart` | só dá pra escolher a entrada de áudio no Windows e no Mac, e a escolhida é a usada | 7 |
+| `entrada_audio_test.dart` | só dá para escolher a entrada de áudio no Windows e no Mac, e a escolhida é a usada | 7 |
 | `microfone_desktop_test.dart` | microfone bloqueado ou entrada desconectada no Windows, com a mensagem de onde liberar | 12 |
 | `recognition_mode_migration_test.dart` | quem tinha o modo servidor abre no aparelho sem perder nada | 2 |
 
@@ -80,7 +80,7 @@ Cobre o YIN, o ponteiro estável e a tela.
 | `pitch_smoother_test.dart` | o ponteiro do afinador segura a corda, ignora leitura isolada e só troca de corda confirmando | 13 |
 | `recorded_strings_test.dart` | o afinador acerta a nota de gravações reais das 6 cordas (`test/fixtures/strings/`) | 6 |
 | `afinador_gravacoes_test.dart` | o afinador troca de corda certo quando uma é tocada por cima da outra, numa gravação real | 2 |
-| `afinador_tela_test.dart` | o afinador abre no Auto, a corda escolhida, a vibração ao afinar e o link pro guia | 6 |
+| `afinador_tela_test.dart` | o afinador abre no Auto, a corda escolhida, a vibração ao afinar e o link para o guia | 6 |
 | `sliding_pcm_buffer_test.dart` | as janelas do afinador saem na ordem, com blocos de qualquer tamanho | 3 |
 | `tuner_note_test.dart` | medir contra a corda escolhida, mesmo perto de outra | 3 |
 
@@ -105,7 +105,7 @@ Cobre as abas, a barra lateral, o tamanho de cada tela, o guia, as cores e os Aj
 | `abas_test.dart` | a barra do celular é Início, Acordes, Reconhecer e Afinador, e o microfone só liga na aba que aparece | 9 |
 | `desktop_test.dart` | a barra lateral no Windows e no Mac, a barra de abas no celular, mouse, teclado e a cara de cada sistema | 43 |
 | `layout_sizes_test.dart` | cada tela cabe em celular pequeno, tablet, modo deitado e fonte grande, e na janela do computador | 206 |
-| `widget_test.dart` | a tela inicial, o atalho pros acordes, a troca de aba e que não sobrou nada da gamificação | 6 |
+| `widget_test.dart` | a tela inicial, o atalho para os acordes, a troca de aba e que não sobrou nada da gamificação | 6 |
 | `navegacao_test.dart` | uma tela abre a outra, e o erro de reconhecimento mostra a mensagem fixa | 4 |
 | `guia_test.dart` | os 12 tópicos do guia, na ordem, e o botão de cada um abre a tela certa | 21 |
 | `theme_contrast_test.dart` | as cores do app têm contraste de texto WCAG AA em todas as aparências | 20 |
@@ -140,6 +140,6 @@ Cobre a política, os três sons, o microfone com o app escondido e a tela acesa
 | Músicas e cifras | 41 |
 | Telas, abas e as quatro plataformas | 337 |
 | Privacidade, sons e segundo plano | 29 |
-| **Total** | **571** |
+| Total | 571 |
 
 Mais os 2 testes de `integration_test/`, que ficam fora da conta.

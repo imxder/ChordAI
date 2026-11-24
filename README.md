@@ -96,7 +96,7 @@ Fonte do limiar e dos acordes: o `model_info.json` e o `labels.json` de cada pas
 
 Fonte: [`experiments/results_duas_fontes/comparativo.md`](https://github.com/imxder/ChordAI-backend/blob/main/experiments/results_duas_fontes/comparativo.md), no backend. O acerto é sem limiar e só nos 8 acordes do v3. O v3 é o padrão porque acertou mais com pessoas e violões que ele nunca ouviu. O v3_meu reconhece o Lá maior e mostra bem menos acorde quando não tem acorde sendo tocado. O teste de sem acorde é pequeno, e as limitações estão no [ADR 0002](docs/adr/0002-dois-modelos-no-app.md). O A só aparece no app quando o v3_meu está escolhido.
 
-**[CONFERIR]** O tempo de cada leitura no iPhone e a demora entre tocar o acorde e ele aparecer na tela ainda não foram medidos no celular. O método está em [docs/como-funciona.md](docs/como-funciona.md), seção 7. No meu computador, o `.tflite` leva 8,78 ms por janela com 1 thread (`export_report.json` do backend).
+Ainda não medi no celular o tempo de cada leitura nem a demora entre tocar o acorde e ele aparecer na tela. O método está em [docs/como-funciona.md](docs/como-funciona.md), seção 7, como trabalho futuro. No meu computador, o `.tflite` leva 8,78 ms por janela com 1 thread (`export_report.json` do backend).
 
 A API Flask do [ChordAI-backend](https://github.com/imxder/ChordAI-backend) continua lá, mas só como ferramenta pra eu testar um modelo pelo computador. Ela usa outro modelo (`trained_model/`) e o app não fala com ela.
 

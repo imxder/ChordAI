@@ -35,7 +35,7 @@ flowchart LR
 
 - **O app manda áudio bruto.** A chroma (quanto de cada uma das 12 notas há na janela) está dentro do `.tflite`, então o app não calcula FFT nem MFCC em Dart. Por que isso e por que o modelo roda no aparelho: [ADR 0001](adr/0001-inferencia-no-aparelho.md).
 - **Janela de 1,5 s.** É o tamanho que o modelo foi treinado pra olhar (`input_samples` no `model_info.json`: 33 075 amostras a 22 050 Hz).
-- **Fora da thread da interface.** Rodar o modelo na thread da interface seguraria o desenho da tela enquanto ele calcula. O tempo no computador é de 8,78 ms por janela (`export_report.json` do backend, `latency_ms_tflite_1thread`); no celular **[CONFERIR]**, ver a seção 7.2.
+- **Fora da thread da interface.** Rodar o modelo na thread da interface seguraria o desenho da tela enquanto ele calcula. O tempo no computador é de 8,78 ms por janela (`export_report.json` do backend, `latency_ms_tflite_1thread`); no celular ainda não medi (seção 7.2).
 - **O estabilizador existe porque a leitura isolada erra.** Uma leitura errada no meio de duas certas não deveria virar um erro na tela. Com 2 de 3, ela é ignorada. O custo é a demora: depois de um silêncio, o acorde só aparece com três leituras (1,5 s), e trocando de um acorde pra outro, com duas leituras iguais (1 s).
 - **O tocar junto não usa o estabilizador.** Ele pede as leituras cruas (`rawReadings: true` em `services/chord_recognizer_factory.dart`), porque a `PlayAlongEngine` faz a conta dela (seção 3).
 - **Sem internet.** O app não pede permissão de internet. O modo servidor saiu do app: [ADR 0003](adr/0003-sem-modo-servidor.md).
@@ -109,7 +109,7 @@ flowchart LR
 | Riptide, silêncio do começo ao fim | 0 | 88 |
 | All Too Well, tocado certinho | 243 | 0 |
 
-**O que o tocar junto não faz.** O modelo decide em janelas de 1,5 s: dois acordes que trocam dentro da mesma janela, como uma troca a cada 1 s, não dão leitura limpa. Por isso a regra do acorde curto. A tolerância de 1000 ms é uma escolha minha: **[CONFERIR]** o valor que serve num violão de verdade, medindo com o método da seção 7.
+**O que o tocar junto não faz.** O modelo decide em janelas de 1,5 s: dois acordes que trocam dentro da mesma janela, como uma troca a cada 1 s, não dão leitura limpa. Por isso a regra do acorde curto. A tolerância de 1000 ms é uma escolha minha, ainda sem medida: o valor que serve num violão de verdade fica como trabalho futuro, com o método da seção 7.3.
 
 ## 4. Desktop (Windows e Mac)
 
@@ -162,11 +162,11 @@ O estado do app é um objeto só, o `appState` (`state/app_state.dart`), que gua
 
 ## 7. Como medir a demora
 
-Dois números ficam por medir, e eu deixo o método aqui. Marquei os dois com **[CONFERIR]** porque dependem do meu aparelho e do meu violão.
+Dois números ainda não foram medidos, porque dependem do meu aparelho e do meu violão. Deixo o método aqui como trabalho futuro.
 
 ### 7.1 Do acorde tocado até aparecer na tela
 
-**[CONFERIR]** Demora medida: ___ ms (aparelho: ___, modelo: ___, data: ___).
+Demora medida: ainda não medi.
 
 Como medir, com dois aparelhos:
 
@@ -180,7 +180,7 @@ Esperado pelo código: as leituras saem a cada 500 ms, e o acorde só aparece co
 
 ### 7.2 O tempo de cada leitura do modelo
 
-**[CONFERIR]** Hoje o app mostra `lastInferenceMicros` (`on_device_chord_service.dart`) só no registro de debug, e nenhum arquivo do repositório guarda o tempo no celular. O ADR 0001 diz que no celular ainda não medi, e o único número salvo é o do computador: 8,78 ms no float32 com 1 thread (`export_report.json` do backend, `latency_ms_tflite_1thread`).
+Hoje o app guarda `lastInferenceMicros` (`on_device_chord_service.dart`) só no registro de debug, e nenhum arquivo do repositório guarda o tempo no celular. O ADR 0001 diz que no celular ainda não medi, e o único número salvo é o do computador: 8,78 ms no float32 com 1 thread (`export_report.json` do backend, `latency_ms_tflite_1thread`).
 
 Como medir no iPhone, para cada modelo:
 
@@ -199,7 +199,7 @@ Em debug o app é mais lento que em release. Anote isso junto, ou meça com `flu
 
 ### 7.3 A tolerância do tocar junto
 
-**[CONFERIR]** Para saber se a `lateTolerance` de 1000 ms (`services/play_along_engine.dart`) está boa, meço quanto tempo a leitura certa demora depois que eu troco de acorde.
+Ainda não fiz esta medida. Para saber se a `lateTolerance` de 1000 ms (`services/play_along_engine.dart`) está boa, meço quanto tempo a leitura certa demora depois que eu troco de acorde.
 
 1. Rode o tocar junto no iPhone em debug, com `flutter run -d <id-do-iphone> | tee tj.log` (o registro `[tj]` só existe em debug).
 2. Toque a música em "Acompanhar o andamento", trocando de acorde junto com a cifra.

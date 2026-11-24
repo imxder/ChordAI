@@ -51,10 +51,10 @@ IMAGENS = RAIZ / 'docs' / 'imagens'
 MOLDURAS = RAIZ / 'tool' / 'molduras'
 
 LARGURA_MAXIMA = 1600
-TAMANHO_MAXIMO = 500 * 1024
+TAMANHO_MAXIMO = 700 * 1024
 FUNDO = (237, 237, 240, 255)
-MARGEM = 60
-ESPACO = 80
+MARGEM = 140
+ESPACO = 100
 MAC_FINAL = (1800, 1200)
 
 
@@ -83,11 +83,40 @@ def area_da_tela(moldura):
     return tela
 
 
-def encaixar(moldura, captura):
+def completar_lados(captura, proporcao):
+    """Alarga a captura até a proporção da tela, repetindo a cor da borda de cada linha.
+
+    Assim a janela inteira cabe na tela, sem cortar em cima e embaixo e sem faixa de outra cor.
+    """
+    largura_nova = round(captura.height * proporcao)
+    if largura_nova <= captura.width:
+        return captura
+    extra = largura_nova - captura.width
+    esquerda = extra // 2
+    saida = Image.new('RGBA', (largura_nova, captura.height), (0, 0, 0, 0))
+    saida.alpha_composite(captura, (esquerda, 0))
+    for y in range(captura.height):
+        opacos = [x for x in range(captura.width) if max(captura.getpixel((x, y))[:3]) > 12]
+        if not opacos:
+            continue
+        primeiro, ultimo = opacos[0], opacos[-1]
+        linha = min(max(y, 40), captura.height - 41)
+        cor_esquerda = captura.getpixel((8, linha))
+        cor_direita = captura.getpixel((captura.width - 9, linha))
+        for x in range(0, esquerda + primeiro):
+            saida.putpixel((x, y), cor_esquerda)
+        for x in range(esquerda + ultimo + 1, largura_nova):
+            saida.putpixel((x, y), cor_direita)
+    return saida
+
+
+def encaixar(moldura, captura, inteira=False):
     """Põe a captura embaixo da moldura, preenchendo a tela. A moldura fica como veio."""
     tela = area_da_tela(moldura)
     x0, y0, x1, y1 = tela.getbbox()
     largura, altura = x1 - x0, y1 - y0
+    if inteira:
+        captura = completar_lados(captura, largura / altura)
     escala = max(largura / captura.width, altura / captura.height)
     nova = captura.resize((round(captura.width * escala), round(captura.height * escala)), Image.LANCZOS)
     esquerda = (nova.width - largura) // 2
@@ -114,6 +143,11 @@ def janela_do_windows(captura, raio=16):
     return saida
 
 
+def sem_margem(imagem):
+    """Tira só a margem transparente em volta do aparelho. O aparelho em si não muda."""
+    return imagem.crop(imagem.getchannel('A').getbbox())
+
+
 def lado_a_lado(imagens):
     """As imagens na linha de base, com a mesma altura de figura e espaço entre elas."""
     altura = max(i.height for i in imagens)
@@ -127,7 +161,7 @@ def lado_a_lado(imagens):
 
 
 def salvar(imagem, destino):
-    """PNG com até 1600 px de largura e até 500 KB: encolhe e reduz as cores até caber."""
+    """PNG com até 1600 px de largura e até 700 KB: encolhe e reduz as cores até caber."""
     imagem = imagem.convert('RGB')
     if imagem.width > LARGURA_MAXIMA:
         altura = round(imagem.height * LARGURA_MAXIMA / imagem.width)
@@ -159,9 +193,9 @@ def reduzir():
 
 
 def apple(args):
-    macbook = encaixar(abrir(args.macbook), abrir(IMAGENS / f'mac_{args.tela}.png'))
-    iphone = encaixar(abrir(args.iphone), abrir(IMAGENS / f'iphone_{args.tela}.png'))
-    altura = macbook.height * 0.6
+    macbook = sem_margem(encaixar(abrir(args.macbook), abrir(IMAGENS / f'mac_{args.tela}.png'), inteira=True))
+    iphone = sem_margem(encaixar(abrir(args.iphone), abrir(IMAGENS / f'iphone_{args.tela}.png')))
+    altura = macbook.height * 0.78
     iphone = iphone.resize((round(iphone.width * altura / iphone.height), round(altura)), Image.LANCZOS)
     salvar(lado_a_lado([macbook, iphone]), IMAGENS / 'produto-apple.png')
 

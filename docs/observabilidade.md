@@ -1,6 +1,6 @@
 # Observabilidade
 
-O que o app registra hoje, por que ele não tem monitoramento em produção e o que seria usado depois da entrega.
+O que o app registra hoje, por que ele não tem monitoramento em produção e os próximos passos.
 
 ## O que existe hoje
 
@@ -27,7 +27,7 @@ O app também não coleta dados. A [política de privacidade](../PRIVACY.md) diz
 
 Só é visível o que é testado, e não há como saber como o app se comporta nos aparelhos das outras pessoas.
 
-## O que seria usado depois da entrega
+## Próximos passos
 
 Isso é um plano, ainda não está feito.
 

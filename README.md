@@ -170,6 +170,7 @@ Como as camadas conversam, onde ficam as regras e qual arquivo é cada tela: [do
 - Os modelos em `assets/models/` foram treinados com o [Guitar Chords V3](https://www.kaggle.com/datasets/fabianavinci/guitar-chords-v3) e o [ChordAI Guitar Chords](https://www.kaggle.com/datasets/imxder/chordai-guitar-chords-v1), os dois CC BY-SA 4.0, e por isso seguem CC BY-SA 4.0. A MIT não vale para eles.
 - O som de acorde aprendido (`assets/sounds/acorde_aprendido.wav`) é do Kenney, do pacote Interface Sounds (CC0), com a licença em `assets/sounds/LICENSES/`. Os sons de clique e de afinado (`click.wav`, `click_forte.wav` e `afinado.wav`) são gerados pelo [`tool/gerar_sons.py`](tool/gerar_sons.py) e seguem a licença do código. Os detalhes estão em [docs/sons.md](docs/sons.md).
 - As bibliotecas do TensorFlow Lite em `blobs/` seguem a licença Apache 2.0 do TensorFlow, com a cópia em [`blobs/LICENSE-TensorFlow.txt`](blobs/LICENSE-TensorFlow.txt).
+- As fontes em `assets/fonts/` seguem as próprias licenças: IBM Plex Mono, SIL Open Font License 1.1 ([`OFL-IBMPlexMono.txt`](assets/fonts/OFL-IBMPlexMono.txt)), e os ícones Phosphor, MIT ([`LICENSE-Phosphor.txt`](assets/fonts/LICENSE-Phosphor.txt)). A imagem do violão do guia (`assets/images/violao.png`) é de domínio público, com a origem em [docs/guia_fontes.md](docs/guia_fontes.md).
 
 ## Links
 
